@@ -1,6 +1,6 @@
 ﻿// Offline support: app files come from the network when possible and fall back to the cache.
 // Polymarket requests are never cached.
-const CACHE = "dailyhq-v14";
+const CACHE = "dailyhq-v15";
 // Water reminder taps: the "Log" action logs water in an open window, or opens the app and logs it there.
 self.addEventListener("notificationclick", e => {
   e.notification.close();
@@ -26,7 +26,7 @@ self.addEventListener("fetch", e => {
   const isFont = url.hostname.endsWith("googleapis.com") || url.hostname.endsWith("gstatic.com");
   if (!sameOrigin && !isFont) return;
   e.respondWith(
-    fetch(e.request).then(res => {
+    fetch(e.request, sameOrigin ? { cache: "no-cache" } : undefined).then(res => {
       if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); }
       return res;
     }).catch(() => caches.match(e.request, { ignoreSearch: true }).then(r => r || caches.match("index.html")))
