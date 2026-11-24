@@ -168,6 +168,16 @@ body.page-mode .amb-shade{background:linear-gradient(180deg,rgba(2,11,14,.45),rg
 .tag.now{background:var(--peach);color:#1C3438}
 .tag.now::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 1.8s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.35;transform:scale(.72)}}
+.tag.missed{background:rgba(238,142,134,.16);color:var(--rose)}
+.it.miss{border-color:rgba(238,142,134,.35);background:rgba(238,142,134,.05)}
+.it.current{border-color:rgba(239,188,144,.55);background:rgba(239,188,144,.07);box-shadow:0 0 0 1px rgba(239,188,144,.15)}
+.chip.nowchip{background:var(--peach);color:#1C3438}
+.chip.misschip{background:rgba(238,142,134,.2);color:var(--rose)}
+.missedbox{margin-top:12px;padding:12px 14px;border-radius:14px;border:1px solid rgba(238,142,134,.35);background:rgba(238,142,134,.05)}
+.missedbox summary{cursor:pointer;font-weight:600;color:var(--rose)}
+.missedbox .it{background:rgba(0,0,0,.12)}
+.missday{margin-top:12px;font-size:13px}
+.missday b{font-weight:600;color:var(--soft)}
 .ck{width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);flex:none;display:grid;place-items:center;font-size:13px;transition:background .2s,border-color .2s}
 .it.done .ck{background:var(--mint);border-color:var(--mint);color:#0B3324}
 .it.done .t{color:var(--muted);text-decoration:line-through}
