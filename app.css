@@ -235,6 +235,22 @@ body.page-mode .amb-shade{background:linear-gradient(180deg,rgba(2,11,14,.45),rg
 .mood{display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(239,188,144,.14);color:#F1C39D;font-size:11px;font-weight:600}
 .jbody>*{animation:unfold .4s var(--ease) both}
 
+/* dogs */
+.grid.dogs{margin-bottom:14px}
+.dogcard{display:flex;flex-direction:column;gap:6px}
+.dogcard.alert{border-color:rgba(238,142,134,.6);box-shadow:0 0 0 1px rgba(238,142,134,.25)}
+.ratio{display:flex;height:10px;border-radius:6px;overflow:hidden;margin:8px 0 4px;background:rgba(255,255,255,.08)}
+.ratio i{background:#8A6B4E}.ratio b{background:var(--mint)}
+.stools{display:flex;align-items:center;gap:5px;margin-top:8px}
+.stools i{width:14px;height:14px;border-radius:4px;background:rgba(255,255,255,.1)}
+.stools i.s1,.stools i.s4{background:#E9C46A}.stools i.s2,.stools i.s3{background:var(--mint)}.stools i.s5{background:var(--rose)}
+.stools small{margin-left:6px;font-size:11px;color:var(--muted)}
+.flag{margin-top:6px;padding:8px 10px;border-radius:9px;background:rgba(233,196,106,.12);border:1px solid rgba(233,196,106,.35);font-size:13px;color:#F2DFA8}
+.flag.urgent{background:rgba(238,142,134,.14);border-color:rgba(238,142,134,.5);color:#F6C4BE;font-weight:600}
+.freezer{display:flex;flex-direction:column;gap:4px}
+.redflags{margin-bottom:14px}
+.sub .up{color:var(--mint)}
+
 /* water */
 .watercard{border-color:rgba(122,184,240,.3);background:linear-gradient(120deg,rgba(30,62,84,.78),rgba(20,44,58,.78))}
 .wnum{font-size:clamp(28px,4vw,38px);font-weight:500;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin-top:4px}
