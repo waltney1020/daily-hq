@@ -925,8 +925,7 @@ const CALM_TIPS=[
  ["Boredom is a signal","If boredom is the trigger, swap in something quick: a song, a stretch, a message to a friend."],
  ["Stress is real, smoke is borrowed calm","The relief is short. Breathing gives you the same calm without the comeback craving."],
  ["Every urge you beat counts","Each one you ride out makes the next one weaker. That's how the habit loosens."],
- ["Be kind to yourself","If you smoke anyway, log it and move on. Data, not guilt. Tomorrow is a fresh streak."],
- ["Want backup?","For nicotine, free coaching is available at 1-800-QUIT-NOW (US). Talking it through helps."]];
+ ["Be kind to yourself","If you smoke anyway, log it and move on. Data, not guilt. Tomorrow is a fresh streak."]];
 const BREATHS={sigh:{name:"Calming sigh",steps:[["Breathe in",2,1.08],["Sip in more",1,1.25],["Long breath out",6,.62]]},box:{name:"Box 4-4-4-4",steps:[["Breathe in",4,1.25],["Hold",4,1.25],["Breathe out",4,.62],["Hold",4,.62]]},b478:{name:"4-7-8",steps:[["Breathe in",4,1.25],["Hold",7,1.25],["Breathe out slowly",8,.62]]}};
 let calm=null;
 function openCalm(){const el=$("calm");el.hidden=false;document.body.style.overflow="hidden";calm={start:Date.now(),pattern:S.ui.breath||"sigh",tip:Math.floor(Math.random()*CALM_TIPS.length),moods:[],raf:0,timers:[]};
@@ -1037,7 +1036,7 @@ const fmtL=ml=>(ml/1000).toFixed(ml%1000===0?0:ml%100===0?1:2)+" L";
 function waterPace(){const now=new Date(),m=now.getHours()*60+now.getMinutes(),a=tmin(W().start),b=tmin(W().end);const f=Math.max(0,Math.min(1,(m-a)/Math.max(1,b-a)));
  const expected=Math.round(W().goal*f/50)*50,drunk=waterToday();return{expected,drunk,behind:Math.max(0,expected-drunk),f}}
 function waterTask(){return S.routine.find(r=>r.link==="water")}
-function addWater(ml,el){if(!(ml>0))return;const k=dkey();waterAt=Date.now();(W().log[k]=W().log[k]||[]).push({ts:Date.now(),ml:Math.round(ml)});afterWater(true,el);
+function addWater(ml,el){if(!(ml>0))return;const k=dkey();waterAt=Date.now();if(Math.random()<.3)setTimeout(()=>waterNote(true),900);(W().log[k]=W().log[k]||[]).push({ts:Date.now(),ml:Math.round(ml)});afterWater(true,el);
  toast(`+${ml} ml · ${fmtL(waterToday())} of ${fmtL(W().goal)}`,"Undo",()=>{const l=W().log[k];if(l&&l.length){l.pop();afterWater(false)}})}
 function afterWater(added,el){const k=dkey(),t=waterTask(),dd=dayData(k),hit=waterToday(k)>=W().goal;
  if(t){if(hit&&!dd.done[t.id]){toggleTask(t.id,el);if(added)setTimeout(()=>{toast("Water goal reached. "+fmtL(W().goal)+" today.");burst(el||$("wbig"),["#7AB8F0","#A9D5F5","#EFBC90"])},250)}else if(!hit&&dd.done[t.id])toggleTask(t.id)}
@@ -1051,6 +1050,18 @@ function renderWater(){const p=waterPace(),g=W().goal,pct=Math.min(100,Math.roun
  <div class="glinfo"><span id="wbig"><b>${fmtL(p.drunk)}</b> of ${fmtL(g)}</span><span class="${p.behind>=500&&p.drunk<g?"behind":""}">${p.drunk>=g?"Goal reached. Nice work.":p.behind>=500?`${fmtL(p.behind)} behind pace`:`On pace · ${fmtL(Math.max(0,g-p.drunk))} to go`}</span><button class="link" id="wdetail">Log or remind</button></div>`;
  c.querySelectorAll(".gls").forEach(b=>b.onclick=()=>{if(+b.dataset.i>=Math.floor(full+1e-9))addWater(W().step,b);else openWater()});$("wdetail").onclick=()=>openWater()}
 var waterAt=0;
+// Hydration tips on a sticky note that pops up now and then on the Today page. Tap it for another, × to close.
+const WATER_TIPS=["Squeeze in some lemon or lime. A little flavor makes it easier to keep sipping.","Add a tiny pinch of salt after a workout or a sweaty day. It helps your body hold on to the water.","Drink a full glass right when you wake up. You've gone all night without any.","Keep a bottle where you can see it. Out of sight really is out of mind.","Cold water goes down easier. Throw some ice in.","Drop in cucumber, mint or a few berries for flavor without the sugar.","Have a glass before every meal. Easy 1.5 L right there.","Sip during training. Roughly 500 ml for every hour you work out.","Pale yellow means you're doing well. Dark yellow means drink up.","Feeling snacky? You might just be thirsty. Try a glass first.","Coffee counts a little, but match each cup with a glass of water.","Hot day or heavy sweat? Add electrolytes, not just water.","Use a straw. Most people drink more without noticing.","Tie it to a habit: a glass after every trade review or every bathroom break.","Eat your water too: watermelon, oranges and cucumber are mostly water.","Front-load it. Aim for half your goal by early afternoon so you're not chugging at night.","Big gulps feel like a chore. Small, steady sips add up faster than you think.","A warm mug of water with lemon counts. Not everything has to be ice cold."];
+let wnoteAt=0,wnoteLast=-1,wnoteT=0;
+function waterNote(force){const n=$("wnote");if(!n||!$("p-today").classList.contains("on"))return;
+ if(!force&&(Date.now()-wnoteAt<12*60e3||Math.random()>.6))return;wnoteAt=Date.now();
+ let i;do i=Math.floor(Math.random()*WATER_TIPS.length);while(i===wnoteLast&&WATER_TIPS.length>1);wnoteLast=i;
+ n.style.setProperty("--r",(Math.random()*5-3).toFixed(1)+"deg");
+ n.innerHTML=`<b>💧 Hydration tip</b><p>${esc(WATER_TIPS[i])}</p><button class="wnx" aria-label="Close tip">×</button>`;
+ n.hidden=false;n.classList.remove("pop","out");void n.offsetWidth;n.classList.add("pop");
+ n.onclick=e=>{if(e.target.closest(".wnx"))return hideNote();waterNote(true)};
+ clearTimeout(wnoteT);wnoteT=setTimeout(hideNote,25000)}
+function hideNote(){const n=$("wnote");if(!n||n.hidden)return;clearTimeout(wnoteT);n.classList.add("out");setTimeout(()=>{n.hidden=true;n.classList.remove("out")},260)}
 function openWater(){$("sheet").dataset.kind="water";$("sheetwrap").hidden=false;drawWaterSheet($("sheet"))}
 function drawWaterSheet(root){const k=dkey(),p=waterPace(),g=W().goal,log=waterLog(k);
  const days=[...Array(7)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);const kk=dkey(d);return[d.toLocaleDateString([], {weekday:"narrow"}),waterToday(kk)]});
@@ -1200,6 +1211,7 @@ function go(v,o={}){S.view=v;if(o.acct)S.ui.acct=o.acct;if(o.book)S.ui.book=o.bo
  document.querySelectorAll("#dock .tb").forEach(b=>b.classList.toggle("on",b.dataset.v===v||(b.dataset.k==="more"&&!["home","today","money"].includes(v))));qlog(false);
  $("crumb").textContent=NAMES[v];setGreet();morphWeek(v==="today",!!o.instant&&weekCompact===null);
  if(v==="home"){renderCards();layout();requestAnimationFrame(fitHome)}else{setAmbient(PALOF[v]);fitHome()}
+ if(v==="today")setTimeout(()=>waterNote(),1200);else hideNote();
  if(v==="today")setTimeout(()=>{const d=$("donext");if(!d||!$("p-today").classList.contains("on"))return;const r=d.getBoundingClientRect();if(r.bottom>innerHeight-90)d.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"})},450);
  if(v==="trades"){shownBal=null;renderTrades();const l=$("spark").querySelector(".line");if(l){l.style.animation="none";void l.offsetWidth;l.style.animation=""}if(S.ui.acct==="poly"&&S.settings.wallet&&Date.now()-S.sync.last>60000)sync(false)}
  if(v==="journal")renderJournal();if(v==="today")renderToday();if(v==="food")renderFood();if(v==="smoke")renderSmoke();if(v==="money")renderMoney();
@@ -1253,8 +1265,12 @@ $("qlog").querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{const q=b.datas
  if(q==="puff"){const X=SM();if(X.active){X.active.puffs++;save();toast(`Puff logged · ${X.active.puffs} this session`)}else{startSmoke(S.ui.smokeLimit??5);SM().active.puffs=1;save()}go("smoke")}
  if(q==="calm")openCalm()});
 /* More sheet */
-function moreSheet(){const items=[["trades","Trades","Polymarket, manual and Bob"],["journal","Journal","Dreams, ideas, notes, emotions"],["food","Food","Meal plan, recipes, the dogs"],["smoke","Smoke log","Sessions, urges, calm mode"]];
- openSheet(`<h2>More</h2><div class="morelist">${items.map(([v,n,d])=>`<button class="moreitem" data-go="${v}"><b>${n}</b><span>${d}</span></button>`).join("")}</div>
+const SECTIONS=[["trades","Trades","#1C3A3F","#86D3B0",'<path d="M4 17l5-5 4 4 7-8"/><path d="M15 8h5v5"/>'],
+ ["journal","Journal","#3A2C25","#EFBC90",'<path d="M6 4h11a1 1 0 0 1 1 1v15H7a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1z"/><path d="M5 18a2 2 0 0 1 2-2h11M9 8h5"/>'],
+ ["food","Food","#2C3622","#C9DE8C",'<path d="M7 3v18M5 3v5a2 2 0 0 0 4 0V3M17 21V3c-2 1.5-3 4-3 7h3"/>'],
+ ["smoke","Smoke log","#2A2A3C","#B9B4F0",'<path d="M3 9h11a3 3 0 1 0-3-3M3 15h15a3 3 0 1 1-3 3"/>']];
+function moreSheet(){
+ openSheet(`<h2>More</h2><h3 class="rh">Sections</h3><div class="sclist">${SECTIONS.map(([v,n,bg,fg,ic])=>`<button class="scitem" data-go="${v}"><span class="tile sec" style="background:${bg};color:${fg}"><svg viewBox="0 0 24 24">${ic}</svg></span>${n}</button>`).join("")}</div>
  <h3 class="rh">Shortcuts</h3><div class="sclist">${SHORTCUTS.map((s,i)=>`<button class="scitem" data-sc="${i}"><span class="tile" style="background:${s.bg};color:${s.fg}">${esc(s.tile)}</span>${esc(s.name)}</button>`).join("")}</div>
  <div class="btns" style="justify-content:center"><button class="link" id="mo-set">Settings</button></div>`,root=>{
   root.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{closeSheet();go(b.dataset.go)});
