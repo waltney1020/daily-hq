@@ -174,6 +174,17 @@ body.page-mode .amb-shade{background:linear-gradient(180deg,rgba(2,11,14,.45),rg
 .glinfo b{color:var(--ink);font-weight:600;font-size:15px}
 .glinfo .behind{color:var(--peach)}
 .glinfo .link{margin-left:auto;padding:4px 0}
+.wnote{position:relative;width:min(300px,86%);margin:14px 6px 2px auto;padding:16px 36px 14px 16px;background:linear-gradient(170deg,#F7E38C,#EFD56E);color:#3B3313;border-radius:2px 2px 16px 2px;transform:rotate(var(--r,-2deg));box-shadow:0 12px 26px rgba(0,0,0,.38),inset 0 -10px 18px rgba(160,120,20,.12);cursor:pointer;transform-origin:top center}
+.wnote::before{content:"";position:absolute;left:50%;top:-9px;width:64px;height:18px;margin-left:-32px;background:rgba(255,255,255,.32);transform:rotate(-3deg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.wnote b{display:block;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6B5A1C}
+.wnote p{margin:6px 0 0;font-size:14px;line-height:1.42;font-weight:500}
+.wnote .wnx{position:absolute;top:6px;right:6px;width:28px;height:28px;border:0;border-radius:50%;background:transparent;color:#6B5A1C;font-size:18px;cursor:pointer}
+.wnote .wnx:hover{background:rgba(0,0,0,.08)}
+.wnote.pop{animation:notein .5s cubic-bezier(.2,.9,.25,1.25)}
+.wnote.out{animation:noteout .26s ease forwards}
+@keyframes notein{from{opacity:0;transform:translateY(-14px) rotate(calc(var(--r,-2deg) - 9deg)) scale(.7)}}
+@keyframes noteout{to{opacity:0;transform:translateY(8px) rotate(var(--r,-2deg)) scale(.92)}}
+@media (prefers-reduced-motion:reduce){.wnote.pop,.wnote.out{animation-duration:.01s}}
 .tlwrap{margin-top:14px}
 .tline{position:relative;padding-bottom:6px}
 .tline::before{content:"";position:absolute;left:61px;top:8px;bottom:0;width:2px;border-radius:2px;background:var(--line)}
@@ -409,6 +420,9 @@ body.hover .tdots .on i::after{animation-play-state:paused}
 .sclist{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .scitem{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;background:none;color:var(--soft);font:500 11.5px var(--f);cursor:pointer;text-align:center}
 .scitem .tile{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;font-size:15px;font-weight:700}
+.scitem .tile.sec{box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.scitem .tile.sec svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.scitem:active .tile{transform:scale(.92)}.scitem .tile{transition:transform .15s}
 
 /* money */
 .db[data-v=money]>svg{background:rgba(95,168,232,.17);color:#9FD4F7}
