@@ -366,7 +366,7 @@ const level=()=>Math.floor(S.xp/1000)+1;
 function addXP(n,el){const before=level();S.xp=Math.max(0,S.xp+n);if(n>0&&level()>before){setTimeout(()=>{toast("Level up! You're level "+level());burst(el||document.body)},300)}}
 
 /* ================= clock + week ================= */
-function tick(){const d=new Date(),h=d.getHours()%12||12,m=String(d.getMinutes()).padStart(2,"0");$("time").innerHTML=`${h}<i>:</i>${m}`;$("dt").textContent=d.toLocaleDateString([], {weekday:"long",month:"long",day:"numeric"});
+function tick(){const d=new Date(),h=d.getHours()%12||12,m=String(d.getMinutes()).padStart(2,"0");$("time").innerHTML=`${h}<i>:</i>${m}`;$("dt").textContent=d.toLocaleDateString([], {weekday:"long",month:"long",day:"numeric"});setGreet();
  if(tick.day&&tick.day!==dkey()){renderAll()}tick.day=dkey()}
 function dayData(k){return S.days[k]||(S.days[k]={done:{},extra:[]})}
 function tasksFor(k){const d=S.days[k]||{done:{},extra:[]},wd=dowOf(k);const list=[...S.routine.filter(r=>!r.dow||!r.dow.length||r.dow.includes(wd)).map(r=>({...r,rep:true,optional:!!(r.optional||(r.optionalDow||[]).includes(wd))})),...(d.extra||[]).map(x=>({...x,rep:false}))];
@@ -540,7 +540,7 @@ function pastMissed(){const out=[];for(let i=1;i<=2;i++){const d=new Date();d.se
   for(const t of timing(k))if(t.st==="missed")out.push({...t,k,when:i===1?"Yesterday":d.toLocaleDateString([], {weekday:"long"})})}return out}
 let doNextId=null;
 function renderToday(just){const k=dkey(),dd=dayData(k),tl=timing(k),req=tl.filter(t=>!t.optional),left=req.filter(t=>!dd.done[t.id]),info=nextInfo(),nMiss=info.missed.length;
- $("prog").textContent=(req.length-left.length)+" / "+req.length;const bd=$("dbadge");bd.hidden=!left.length;bd.textContent=left.length;
+ $("prog").textContent=(req.length-left.length)+" / "+req.length;if($("donelbl"))$("donelbl").textContent=(req.length-left.length)+" of "+req.length+" done";const bd=$("dbadge");bd.hidden=!left.length;bd.textContent=left.length;
  doNextId=info.t?info.t.id:null;
  $("dnt").textContent=info.t?info.t.t:tl.length?"All clear for today":"Add your first task";
  $("dncount").textContent=info.kind==="now"?"Now":info.kind==="soon"?"Starting soon":info.kind==="missed"?"Catch up":left.length?left.length+" left":"Done";
@@ -1180,21 +1180,40 @@ $("addtrade").onclick=()=>editTrade(S.ui.acct);
 const NAMES={home:"Home",today:"Today",trades:"Trades",journal:"Journal",food:"Food",smoke:"Smoke log",money:"Money"},PALOF={today:1,trades:0,journal:2,food:3,smoke:4,money:0};
 function go(v,o={}){S.view=v;if(o.acct)S.ui.acct=o.acct;if(o.book)S.ui.book=o.book;
  $("v-home").classList.toggle("off",v!=="home");document.querySelectorAll(".page").forEach(p=>p.classList.toggle("on",p.id==="p-"+v));document.body.classList.toggle("page-mode",v!=="home");
- $("dcore").querySelectorAll(".db").forEach(b=>b.classList.toggle("on",b.dataset.v===v));glide();
- const cr=$("crumb");cr.textContent=NAMES[v];cr.classList.remove("swap");void cr.offsetWidth;cr.classList.add("swap");
+ document.querySelectorAll("#dock .tb").forEach(b=>b.classList.toggle("on",b.dataset.v===v||(b.dataset.k==="more"&&!["home","today","money"].includes(v))));qlog(false);
+ $("crumb").textContent=NAMES[v];setGreet();
  if(v==="home"){renderCards();layout()}else setAmbient(PALOF[v]);
  if(v==="trades"){shownBal=null;renderTrades();const l=$("spark").querySelector(".line");if(l){l.style.animation="none";void l.offsetWidth;l.style.animation=""}if(S.ui.acct==="poly"&&S.settings.wallet&&Date.now()-S.sync.last>60000)sync(false)}
  if(v==="journal")renderJournal();if(v==="today")renderToday();if(v==="food")renderFood();if(v==="smoke")renderSmoke();if(v==="money")renderMoney();
  save();scrollTo({top:0,behavior:o.instant?"auto":"smooth"});history.replaceState(null,"","#"+v)}
-function glide(){const b=$("dcore").querySelector(".db.on"),g=$("glide");if(!b){g.style.opacity=0;return}g.style.opacity=1;g.style.left=(b.offsetLeft+12)+"px";g.style.width=(b.offsetWidth-24)+"px"}
-$("dcore").querySelectorAll(".db").forEach(b=>b.onclick=()=>go(b.dataset.v));
-document.querySelector('[data-k="apps"]').onclick=()=>$("dock").classList.toggle("apps");
-document.querySelector('[data-k="back"]').onclick=()=>$("dock").classList.remove("apps");
-$("logbtn").onclick=()=>go("trades");$("setbtn").onclick=()=>aboutSheet();$("syncbtn").onclick=()=>sync(true);$("streakbtn").onclick=()=>go("today");$("levelpill").onclick=()=>go("today");
+function glide(){}
+function greeting(){const h=new Date().getHours();return (h<5?"Good night":h<12?"Good morning":h<17?"Good afternoon":"Good evening")+", "+(typeof APP_OWNER!=="undefined"?APP_OWNER:"James")}
+function setGreet(){const g=$("greet");if(g)g.textContent=["home","today"].includes(S.view)?greeting():NAMES[S.view]||greeting()}
+document.querySelectorAll("#dock .tb[data-v]").forEach(b=>b.onclick=()=>go(b.dataset.v));
+document.querySelector('#dock [data-k="more"]').onclick=()=>moreSheet();
+$("setbtn").onclick=()=>aboutSheet();$("syncbtn").onclick=()=>sync(true);$("streakbtn").onclick=()=>go("today");$("donebtn").onclick=()=>go("today");$("levelpill").onclick=()=>go("today");
+/* quick log (+) */
+function qlog(open){const q=$("qlog"),p=$("plusbtn");if(!q)return;q.hidden=!open;p.classList.toggle("open",!!open);p.setAttribute("aria-expanded",!!open)}
+$("plusbtn").onclick=e=>{e.stopPropagation();qlog($("qlog").hidden)};
+document.addEventListener("click",e=>{if(!e.target.closest("#qlog,#plusbtn"))qlog(false)});
+$("qlog").querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{const q=b.dataset.q;qlog(false);
+ if(q==="purchase"){go("money");setTimeout(()=>$("m-amt")&&$("m-amt").focus(),350)}
+ if(q==="water")addWater(W().step,b);
+ if(q==="task"){go("today");setTimeout(()=>{$("nt").scrollIntoView({block:"center"});$("nt").focus()},350)}
+ if(q==="puff"){const X=SM();if(X.active){X.active.puffs++;save();toast(`Puff logged · ${X.active.puffs} this session`)}else{startSmoke(S.ui.smokeLimit??5);SM().active.puffs=1;save()}go("smoke")}
+ if(q==="calm")openCalm()});
+/* More sheet */
+function moreSheet(){const items=[["trades","Trades","Polymarket, manual and Bob"],["journal","Journal","Dreams, ideas, notes, emotions"],["food","Food","Meal plan, recipes, the dogs"],["smoke","Smoke log","Sessions, urges, calm mode"]];
+ openSheet(`<h2>More</h2><div class="morelist">${items.map(([v,n,d])=>`<button class="moreitem" data-go="${v}"><b>${n}</b><span>${d}</span></button>`).join("")}</div>
+ <h3 class="rh">Shortcuts</h3><div class="sclist">${SHORTCUTS.map((s,i)=>`<button class="scitem" data-sc="${i}"><span class="tile" style="background:${s.bg};color:${s.fg}">${esc(s.tile)}</span>${esc(s.name)}</button>`).join("")}</div>
+ <div class="btns" style="justify-content:center"><button class="link" id="mo-set">Settings</button></div>`,root=>{
+  root.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{closeSheet();go(b.dataset.go)});
+  root.querySelectorAll("[data-sc]").forEach(b=>b.onclick=()=>{closeSheet();openShortcut(SHORTCUTS[+b.dataset.sc])});
+  root.querySelector("#mo-set").onclick=()=>{closeSheet();aboutSheet()}})}
 
 /* ================= orbit ================= */
 function orbit(o){$("orbit").classList.toggle("open",o);$("scrim").classList.toggle("on",o);$("orbit").setAttribute("aria-hidden",!o)}
-$("assist").onclick=()=>orbit(!$("orbit").classList.contains("open"));$("scrim").onclick=()=>orbit(false);
+$("scrim").onclick=()=>orbit(false);
 $("orbit").querySelectorAll(".olab").forEach(b=>b.onclick=()=>{orbit(false);const a=b.dataset.a;
  if(a==="won"||a==="lost"){go("trades");setTimeout(()=>quickLog(a==="won",$(a)),380)}
  if(a==="task"){go("today");setTimeout(()=>$("nt").focus(),380)}
