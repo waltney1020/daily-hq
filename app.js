@@ -538,25 +538,29 @@ function nextInfo(){const k=dkey(),tl=timing(k),dd=S.days[k]||{},later=dd.later|
  return{t:null,missed,up,any}}
 function pastMissed(){const out=[];for(let i=1;i<=2;i++){const d=new Date();d.setDate(d.getDate()-i);const k=dkey(d);if(k<startDay()||(S.days[k]&&S.days[k].ack))continue;
   for(const t of timing(k))if(t.st==="missed")out.push({...t,k,when:i===1?"Yesterday":d.toLocaleDateString([], {weekday:"long"})})}return out}
-let doNextId=null;
+let doNextId=null,DN=null;
 function renderToday(just){const k=dkey(),dd=dayData(k),tl=timing(k),req=tl.filter(t=>!t.optional),left=req.filter(t=>!dd.done[t.id]),info=nextInfo(),nMiss=info.missed.length;
- $("prog").textContent=(req.length-left.length)+" / "+req.length;if($("donelbl"))$("donelbl").textContent=(req.length-left.length)+" of "+req.length+" done";const bd=$("dbadge");bd.hidden=!left.length;bd.textContent=left.length;
+ $("prog").textContent=(req.length-left.length)+" of "+req.length;DN=DN||$("donext");if($("donelbl"))$("donelbl").textContent=(req.length-left.length)+" of "+req.length+" done";const bd=$("dbadge");bd.hidden=!left.length;bd.textContent=left.length;
  doNextId=info.t?info.t.id:null;
  $("dnt").textContent=info.t?info.t.t:tl.length?"All clear for today":"Add your first task";
- $("dncount").textContent=info.kind==="now"?"Now":info.kind==="soon"?"Starting soon":info.kind==="missed"?"Catch up":left.length?left.length+" left":"Done";
- $("dncount").className="chip"+(info.kind==="now"?" nowchip":info.kind==="missed"?" misschip":"");
+ $("dncount").textContent=info.kind==="now"?"Now":info.kind==="soon"?"Starting soon":info.kind==="missed"?"Catch up":info.kind==="any"?"Anytime today":info.kind==="up"?"Up next":"All done";
+ $("dncount").className="eyebrow"+(info.kind==="now"?" nowchip":info.kind==="missed"?" misschip":"");
  $("dnsub").textContent=info.t?info.sub+(info.then?` Then: ${info.then.t} at ${info.then.time}.`:"")+(nMiss&&info.kind!=="missed"?` ${nMiss} missed today.`:""):tl.length?"Everything's done. Your streak is safe.":"Use the box below to build your routine.";
- $("dnxp").textContent=`Level ${level()} · ${S.xp%1000} / 1000 XP`;$("dndone").hidden=$("dnskip").hidden=!info.t;
+ $("dnxp").textContent=`Level ${level()} · ${S.xp%1000} XP`;$("dndone").hidden=$("dnskip").hidden=!info.t;
  const firstUp=tl.filter(t=>t.st==="upcoming").sort((a,b)=>a.T-b.T)[0],nm=nowMin();
  const pm=pastMissed();
  const byDay={};pm.forEach(t=>(byDay[t.k]=byDay[t.k]||[]).push(t));
  const missedHtml=pm.length?`<details class="missedbox" ${S.ui.missOpen?"open":""}><summary>Missed earlier · ${pm.length}</summary><p class="sub" style="margin:6px 0 4px">Check off anything you actually did. Finishing a day's list repairs its streak. Dismiss a day to clear the rest.</p>
   ${Object.entries(byDay).map(([dk,items])=>`<div class="row sb missday"><b>${esc(items[0].when)} · ${items.length} missed</b><button class="link" data-ack="${dk}">Dismiss</button></div>${items.map(t=>`<div class="it"><button class="main" data-past="${t.k}|${t.id}"><span class="ck"></span><span class="t">${esc(t.t)}</span></button><span class="r">${esc(t.time||"")}</span></div>`).join("")}`).join("")}</details>`:"";
- let g="";const html=tl.map(t=>{const done=t.st==="done"||t.st==="late";
-  const tag=t.st==="now"?'<span class="tag now">NOW</span>':t.st==="missed"?'<span class="tag missed">MISSED</span>':firstUp&&t.id===firstUp.id?`<span class="tag">NEXT · ${fmtIn(t.T-nm)}</span>`:"";
-  const head=t.g!==g?(g=t.g,`<div class="grp">${esc(g)}</div>`):"";
-  return head+`<div class="it ${done?"done":""} ${t.st==="missed"?"miss":""} ${t.st==="now"?"current":""} ${t.id===just?"just":""}"><button class="main" data-id="${t.id}"><span class="ck">${done?"✓":""}</span>${tag}<span class="t">${esc(t.t)}</span></button><span class="r">${esc([t.st==="late"?"done late":"",t.steps&&t.steps.length?stepsDone(k,t)+"/"+stepList(k,t).length+(useAlt(k,t)?" gym":" steps"):"",t.time,t.rep?repLabel(t):"today",t.optional?"optional":"",t.note&&!(t.steps&&t.steps.length)?"note":""].filter(Boolean).join(" · "))}</span><button class="ed" data-ed="${t.id}" aria-label="Edit task">✎</button></div>`}).join("");
- $("tasks").innerHTML=missedHtml+(html||`<div class="empty"><b>Build your daily routine</b>Add the things you do every day. They'll come back each morning.</div>`);
+ let g="";const tm=s=>s?esc(s).replace(/\s?(AM|PM)$/i,m=>`<small>${m.trim().toLowerCase()}</small>`):"";
+ const html=tl.map(t=>{const done=t.st==="done"||t.st==="late";
+  const head=t.g!==g?(g=t.g,`<div class="tlg">${esc(g)}</div>`):"";
+  if(t.id===doNextId)return head+`<div class="tlnow" id="nowslot"></div>`;
+  const tag=t.st==="now"?'<span class="mtag nowt">Now</span>':t.st==="missed"?'<span class="mtag">Missed · tap to do</span>':firstUp&&t.id===firstUp.id?`<span class="mtag nextt">in ${fmtIn(t.T-nm)}</span>`:"";
+  const meta=[t.st==="late"?"done late":"",t.steps&&t.steps.length?stepsDone(k,t)+"/"+stepList(k,t).length+(useAlt(k,t)?" gym":" steps"):"",t.optional?"optional":"",t.note&&!(t.steps&&t.steps.length)?"note":""].filter(Boolean).join(" · ");
+  return head+`<div class="tlr ${done?"done":""} ${t.st==="missed"?"miss":""} ${t.st==="now"?"current":""} ${t.time?"":"untimed"} ${t.id===just?"just":""}"><span class="tm">${tm(t.time)}</span><button class="main" data-id="${t.id}"><span class="dot"></span><span class="t">${esc(t.t)}</span>${tag}</button>${meta?`<span class="r">${esc(meta)}</span>`:""}<button class="ed" data-ed="${t.id}" aria-label="Edit task">✎</button></div>`}).join("");
+ $("tasks").innerHTML=missedHtml+(doNextId?"":`<div class="tlnow" id="nowslot"></div>`)+(html||`<div class="empty"><b>Build your daily routine</b>Add the things you do every day. They'll come back each morning.</div>`);
+ const slot=$("nowslot");if(slot&&DN)slot.appendChild(DN);
  const mb=$("tasks").querySelector(".missedbox");if(mb)mb.ontoggle=()=>{S.ui.missOpen=mb.open;save()};
  $("tasks").querySelectorAll("[data-past]").forEach(b=>b.onclick=()=>{const [pk,id]=b.dataset.past.split("|");toggleTask(id,b,pk)});
  $("tasks").querySelectorAll("[data-ack]").forEach(b=>b.onclick=()=>{const dk=b.dataset.ack;dayData(dk).ack=true;save();renderToday();toast("Cleared. Those stay marked as missed.","Undo",()=>{delete dayData(dk).ack;save();renderToday()})});
@@ -592,7 +596,17 @@ $("addf").onsubmit=e=>{e.preventDefault();const v=$("nt").value.trim();if(!v)ret
  if(rep==="once")dayData(dkey()).extra.push(t);else{if(rep==="weekly")t.dow=[wd];S.routine.push(t)}
  const dd=dayData(dkey());dd.complete=isComplete(dkey());$("nt").value="";save();renderToday();renderWeek();renderCards();toast(rep==="daily"?"Added to your routine":rep==="weekly"?"Added for every "+DOWL[wd].slice(0,-1):"Added for today")};
 function syncRepSelect(){const o=$("rep").querySelector('[value=weekly]');if(o)o.textContent="Every "+DOWL[dowOf(dkey())].slice(0,-1)}
-$("dndone").onclick=e=>{const k=dkey(),t=tasksFor(k).find(x=>x.id===doNextId);if(!t)return;if(t.link==="water")return openWater();if(t.link==="dogs")return dogCheckIn();if(t.link==="weigh")weighSheet(t.id);else if(t.steps&&t.steps.length)openSteps(t.id);else toggleTask(t.id,e.currentTarget)};
+function dnDo(el){const k=dkey(),t=tasksFor(k).find(x=>x.id===doNextId);if(!t)return;if(t.link==="water")return openWater();if(t.link==="dogs")return dogCheckIn();if(t.link==="weigh")weighSheet(t.id);else if(t.steps&&t.steps.length)openSteps(t.id);else toggleTask(t.id,el)}
+// Slide to mark done: drag the knob past ~80% of the track. Keyboard users press the knob.
+(function(){const tr=$("dndone"),kn=$("dnknob");if(!tr||!kn)return;let sx=0,dx=0,max=0,drag=false;
+ const set=(x,anim)=>{tr.classList.toggle("anim",!!anim);tr.style.setProperty("--x",x+"px");tr.style.setProperty("--p",max?(x/max).toFixed(3):0)};
+ kn.addEventListener("pointerdown",e=>{drag=true;sx=e.clientX;dx=0;max=tr.clientWidth-kn.offsetWidth-10;try{kn.setPointerCapture(e.pointerId)}catch(_){}set(0)});
+ kn.addEventListener("pointermove",e=>{if(!drag)return;dx=Math.max(0,Math.min(max,e.clientX-sx));set(dx)});
+ const end=()=>{if(!drag)return;drag=false;
+  if(dx>=max*.8){set(max,true);try{navigator.vibrate&&navigator.vibrate(15)}catch(_){}setTimeout(()=>{dnDo(kn);set(0)},260)}
+  else{set(0,true);if(dx<6){tr.classList.remove("nudge");void tr.offsetWidth;tr.classList.add("nudge")}}};
+ kn.addEventListener("pointerup",end);kn.addEventListener("pointercancel",end);
+ kn.addEventListener("click",e=>{if(e.detail===0)dnDo(kn)})})();
 $("dnskip").onclick=()=>{const k=dkey(),dd=dayData(k),list=tasksFor(k).filter(x=>!x.optional&&!dd.done[x.id]);if(list.length<2||!doNextId){toast("It's the last one left");return}
  (dd.later=dd.later||{})[doNextId]=true;save();renderToday();renderCards();toast("Moved to the end of today")};
 
@@ -1023,7 +1037,7 @@ const fmtL=ml=>(ml/1000).toFixed(ml%1000===0?0:ml%100===0?1:2)+" L";
 function waterPace(){const now=new Date(),m=now.getHours()*60+now.getMinutes(),a=tmin(W().start),b=tmin(W().end);const f=Math.max(0,Math.min(1,(m-a)/Math.max(1,b-a)));
  const expected=Math.round(W().goal*f/50)*50,drunk=waterToday();return{expected,drunk,behind:Math.max(0,expected-drunk),f}}
 function waterTask(){return S.routine.find(r=>r.link==="water")}
-function addWater(ml,el){if(!(ml>0))return;const k=dkey();(W().log[k]=W().log[k]||[]).push({ts:Date.now(),ml:Math.round(ml)});afterWater(true,el);
+function addWater(ml,el){if(!(ml>0))return;const k=dkey();waterAt=Date.now();(W().log[k]=W().log[k]||[]).push({ts:Date.now(),ml:Math.round(ml)});afterWater(true,el);
  toast(`+${ml} ml · ${fmtL(waterToday())} of ${fmtL(W().goal)}`,"Undo",()=>{const l=W().log[k];if(l&&l.length){l.pop();afterWater(false)}})}
 function afterWater(added,el){const k=dkey(),t=waterTask(),dd=dayData(k),hit=waterToday(k)>=W().goal;
  if(t){if(hit&&!dd.done[t.id]){toggleTask(t.id,el);if(added)setTimeout(()=>{toast("Water goal reached. "+fmtL(W().goal)+" today.");burst(el||$("wbig"),["#7AB8F0","#A9D5F5","#EFBC90"])},250)}else if(!hit&&dd.done[t.id])toggleTask(t.id)}
@@ -1031,10 +1045,12 @@ function afterWater(added,el){const k=dkey(),t=waterTask(),dd=dayData(k),hit=wat
 function renderWater(){const p=waterPace(),g=W().goal,pct=Math.min(100,Math.round(p.drunk/g*100));
  const lbl=$("waterlbl");if(lbl)lbl.textContent=fmtL(p.drunk)+" / "+fmtL(g);const dot=$("waterdot");if(dot)dot.hidden=!(p.behind>=500&&p.drunk<g);
  const c=$("watercard");if(!c)return;
- c.innerHTML=`<div class="row sb"><div><span class="eyebrow">Water</span><div class="wnum" id="wbig">${fmtL(p.drunk)} <span>/ ${fmtL(g)}</span></div></div><div class="row"><button class="action" id="wdetail">Log or remind</button><button class="action wbtn" id="wadd">+${W().step} ml</button></div></div>
- <div class="wbar"><i style="width:${pct}%"></i><b style="left:${Math.round(p.f*100)}%" title="Where you should be by now"></b></div>
- <div class="sub" style="margin-top:8px">${p.drunk>=g?"Goal reached. Nice work.":p.behind>=500?`You're ${fmtL(p.behind)} behind pace. Have a glass now.`:`On pace. ${fmtL(Math.max(0,g-p.drunk))} to go.`}</div>`;
- $("wadd").onclick=e=>addWater(W().step,e.currentTarget);$("wdetail").onclick=()=>openWater()}
+ // Water as glasses: one glass per preset amount (8 × 500 ml for 4 L). Tap an empty glass to log one, a full one for details.
+ const n=Math.max(1,Math.min(12,Math.round(g/W().step))),per=g/n,full=p.drunk/per,exp=p.expected/per,justI=Date.now()-waterAt<900?Math.ceil(full)-1:-1;
+ c.innerHTML=`<div class="gl">${[...Array(n)].map((_,i)=>{const f=Math.max(0,Math.min(1,full-i));return`<button class="gls ${f>=1?"f":""} ${i===justI?"just":""} ${full<exp&&i===Math.ceil(exp)-1?"pace":""}" data-i="${i}" aria-label="${f>=1?"Full glass, open water log":"Log "+W().step+" ml"}"><i style="height:${Math.round(f*82)}%"></i></button>`}).join("")}</div>
+ <div class="glinfo"><span id="wbig"><b>${fmtL(p.drunk)}</b> of ${fmtL(g)}</span><span class="${p.behind>=500&&p.drunk<g?"behind":""}">${p.drunk>=g?"Goal reached. Nice work.":p.behind>=500?`${fmtL(p.behind)} behind pace`:`On pace · ${fmtL(Math.max(0,g-p.drunk))} to go`}</span><button class="link" id="wdetail">Log or remind</button></div>`;
+ c.querySelectorAll(".gls").forEach(b=>b.onclick=()=>{if(+b.dataset.i>=Math.floor(full+1e-9))addWater(W().step,b);else openWater()});$("wdetail").onclick=()=>openWater()}
+var waterAt=0;
 function openWater(){$("sheet").dataset.kind="water";$("sheetwrap").hidden=false;drawWaterSheet($("sheet"))}
 function drawWaterSheet(root){const k=dkey(),p=waterPace(),g=W().goal,log=waterLog(k);
  const days=[...Array(7)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);const kk=dkey(d);return[d.toLocaleDateString([], {weekday:"narrow"}),waterToday(kk)]});
@@ -1184,6 +1200,7 @@ function go(v,o={}){S.view=v;if(o.acct)S.ui.acct=o.acct;if(o.book)S.ui.book=o.bo
  document.querySelectorAll("#dock .tb").forEach(b=>b.classList.toggle("on",b.dataset.v===v||(b.dataset.k==="more"&&!["home","today","money"].includes(v))));qlog(false);
  $("crumb").textContent=NAMES[v];setGreet();morphWeek(v==="today",!!o.instant&&weekCompact===null);
  if(v==="home"){renderCards();layout();requestAnimationFrame(fitHome)}else{setAmbient(PALOF[v]);fitHome()}
+ if(v==="today")setTimeout(()=>{const d=$("donext");if(!d||!$("p-today").classList.contains("on"))return;const r=d.getBoundingClientRect();if(r.bottom>innerHeight-90)d.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"})},450);
  if(v==="trades"){shownBal=null;renderTrades();const l=$("spark").querySelector(".line");if(l){l.style.animation="none";void l.offsetWidth;l.style.animation=""}if(S.ui.acct==="poly"&&S.settings.wallet&&Date.now()-S.sync.last>60000)sync(false)}
  if(v==="journal")renderJournal();if(v==="today")renderToday();if(v==="food")renderFood();if(v==="smoke")renderSmoke();if(v==="money")renderMoney();
  save();scrollTo({top:0,behavior:o.instant?"auto":"smooth"});history.replaceState(null,"","#"+v)}
