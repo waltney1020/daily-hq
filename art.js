@@ -12,11 +12,9 @@ function paintScene(cv,pi,W=1400,H=860,seed0=7){cv.width=W;cv.height=H;const c=c
  const k=W/1400;
  // sky and stars
  let g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,P.sky[0]);g.addColorStop(1,P.sky[1]);c.fillStyle=g;c.fillRect(0,0,W,H);
- // stars: a field of small ones, plus a handful of brighter ones with a soft glow (no sparkle lines)
+ // stars: a field of small, crisp dots (no glows or sparkles)
  for(let i=0;i<200;i++){const big=R()<.1;c.fillStyle=`rgba(255,255,255,${.28+R()*(big?.7:.45)})`;c.beginPath();c.arc(R()*W,R()*H*.62,(big?1.9:1)*k+R()*.7*k,0,7);c.fill()}
- for(let i=0;i<9;i++){const x=R()*W,y=R()*H*.5,r=(2+R()*1.4)*k,a=.75+R()*.25;
-  g=c.createRadialGradient(x,y,0,x,y,r*9);g.addColorStop(0,`rgba(255,255,255,${.5*a})`);g.addColorStop(.25,`rgba(220,235,255,${.14*a})`);g.addColorStop(1,"rgba(220,235,255,0)");c.fillStyle=g;c.fillRect(x-r*9,y-r*9,r*18,r*18);
-  c.fillStyle=`rgba(255,255,255,${a})`;c.beginPath();c.arc(x,y,r,0,7);c.fill()}
+ for(let i=0;i<36;i++)R(); // (glowing stars removed; keeps the same random sequence so the mountains don't change shape)
  // moon with a wide soft halo
  const mx=W*(.62+R()*.22),my=H*(.09+R()*.05),mr=24*k;g=c.createRadialGradient(mx,my,0,mx,my,H*.75);g.addColorStop(0,P.sun+"55");g.addColorStop(.3,P.sun+"16");g.addColorStop(1,P.sun+"00");c.fillStyle=g;c.fillRect(0,0,W,H);
  c.fillStyle=P.sun;c.shadowColor=P.sun;c.shadowBlur=36*k;c.beginPath();c.arc(mx,my,mr,0,7);c.fill();c.shadowBlur=0;
