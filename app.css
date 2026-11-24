@@ -268,6 +268,23 @@ body.page-mode .amb-shade{background:linear-gradient(180deg,rgba(2,11,14,.45),rg
 .hd .week button[aria-pressed=true] i{background:var(--peach)}
 @media (max-width:420px){.hd .week button strong{width:36px;height:36px;font-size:15px}}
 
+/* ===== compact week (Today page): the open week morphs into a boxed strip ===== */
+.hd .strip{transition:background .45s var(--ease),border-color .45s var(--ease),padding .45s var(--ease),border-radius .45s var(--ease),box-shadow .45s var(--ease)}
+.hd .stripchips{display:none}
+.hd.compact .strip{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px;padding:6px 8px;border:1px solid var(--line);border-radius:17px;background:rgba(18,43,49,.54);box-shadow:0 18px 54px rgba(4,18,23,.13);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.hd.compact .week{max-width:none;gap:2px}
+.hd.compact .week button{flex-direction:row;align-items:center;justify-content:center;gap:7px;padding:10px 0;border-radius:11px;transition:background .45s var(--ease)}
+.hd.compact .week button strong{width:auto;height:auto;background:none!important;font-size:17px;border-radius:0}
+.hd.compact .week button span{font-size:11px}
+.hd.compact .week button[aria-pressed=true]{background:rgba(241,188,144,.96)}
+.hd.compact .week button[aria-pressed=true] strong,.hd.compact .week button[aria-pressed=true] span{color:#25383B}
+.hd.compact .week i{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);margin:0}
+.hd.compact .week button{position:relative}
+.hd.compact.wide .hchips{display:none}
+.hd.compact.wide .stripchips{display:flex;gap:5px}
+.hd.compact .stripchips .hchip{min-height:42px;border-radius:12px;background:rgba(9,28,34,.45)}
+@media (max-width:640px){.hd.compact .week button{flex-direction:column;gap:2px;padding:7px 0}.hd.compact .week button strong{font-size:15px}.hd.compact .week button span{font-size:10px}.hd.compact .strip{padding:5px}}
+
 /* ===== tab bar with + ===== */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:52;display:grid;grid-template-columns:1fr 1fr 92px 1fr 1fr;align-items:end;height:calc(70px + env(safe-area-inset-bottom,0px));padding:0 max(6px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(6px,env(safe-area-inset-left,0px));background:#0B171A;border-top:1px solid #1C2E33}
 .tb{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:64px;border:0;background:none;color:#7F9593;font:500 11px var(--f);cursor:pointer;-webkit-tap-highlight-color:transparent}
