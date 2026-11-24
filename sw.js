@@ -1,6 +1,6 @@
 // Offline support: app files come from the network when possible and fall back to the cache.
 // Polymarket requests are never cached.
-const CACHE = "dailyhq-v21";
+const CACHE = "dailyhq-v22";
 // Water reminder taps: the "Log" action logs water in an open window, or opens the app and logs it there.
 self.addEventListener("notificationclick", e => {
   e.notification.close();
@@ -11,7 +11,7 @@ self.addEventListener("notificationclick", e => {
     return self.clients.openWindow(e.action === "log" ? `./?water=${ml}#today` : "./#today");
   }));
 });
-const FILES = ["./", "index.html", "app.css?v=21", "art.js?v=21", "app.js?v=21", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
+const FILES = ["./", "index.html", "app.css?v=22", "art.js?v=22", "app.js?v=22", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
@@ -23,7 +23,7 @@ self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET" || url.hostname.endsWith("polymarket.com")) return;
   const sameOrigin = url.origin === location.origin;
-  const isFont = url.hostname.endsWith("googleapis.com") || url.hostname.endsWith("gstatic.com");
+  const isFont = url.hostname.endsWith("googleapis.com") || url.hostname.endsWith("gstatic.com") || url.hostname === "cdn.jsdelivr.net";
   if (!sameOrigin && !isFont) return;
   e.respondWith(
     fetch(e.request, sameOrigin ? { cache: "no-cache" } : undefined).then(res => {
