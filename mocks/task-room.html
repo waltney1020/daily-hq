@@ -69,7 +69,8 @@ button{font-family:inherit;cursor:pointer}
 </ul>
 <b style="color:var(--ink);font-size:13px">Opening style</b>
 <div class="seg" id="anim"><button data-a="grow" class="on">Grow from row</button><button data-a="rise">Rise up</button><button data-a="iris">Circle reveal</button></div>
-<p>Try all three, then pick one.</p></div>
+<p>Tap a style and it plays on the phone right away.</p>
+<label style="display:flex;align-items:center;gap:8px;color:var(--ink);font-size:13px;cursor:pointer"><input type="checkbox" id="slow"> Slow motion (3× slower)</label></div>
 
 <div class="phone" id="phone">
  <div class="today"><h1>Today</h1><div class="meta">5 OF 32 DONE · LEVEL 1</div>
@@ -105,7 +106,11 @@ const TASKS={
   steps:[["🏋️","Single-arm row · 4×10–15"],["🔁","Dumbbell pullover · 3×10–12"],["🪽","Rear delt fly · 3×15–20"],["💪","Single-arm curls · 3×8–12"],["🔨","Hammer curls · 2×10–12"],["🚶","Cardio: 15–20 min walk"]]}};
 let anim="grow",cur=null,row=null,on=new Set();
 const $=id=>document.getElementById(id),phone=$("phone"),room=$("room");
-document.querySelectorAll("#anim button").forEach(b=>b.onclick=()=>{anim=b.dataset.a;document.querySelectorAll("#anim button").forEach(x=>x.classList.toggle("on",x===b))});
+const SLOW=()=>$("slow").checked?3:1,today=document.querySelector(".today");
+// tapping a style replays it on the phone: close whatever is open, then open Hair with that style
+document.querySelectorAll("#anim button").forEach(b=>b.onclick=()=>{anim=b.dataset.a;document.querySelectorAll("#anim button").forEach(x=>x.classList.toggle("on",x===b));
+ const go=()=>{const r=document.querySelector(".row[data-k=hair]");r.classList.remove("done");r.querySelector(".r").textContent="0/5";open("hair",r)};
+ if(cur){room.getAnimations().forEach(x=>x.cancel());room.classList.remove("on","in");today.getAnimations().forEach(x=>x.cancel());cur=null;setTimeout(go,250)}else go()});
 function paint(T){const cv=$("rcv"),d=devicePixelRatio||1,W=cv.clientWidth||374,H=330;cv.width=W*d;cv.height=H*d;const c=cv.getContext("2d");c.scale(d,d);let s=7;const R=()=>(s=(s*9301+49297)%233280)/233280;
  let g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,T.sky[0]);g.addColorStop(1,T.sky[1]);c.fillStyle=g;c.fillRect(0,0,W,H);
  for(let i=0;i<70;i++){c.fillStyle=`rgba(255,255,255,${.3+R()*.5})`;c.beginPath();c.arc(R()*W,R()*H*.55,R()*.9+.4,0,7);c.fill()}
@@ -124,13 +129,19 @@ function open(k,el){cur=k;row=el;on=new Set();const T=TASKS[k];room.style.setPro
  let kf;if(anim==="grow")kf=[{clipPath:`inset(${t}px ${rt}px ${b}px ${l}px round 14px)`},{clipPath:"inset(0px 0px 0px 0px round 0px)"}];
  else if(anim==="rise")kf=[{transform:"translateY(100%)",borderRadius:"28px"},{transform:"none",borderRadius:"0"}];
  else{const cx=r.left-P.left+r.width/2,cy=r.top-P.top+r.height/2;kf=[{clipPath:`circle(0px at ${cx}px ${cy}px)`},{clipPath:`circle(140% at ${cx}px ${cy}px)`}]}
- room.animate(kf,{duration:anim==="iris"?620:520,easing:"cubic-bezier(.32,.72,0,1)"});
+ const dur={grow:760,rise:700,iris:950}[anim]*SLOW();
+ room.animate(kf,{duration:dur,easing:anim==="iris"?"cubic-bezier(.65,0,.35,1)":"cubic-bezier(.32,.72,0,1)"});
+ // each style moves the Today page behind it differently, so they feel distinct
+ if(anim==="rise")today.animate([{transform:"none",filter:"none"},{transform:"scale(.92)",filter:"brightness(.5)"}],{duration:dur,easing:"cubic-bezier(.32,.72,0,1)",fill:"forwards"});
+ if(anim==="grow")today.animate([{filter:"none"},{filter:"blur(6px) brightness(.6)"}],{duration:dur,fill:"forwards"});
  requestAnimationFrame(()=>requestAnimationFrame(()=>room.classList.add("in")))}
 function close(done){if(!cur)return;const P=phone.getBoundingClientRect(),r=row.getBoundingClientRect(),t=r.top-P.top-8,l=r.left-P.left-8,b=P.bottom-r.bottom-8,rt=P.right-r.right-8;
  let kf;if(anim==="grow")kf=[{clipPath:"inset(0px 0px 0px 0px round 0px)"},{clipPath:`inset(${t}px ${rt}px ${b}px ${l}px round 14px)`}];
  else if(anim==="rise")kf=[{transform:"none"},{transform:"translateY(100%)",borderRadius:"28px"}];
  else{const cx=r.left-P.left+r.width/2,cy=r.top-P.top+r.height/2;kf=[{clipPath:`circle(140% at ${cx}px ${cy}px)`},{clipPath:`circle(0px at ${cx}px ${cy}px)`}]}
- room.classList.remove("in");const a=room.animate(kf,{duration:440,easing:"cubic-bezier(.32,.72,0,1)"});a.onfinish=()=>{room.classList.remove("on");if(done){row.classList.add("done");row.querySelector(".r").textContent="done"}cur=null}}
+ room.classList.remove("in");const cd=560*SLOW();const a=room.animate(kf,{duration:cd,easing:"cubic-bezier(.32,.72,0,1)"});
+ today.getAnimations().forEach(x=>x.reverse());
+ a.onfinish=()=>{room.classList.remove("on");today.getAnimations().forEach(x=>x.cancel());if(done){row.classList.add("done");row.querySelector(".r").textContent="done"}cur=null}}
 function finish(){$("cele").classList.add("on");setTimeout(()=>close(true),1100)}
 document.querySelectorAll(".row[data-k]").forEach(b=>b.onclick=()=>{if(!b.classList.contains("done"))open(b.dataset.k,b)});
 $("rback").onclick=()=>close(false);$("rall").onclick=()=>{TASKS[cur].steps.forEach((_,i)=>on.add(i));render();finish()};
