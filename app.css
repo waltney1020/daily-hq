@@ -243,6 +243,43 @@ body.roomopen{overflow:hidden}
 .troom.in.entering .trtile{transition-delay:calc(.16s + var(--d,0)*.05s)}.troom.in.entering .trwk,.troom.in.entering .trfoot{transition-delay:.3s}
 .troom.in .trtile:active{transform:scale(.97)}
 @media (prefers-reduced-motion:reduce){.troom *{transition:none!important;animation:none!important}.troom .trbar,.troom .trhero,.troom .trnote,.troom .trrule,.troom .vseg,.troom .trgrid .trtile,.troom .trwk,.troom .trfoot{opacity:1;transform:none}}
+/* Water room (uses the task room shell) */
+.troom.water .trfade{top:300px;height:42px}
+.troom.water .trhero{margin-top:118px}
+.wrbig{font-size:clamp(52px,13vw,68px);font-weight:600;letter-spacing:-.045em;line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 2px 22px rgba(0,0,0,.45)}
+.wrbig span{font-size:.38em;color:rgba(255,255,255,.72);letter-spacing:-.01em;font-weight:500;margin-left:4px}
+.wrbehind{color:var(--peach);font-weight:600}
+.wrpct{font-size:30px;font-weight:600;letter-spacing:-.03em;color:#BFE0FF;text-shadow:0 2px 14px rgba(0,0,0,.4)}
+.wrq{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:8px;margin-top:22px}
+.wrqb{border-radius:18px;padding:16px 8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:var(--ink);font:700 15px var(--f);display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:transform .12s}
+.wrqb small{font-size:11px;font-weight:500;color:var(--muted)}
+.wrqb:active{transform:scale(.95)}
+.wrqb.main{background:var(--acc);border-color:var(--acc);color:#05223D;font-size:18px}.wrqb.main small{color:#1E4A73}
+.wrcust{margin-top:8px}
+.wrsec{margin-top:24px}
+.wrsec h4{margin:0 0 10px;display:flex;justify-content:space-between;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.wrlog{display:flex;flex-wrap:wrap;gap:6px}
+.wrl{display:flex;align-items:center;gap:8px;padding:7px 7px 7px 12px;border-radius:999px;background:rgba(122,184,240,.12);font-size:13px;font-weight:600}
+.wrl small{color:var(--muted);font-weight:500}
+.wrl button{width:24px;height:24px;border-radius:50%;border:0;background:rgba(255,255,255,.08);color:var(--muted);font-size:11px;cursor:pointer}
+.wrchart{position:relative;height:120px;display:flex;align-items:flex-end;gap:8px}
+.wrc{flex:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;position:relative;z-index:1}
+.wrc em{font-style:normal;font-size:10px;color:var(--muted);margin-bottom:4px;font-variant-numeric:tabular-nums}
+.wrc i{width:100%;max-width:32px;border-radius:7px 7px 3px 3px;background:rgba(122,184,240,.35)}
+.wrc.full i{background:var(--acc)}
+.wrc.today i{box-shadow:0 0 0 2px rgba(239,188,144,.65)}
+.wrgoal{position:absolute;left:0;right:0;border-top:1.5px dashed rgba(239,188,144,.7);z-index:2;pointer-events:none}
+.wrgoal span{position:absolute;right:0;top:-16px;font-size:10px;color:var(--peach);font-weight:600}
+.wrlabels{display:flex;gap:8px;margin-top:6px}.wrlabels span{flex:1;text-align:center;font-size:11px;color:var(--muted)}.wrlabels span.t{color:var(--ink);font-weight:700}
+.wrrem{margin-top:24px;border-radius:16px;background:rgba(255,255,255,.045);padding:14px}
+.wrrem summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px;font-weight:600;font-size:14px;cursor:pointer}
+.wrrem summary::-webkit-details-marker{display:none}
+.wrrem summary small{display:block;font-weight:500;font-size:12px;color:var(--muted);margin-top:2px}
+.wrrem summary b{color:var(--muted);font-size:18px;transition:transform .2s}.wrrem[open] summary b{transform:rotate(90deg)}
+.troom .wrq,.troom .wrsec,.troom .wrrem{opacity:0;transform:translateY(14px)}
+.troom.in .wrq,.troom.in .wrsec,.troom.in .wrrem{opacity:1;transform:none;transition:opacity .4s ease,transform .55s cubic-bezier(.32,.72,0,1)}
+.troom.in.entering .wrq{transition-delay:.14s}.troom.in.entering .wrsec{transition-delay:.22s}.troom.in.entering .wrrem{transition-delay:.3s}
+@media (prefers-reduced-motion:reduce){.troom .wrq,.troom .wrsec,.troom .wrrem{opacity:1;transform:none}}
 /* Light that follows your finger / mouse (background), and the lit card on Home (touch + tilt) */
 .room{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0;background:radial-gradient(480px circle at var(--sx,50%) var(--sy,40%),rgba(255,226,190,.17),rgba(140,200,210,.07) 40%,transparent 70%);mix-blend-mode:screen;will-change:opacity}
 .card.c.lit .glare{opacity:var(--gi,0);transition:none;background:radial-gradient(circle at var(--gx,50%) var(--gy,50%),rgba(255,236,214,.3),rgba(255,236,214,.08) 30%,transparent 56%)}
