@@ -882,7 +882,7 @@ function closeCalm(outcome){if(!calm)return;const secs=Math.round((Date.now()-ca
  calm=null;$("calm").hidden=true;document.body.style.overflow="";
  if(outcome){SM().urges.push({ts:Date.now(),outcome,secs,moods});if(outcome==="passed"){addXP(15);save();if(S.view!=="smoke")go("smoke");else renderSmoke();toast(`Urge beaten in ${mmss(secs)} · +15 XP`);burst($("calmbtn"),["#B7A3E0","#86D3B0","#EFBC90","#9FD4F7"])}
   else{save();go("smoke");startSmoke(S.ui.smokeLimit??5,moods);toast("No judgment. Logging it helps you spot patterns.")}}}
-$("calmbtn").onclick=()=>openCalm();
+if($("calmbtn"))$("calmbtn").onclick=()=>openCalm();
 
 /* ================= dogs ================= */
 const dogLog=(k,id)=>(S.dogs.log[k]||{})[id];
