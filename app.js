@@ -15,7 +15,150 @@ const ACCTS={poly:"Polymarket",manual:"Manual",bob:"Bob"};
 const GROUPS=["Morning","Afternoon","Evening","Hair care","Weekly","Anytime"];
 const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],DOWL=["Sundays","Mondays","Tuesdays","Wednesdays","Thursdays","Fridays","Saturdays"];
 /* the user's checklist; bump PACK when it changes so installed apps pick it up */
-const PACK=3;
+const PACK=5;
+/* ---- training plan (pack 5) ---- */
+const REST_NOTE="Rest between sets: heavy compound lifts 2–3 min · curls, laterals and isolation 60–90 sec · abs 30–60 sec. The weights are starting targets, not mandatory loads for unfamiliar exercises.";
+const LIFT_PHASES=[["2026-11-23","2026-11-29","Week 1: find accurate working weights. Stop each set with 2–3 reps left."],["2026-11-30","2026-12-06","Week 2: add reps at the same weights. Stop with 1–2 reps left."],["2026-12-07","2026-12-13","Week 3: increase the weights you've earned. Stop with 1–2 reps left."],["2026-12-14","2026-12-20","Week 4: consolidate. Cut volume if you're fatigued. Stop with 2–3 reps left."]];
+const WORKOUT_PACK=[
+ [1,"Workout: chest + shoulders",true,["Floor/bench press — 30 lb, 4×8–12","Incline press — 30 lb, 3×8–12","Shoulder press — 15–30 lb, 3×8–12","Lateral raises — 5–10 lb, 3×15–20","Overhead triceps extension — 30 lb total, 2×10–15","Cardio: 15-minute incline walk"],
+  ["TKO chest press — 100 lb, 4×8–12","TKO incline press — 70–90 lb, 3×8–12","TKO shoulder press — calibrate, 3×8–12","DB lateral raises — 5–10 lb, 3×15–20","Triceps extension — calibrate, 2×12–15","Cardio: 15-minute incline walk"],"High intensity."],
+ [2,"Workout: back + biceps",true,["Single-arm row — 30 lb, 4×10–15","Dumbbell pullover — 30 lb total, 3×10–12","Rear delt fly — 5–10 lb each, 3×15–20","Single-arm curls — 15–30 lb, 3×8–12 (right arm first)","Hammer curls — 15–30 lb, 2×10–12","Cardio: 15–20-minute walk"],
+  ["TKO lat pulldown — 80–100 lb, 4×8–12","TKO seated row — 80–100 lb, 4×8–12","Pull-ups — bodyweight, 2×6–12","Rear delt fly — 5–10 lb, 3×15–20","Single-arm curls — 15–30 lb, 3×8–12 (right arm first)","Cardio: 15–20-minute walk"],"High intensity. Biceps imbalance: start with your right arm and match its reps with the left. Add one extra right-arm curl set if the gap persists."],
+ [3,"Workout: legs + calves",true,["Goblet squats — 30 lb total, 4×12–20","Romanian deadlifts — 30 lb each, 4×10–15","Split squats — 15–30 lb each, 3×10 per leg","Platform calf raises — bodyweight or 30 lb, 4×15–20"],
+  ["Smith machine squat — calibrate, 4×8–12","TKO leg extension — 70–100 lb, 3×10–15","TKO leg curl — 60–80 lb, 3×10–15","DB lunges — 15–30 lb each, 2×10 per leg","Platform calf raises — bodyweight or weighted, 4×15–20"],"High intensity. Calf technique: lower your heels slowly below the platform, hold the stretch for one second, then rise fully."],
+ [4,"Workout: stamina + recovery",false,["Warm-up walk — 5 min","Jog/walk intervals: 30 sec easy jog + 90 sec walk, 6–10 rounds","Cooldown walk — 5 min","Full-body mobility — 10 min","Steam room 8–12 min (optional, only if you feel well and are hydrated)"],null,"Recovery day. No mandatory lifting. Builds conditioning without getting in the way of muscle recovery."],
+ [5,"Workout: chest + arms + shoulders",true,["Incline DB press — 30 lb each, 4×10–12","Floor press — 30 lb each, 3×10–12","Lateral raises — 5–10 lb each, 4×15–25","Single-arm curls — 15–30 lb, 3×10–12","Hammer curls — 15–30 lb, 2×10–12","Overhead triceps extension — 30 lb total, 3×10–15","Close-grip push-ups — bodyweight, 2×10–15","Cardio: 10-minute easy walk"],
+  ["TKO incline press — 70–90 lb, 4×8–12","TKO chest press — 100 lb, 3×10–12","DB lateral raises — 5–10 lb, 4×15–25","Single-arm curls — 15–30 lb, 3×10–12","Hammer curls — 15–30 lb, 2×10–12","DB triceps extension — 30 lb total, 3×10–15","Cardio: 10-minute easy walk"],"High intensity. Your primary aesthetic growth day."],
+ [6,"Workout: lower body + back",true,["Goblet squat — 30 lb, 3×15–20","Romanian deadlift — 30 lb each, 3×12","Single-arm row — 30 lb, 4×12–15","Dumbbell pullover — 30 lb, 3×12","Calf raises — bodyweight or weighted, 4×20","Cardio: 20-minute moderate walk"],
+  ["TKO leg extension — 70–100 lb, 3×12–15","TKO leg curl — 60–80 lb, 3×12–15","TKO lat pulldown — 80–100 lb, 3×10–12","TKO seated row — 80–100 lb, 3×10–12","Platform calf raises — bodyweight or weighted, 4×20","Cardio: 20-minute moderate walk"],"Moderate intensity."],
+ [0,"Recovery: walk, mobility + weekly review",false,["Progress pictures (before training, same lighting as previous weeks)","Walk — 30–45 min","Mobility — 10 min","Steam (optional)","Update the training scoreboard in Notes: weights, reps, pull-ups, bodyweight, right vs left biceps, jog time"],null,"No heavy lifting today."]];
+const STARTER_STEPS=["Push-ups — 2×25 (split into smaller sets if needed)","Bodyweight squats — 2×25","Calf raises — 2×25","Dumbbell curls — 2×10","Dead bugs — 2×10 per side","Plank — 2×30–45 sec"];
+const NIGHT_STEPS=["Calf raises — 2×25","Dead bugs — 2×10 per side","Plank — 2×45 sec","Easy walk — 10 min","Mobility — 5 min"];
+const FIT_NOTE={title:"Training plan: Nov 23 – Dec 20",body:`Weekly schedule (repeat for 4 weeks)
+• Mon: chest + shoulders (high)
+• Tue: back + biceps (high)
+• Wed: legs + calves (high)
+• Thu: cardio + mobility (recovery)
+• Fri: chest + arms + shoulders (high)
+• Sat: lower body + back (moderate)
+• Sun: recovery + weekly review
+Dumbbells are the guaranteed workout. Grandpa-gym machines are an optional addition or replacement.
+
+Daily morning routine (10–15 min, keep 3–4 reps in reserve, optional on recovery days)
+Push-ups 2×25 · squats 2×25 · calf raises 2×25 · DB curls 2×10 · dead bugs 2×10/side · plank 2×30–45 sec
+
+Monthly progression
+• Week 1: establish accurate working weights (2–3 reps left)
+• Week 2: increase reps (1–2 reps left)
+• Week 3: increase earned weights (1–2 reps left)
+• Week 4: consolidate, reduce volume if fatigued (2–3 reps left)
+Example, chest press: wk1 100 lb 10/10/10/10 → wk2 100 lb 12/11/10/10 → wk3 100 lb 12/12/12/12 → wk4 105 lb 8–10 per set. If you hit a target early, progress early.
+
+${REST_NOTE}
+
+Optional night routine: max 2–3 nights a week, only when recovering well. More fatigue isn't necessarily more growth.
+
+Scoreboard (update every Sunday)
+• Dumbbell press: start 30 lb each →
+• Dumbbell row: start 30 lb →
+• Chest press: start 100 lb →
+• Pull-ups: baseline →
+• Leg extension: baseline →
+• Bodyweight: →
+• Right vs left biceps: →
+• Conditioning (jog time, walking endurance): →
+• Training completion (target 5 main sessions/week): →`};
+function packWorkouts(){return WORKOUT_PACK.map(([d,t,main,steps,alt,note])=>({id:uid(),t,time:"11:00 AM",g:"Morning",dow:[d],steps,note:[note,main?REST_NOTE:"",STEAM_NOTE].filter(Boolean).join("\n\n"),...(main?{main:true,phases:LIFT_PHASES}:{}),...(alt?{altName:"Grandpa gym",mainName:"Dumbbells",alt}:{})}))}
+/* ---- skin plan (pack 4) ---- */
+const W1=["2026-11-23","2026-11-29"],W2=["2026-11-30","2026-12-06"],W3=["2026-12-07","2026-12-13"],W4=["2026-12-14","2026-12-20"],W24=["2026-11-30","2026-12-20"],W34=["2026-12-07","2026-12-20"];
+const ph=(w,text)=>[w[0],w[1],text];
+const sCC="Cool eye compress — 5 minutes",sCL="YTTP cleanser — gently cleanse 30 seconds",sHA="Hyaluronic Acid — 2–3 drops on slightly damp skin",sNI="Niacinamide — 2–3 drops",
+ sCA="Caffeine Solution — small amount under each eye (skip if eyes are irritated)",sEY="CeraVe Eye Repair Cream",sMO="Natural Moisturizing Factors moisturizer",sGS="Gua sha — 2–3 minutes, gentle pressure with enough slip",
+ sBB="Beard balm — small amount",sSPF="Sunscreen SPF 60 — face, ears and neck",sCO="Castor oil — small amount on beard hair if tolerated";
+const AM_BASE=[sCC,sCL,sHA,sNI,sCA,sEY,sMO,sGS,sBB,sSPF];
+const MIN_AM="Cleanser → moisturizer → sunscreen",MIN_PM="Cleanser → moisturizer";
+const SKIN_RULE="Only step up a treatment if your skin is comfortable, without persistent redness, burning or peeling. If under-eyes itch or turn red, pause caffeine serum and eye cream, use a cool compress and a bland moisturizer.";
+const SKIN_PACK=[
+ [1,"AM","Skin AM: retinoid & texture",AM_BASE,"",[]],
+ [1,"PM","Skin PM: retinoid night",["YTTP cleanser","Let face dry completely","Granactive Retinoid 2% — pea-sized, avoid eyes and lips",sEY,sMO,"Rosehip oil — optional, 1–2 drops if dry",sCO],"No glycolic, salicylic acid, clay mask or microneedling tonight.",[ph(W1,"Week 1: recovery night. Replace the retinoid with hyaluronic acid + niacinamide."),ph(W24,"Retinoid night (pea-sized amount).")]],
+ [2,"AM","Skin AM: brightening",[sCC,sCL,sHA,sCA,sEY,"Vitamin C Suspension 23% — small amount, avoid eyes",sMO,"Gua sha — gently, only if comfortable",sBB,sSPF],"On vitamin C mornings, niacinamide stays separate to keep things simple and reduce irritation.",[ph(W1,"Week 1: replace vitamin C with niacinamide."),ph(W24,"Vitamin C morning.")]],
+ [2,"PM","Skin PM: even complexion",["YTTP cleanser",sHA,sNI,"Azelaic Acid 10% — optional (see this week)",sEY,sMO,"Rosehip oil — 1–2 drops","Castor oil on beard hair","Gua sha — gentle, if skin is comfortable"],"",[ph(W1,"Week 1: skip azelaic acid."),ph(W24,"Azelaic acid is optional, only if Monday's retinoid caused no irritation.")]],
+ [3,"AM","Skin AM: hydration & recovery",AM_BASE,"",[]],
+ [3,"PM","Skin PM: recovery night",["YTTP cleanser",sHA,sNI,sEY,sMO,"Rosehip oil — 2–3 drops if needed","Castor oil on beard hair","Gua sha — gentle"],"A recovery window between stronger treatments while keeping skin hydrated.",[]],
+ [4,"AM","Skin AM: azelaic day",AM_BASE,"",[]],
+ [4,"PM","Skin PM: azelaic acid",["YTTP cleanser","Hyaluronic Acid — let it settle","Azelaic Acid 10% — thin layer, avoid eyes",sEY,sMO,"Rosehip oil — optional","Castor oil on beard hair"],"Targets uneven complexion, blemishes and post-acne marks. No retinoid, glycolic or salicylic acid tonight.",[]],
+ [5,"AM","Skin AM: exfoliation day",AM_BASE,"",[]],
+ [5,"PM","Skin PM: exfoliation",["YTTP cleanser","Pat skin completely dry","This week's acid — thin layer, avoid eyes, lips and irritated skin (see this week)","Let it settle 1–2 minutes",sHA,sEY,sMO,"Rosehip oil — optional","Castor oil on beard hair if comfortable"],"Never combine glycolic and salicylic in one session. Skip gua sha tonight. On recovery Fridays use niacinamide instead of the acid.",[ph(W1,"Week 1: recovery, no exfoliation. Use niacinamide instead."),ph(W2,"Week 2: Glycolic Acid 7%."),ph(W3,"Week 3: Salicylic Acid 2% if congested, otherwise recovery (niacinamide)."),ph(W4,"Week 4: Glycolic Acid 7%.")]],
+ [6,"AM","Skin AM: maintenance",[sCC,sCL,sHA,sCA,sEY,"Vitamin C — or niacinamide if skipping (see this week)",sMO,"Gua sha — gentle",sBB,sSPF],"",[ph(W1,"Week 1: niacinamide instead of vitamin C."),ph(W2,"Week 2: vitamin C optional if Tuesday's went well, otherwise niacinamide."),ph(W34,"Vitamin C morning.")]],
+ [6,"PM","Skin PM: clay & maintenance",["YTTP cleanser","Clay mask — mainly oily areas and T-zone (optional)","Leave on 5–8 minutes (follow product instructions)","Rinse thoroughly with lukewarm water",sHA,sEY,sMO,"Rosehip oil — optional","Castor oil on beard hair","Foot maintenance"],"Skip the clay if Friday's exfoliation left your skin dry, sensitive or tight.",[]],
+ [0,"AM","Skin AM: photo review & reset",["Photo: front-facing","Photo: left profile","Photo: right profile","Photo: under-eye close-up","Photo: beard close-up","Photo: under-jaw and neckline","Cool eye compress — 5–10 minutes",sCL,sHA,sNI,sCA,sEY,sMO,sGS,sBB,sSPF,"Write down: consistency, any irritation, new pimples, eye symptoms"],"Take photos before shaving or applying products, with similar natural lighting, distance and angles each week.",[ph(W1,"Checkpoint Nov 29: consistency and skin recovery."),ph(W2,"Checkpoint Dec 6: treatment tolerance."),ph(W3,"Checkpoint Dec 13: complexion and beard comparison."),ph(W4,"Checkpoint Dec 20: monthly results and next cycle.")]],
+ [0,"PM","Skin PM: recovery & grooming",["Cleanse face","Shave or shape facial hair if desired — shaving cream, with the grain","Rinse with cool water","Hyaluronic Acid — only if comfortable",sEY,sMO,"Rosehip oil — optional if skin isn't irritated"],"No strong actives, no gua sha over freshly shaved skin, no microneedling.",[]]];
+const SKIN_DATES=[
+ ["2026-11-23",{t:"Skin: baseline photos",g:"Morning",time:"7:55 AM",steps:["Front-facing","Left profile","Right profile","Under-eye close-up","Beard close-up","Under-jaw and neckline"],note:"Baseline for the month. Take them before products, in natural light, and use the same setup every Sunday."}],
+ ["2026-12-20",{t:"Skin: monthly results review",g:"Evening",time:"8:00 PM",steps:["Compare Dec 20 photos with the Nov 23 baseline","Rate under-eyes, complexion, glow, beard, texture, definition","Note what to keep, change or drop for the next cycle"],note:"Week 4 checkpoint: monthly results and next cycle. Default decision: keep the routine unchanged unless there's a meaningful reason to adjust it."}]];
+const SKIN_RESTOCK={t:"Skin restock (only what's running low)",g:"Anytime",optional:true,steps:["Sunscreen (essential)","Gentle cleanser (essential)","Moisturizer (essential)","Preservative-free artificial tears (if eyes are dry)","Reusable cooling eye mask (useful)","Hydrocolloid pimple patches (useful)","Benzoyl peroxide 2.5% (only if needed for acne)"],note:"No new serums or microneedling devices needed this month."};
+const SKIN_NOTE={title:"Skin plan: Nov 23 – Dec 20",body:`Objectives (in priority order)
+1. Under-eye bags and redness: cold compresses, recovery, gentle eye care
+2. Clearer complexion: consistent cleansing, targeted treatments
+3. Skin glow: vitamin C, hydration, sunscreen
+4. Beard development: consistent conditioning, growth tracking
+5. Skin texture: retinoid, controlled exfoliation
+6. Facial definition: gentle gua sha, grooming
+7. Consistency: complete morning and night routines
+
+Treatment calendar
+• Week 1 (Nov 23–29): basics only. Monday retinoid → recovery night, no vitamin C, Thursday azelaic, no Friday exfoliation
+• Week 2 (Nov 30–Dec 6): retinoid starts, Tuesday vitamin C, Friday glycolic, Saturday vitamin C optional
+• Week 3 (Dec 7–13): Friday salicylic only if congested, Saturday vitamin C
+• Week 4 (Dec 14–20): Friday glycolic
+• Clay mask Saturdays: always optional
+${SKIN_RULE} Don't use a product just because you own it.
+
+Products
+• YTTP cleanser: daily AM/PM
+• Hyaluronic Acid 2% + B5: daily AM/PM
+• Niacinamide 10% + Zinc: daily AM, selected nights
+• Caffeine Solution 5% + EGCG: AM, if eyes aren't irritated
+• CeraVe Eye Repair Cream: AM/PM, if tolerated
+• Natural Moisturizing Factors + HA: daily AM/PM
+• La Roche-Posay SPF 60: every morning
+• Vitamin C Suspension 23%: 1–2 mornings weekly, if tolerated
+• Granactive Retinoid 2%: 1–2 nights weekly
+• Azelaic Acid 10%: 1–2 nights weekly
+• Glycolic Acid 7%: alternating exfoliation weeks
+• Salicylic Acid 2%: alternative for acne and congestion
+• Rosehip Seed Oil: recovery nights
+• Clay mask: Saturday, if needed
+• Castor oil: optional beard conditioning
+• Beard balm: morning grooming
+• Hair peptide serum: according to label
+• CeraVe SA Cleanser / Clinique 3-Step: alternatives
+• Hydrocolloid patches, Benzoyl peroxide 2.5%: as needed
+• Gua sha: gentle, healthy skin only
+• Red LED mask: pending spec check
+• Microneedling: paused pending professional guidance
+
+Eye protocol
+• Cool compress: mornings, optionally at night
+• Caffeine serum: mornings, if tolerated
+• Eye cream: AM/PM, if tolerated
+• Preservative-free artificial tears: when needed
+• Hydrate through the day, sleep 7–9 hours, reduce smoke exposure
+If under-eye skin itches or turns red, stop caffeine serum and eye cream for a while, use a cool compress and a bland moisturizer. If the whites of your eyes look genuinely yellow, get a prompt medical check.
+
+Beard protocol
+• Beard balm every morning if needed · castor oil optional at night · gentle brushing daily
+• Peptide serum per label · beard photos and shaping on Sunday
+• Microneedling paused pending dermatologist guidance
+Balm and castor oil condition existing hair; neither is proven to create new growth.
+
+Checkpoints
+• Baseline: Nov 23 · Week 1: Nov 29 (consistency, recovery) · Week 2: Dec 6 (tolerance) · Week 3: Dec 13 (complexion, beard) · Week 4: Dec 20 (results, next cycle)
+
+Emergency minimum
+AM: ${MIN_AM}. PM: ${MIN_PM}. A minimum routine still counts. Don't try to make up missed treatments the next day.`};
+function packSkin(){return SKIN_PACK.map(([d,ap,t,steps,note,phases])=>({id:uid(),t,time:ap==="AM"?"8:00 AM":"7:15 PM",g:ap==="AM"?"Morning":"Evening",dow:[d],steps,note:[note,SKIN_RULE].filter(Boolean).join("\n\n"),phases,min:ap==="AM"?MIN_AM:MIN_PM}))}
+const phaseFor=(t,k)=>(t.phases||[]).find(p=>k>=p[0]&&k<=p[1]);
 const BONNET="Wear bonnet at night",SERUM="Apply peptide serum if due (not before sauna/steam)";
 const HAIR_PACK=[
  [1,"Hair: hydration and reset",["Wash with Innersense shampoo","Apply Double Cream Deep Quencher for 10–15 minutes","Gently detangle with fingers while conditioner is in","Rinse thoroughly","Apply a pea-sized amount of Weightless Air Dry Cream","Apply a small amount of Hydro Style Flexi Jelly","Scrunch curls upward","Air-dry without touching",SERUM,BONNET],"Do the full routine after your last sauna or steam session of the day."],
@@ -103,6 +246,20 @@ if(!S||S.v!==1)S=defaults();
   for(const [k,x] of HAIR_DATES){const dd=S.days[k]||(S.days[k]={done:{},extra:[]});if(!dd.extra.some(e=>e.t===x.t))dd.extra.push({id:uid(),time:"",...x})}
   if(!S.journal.notes.some(e=>e.title===HAIR_NOTE.title))S.journal.notes.push({id:uid(),ts:Date.now(),...HAIR_NOTE});
   S.hairStart=S.hairStart||dkey()}
+ if(pack0<4){const has=t=>S.routine.some(r=>r.t===t);
+  S.routine=S.routine.filter(r=>!(r.t==="Face care and grooming"&&!r.steps));
+  for(const r of packSkin())if(!has(r.t))S.routine.push(r);
+  for(const [k,x] of SKIN_DATES){const dd=S.days[k]||(S.days[k]={done:{},extra:[]});if(!dd.extra.some(e=>e.t===x.t))dd.extra.push({id:uid(),...x})}
+  const td=S.days[dkey()]||(S.days[dkey()]={done:{},extra:[]});if(!td.extra.some(e=>e.t===SKIN_RESTOCK.t))td.extra.push({id:uid(),time:"",...SKIN_RESTOCK});
+  if(!S.journal.notes.some(e=>e.title===SKIN_NOTE.title))S.journal.notes.push({id:uid(),ts:Date.now(),...SKIN_NOTE});
+  S.skinStart=S.skinStart||dkey()}
+ if(pack0<5){const has=t=>S.routine.some(r=>r.t===t);
+  const st=S.routine.find(r=>r.t==="Starter workout");if(st&&!st.steps)Object.assign(st,{steps:STARTER_STEPS,optionalDow:[4,0],note:"10–15 minutes. Keep it comfortable, with 3–4 reps left. Optional on recovery days (Thursday and Sunday)."});
+  S.routine=S.routine.filter(r=>!(r.t==="Workout or steam"&&!r.steps));
+  for(const r of packWorkouts())if(!has(r.t))S.routine.push(r);
+  const nt=S.routine.find(r=>r.t==="Optional light workout/recovery");if(nt&&!nt.steps)Object.assign(nt,{t:"Optional night workout",steps:NIGHT_STEPS,optional:true,note:"Maximum 2–3 nights a week, and only when you're recovering well. Deliberately light."});
+  if(!S.journal.notes.some(e=>e.title===FIT_NOTE.title))S.journal.notes.push({id:uid(),ts:Date.now(),...FIT_NOTE});
+  S.fitStart=S.fitStart||dkey()}
  S.pack=PACK})();
 let saveT;function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Couldn't save. Your phone storage may be full.")}},150)}
 addEventListener("pagehide",()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}});
@@ -119,24 +276,36 @@ function addXP(n,el){const before=level();S.xp=Math.max(0,S.xp+n);if(n>0&&level(
 function tick(){const d=new Date(),h=d.getHours()%12||12,m=String(d.getMinutes()).padStart(2,"0");$("time").innerHTML=`${h}<i>:</i>${m}`;$("dt").textContent=d.toLocaleDateString([], {weekday:"long",month:"long",day:"numeric"});
  if(tick.day&&tick.day!==dkey()){renderAll()}tick.day=dkey()}
 function dayData(k){return S.days[k]||(S.days[k]={done:{},extra:[]})}
-function tasksFor(k){const d=S.days[k]||{done:{},extra:[]},wd=dowOf(k);const list=[...S.routine.filter(r=>!r.dow||!r.dow.length||r.dow.includes(wd)).map(r=>({...r,rep:true})),...(d.extra||[]).map(x=>({...x,rep:false}))];
+function tasksFor(k){const d=S.days[k]||{done:{},extra:[]},wd=dowOf(k);const list=[...S.routine.filter(r=>!r.dow||!r.dow.length||r.dow.includes(wd)).map(r=>({...r,rep:true,optional:!!(r.optional||(r.optionalDow||[]).includes(wd))})),...(d.extra||[]).map(x=>({...x,rep:false}))];
  const later=d.later||{};list.sort((a,b)=>(later[a.id]?1:0)-(later[b.id]?1:0)||GROUPS.indexOf(a.g)-GROUPS.indexOf(b.g)||tmin(a.time)-tmin(b.time));return list}
 function tmin(t){if(!t)return 9999;const m=/^(\d{1,2})(?::(\d{2}))?\s*([ap]m)?$/i.exec(t.trim());if(!m)return 9998;let h=+m[1];const mm=+(m[2]||0);if(m[3]){const pm=/p/i.test(m[3]);if(pm&&h<12)h+=12;if(!pm&&h==12)h=0}return h*60+mm}
 function isComplete(k){const t=tasksFor(k).filter(x=>!x.optional);if(!t.length)return false;const d=S.days[k];return !!d&&t.every(x=>d.done[x.id])}
-function stepsDone(k,t){const s=(S.days[k]&&S.days[k].steps&&S.days[k].steps[t.id])||{};return (t.steps||[]).filter((_,i)=>s[i]).length}
-function hairAdherence(){let due=0,done=0;const d=new Date();for(let i=0;i<7;i++){const k=dkey(d);if(S.hairStart&&k<S.hairStart)break;const dd=S.days[k];
-  for(const t of tasksFor(k))if(t.g==="Hair care"&&!t.optional){due++;if(dd&&dd.done[t.id])done++}d.setDate(d.getDate()-1)}return{due,done,pct:due?Math.round(done/due*100):null}}
+const useAlt=(k,t)=>!!(t.alt&&S.days[k]&&S.days[k].variant&&S.days[k].variant[t.id]);
+const stepList=(k,t)=>useAlt(k,t)?t.alt:(t.steps||[]);
+const stepKey=(k,t)=>useAlt(k,t)?t.id+":alt":t.id;
+function stepsDone(k,t){const s=(S.days[k]&&S.days[k].steps&&S.days[k].steps[stepKey(k,t)])||{};return stepList(k,t).filter((_,i)=>s[i]).length}
+function adherence(match,start){let due=0,done=0;const d=new Date();for(let i=0;i<7;i++){const k=dkey(d);if(start&&k<start)break;const dd=S.days[k];
+  for(const t of tasksFor(k))if(match(t)&&!t.optional){due++;if(dd&&dd.done[t.id])done++}d.setDate(d.getDate()-1)}return{due,done,pct:due?Math.round(done/due*100):null}}
+const isSkin=t=>/^Skin (AM|PM):/.test(t.t);
 function openSteps(id){const k=dkey(),t=tasksFor(k).find(x=>x.id===id);if(!t)return;
- const draw=root=>{const dd=dayData(k),s=(dd.steps||{})[id]||{},n=stepsDone(k,t),total=(t.steps||[]).length,isDone=!!dd.done[id];
-  const adh=t.g==="Hair care"?hairAdherence():null;
+ const draw=root=>{const dd=dayData(k),steps=stepList(k,t),sk=stepKey(k,t),s=(dd.steps||{})[sk]||{},n=stepsDone(k,t),total=steps.length,isDone=!!dd.done[id];
+  const adh=t.g==="Hair care"?{...adherence(x=>x.g==="Hair care",S.hairStart),label:"Hair routine",target:" Target 85–100%."}:isSkin(t)?{...adherence(isSkin,S.skinStart),label:"Skin routines",target:""}:t.main?{...adherence(x=>!!x.main,S.fitStart),label:"Main workouts",target:" Target: 5 a week."}:null;
+  const variant=t.alt?`<div class="seg vseg" style="margin-bottom:12px"><span class="hl"></span><button type="button" data-v="0" class="${useAlt(k,t)?"":"on"}">${esc(t.mainName||"Main")}</button><button type="button" data-v="1" class="${useAlt(k,t)?"on":""}">${esc(t.altName||"Alternative")}</button></div>`:"";
+  const phase=phaseFor(t,k),minDone=dd.minDone&&dd.minDone[id];
   root.innerHTML=`<div class="grab"></div><h2>${esc(t.t)}</h2><p class="desc">${esc([t.time,t.rep?repLabel(t)||"Every day":"Today only",t.optional?"Optional":""].filter(Boolean).join(" · "))}${total?` · ${n} of ${total} done`:""}</p>
-  ${t.note?`<div class="note">${esc(t.note)}</div>`:""}
-  ${total?`<div class="steps">${t.steps.map((x,i)=>`<button type="button" class="step ${s[i]?"on":""}" data-i="${i}"><span class="ck">${s[i]?"✓":""}</span><span>${esc(x)}</span></button>`).join("")}</div>`:""}
-  ${adh&&adh.pct!==null?`<p class="desc" style="margin-top:14px">Hair routine, last 7 days: ${adh.done} of ${adh.due} done (${adh.pct}%). Target 85–100%.</p>`:""}
-  <div class="btns"><button class="action p" id="st-all">${isDone?"Mark not done":total?"Mark all done":"Mark done"}</button><button class="action" id="st-edit">Edit task</button></div>`;
-  root.querySelectorAll(".step").forEach(b=>b.onclick=()=>{const dd2=dayData(k);dd2.steps=dd2.steps||{};const m=dd2.steps[id]=dd2.steps[id]||{};const i=+b.dataset.i;m[i]=!m[i];if(!m[i])delete m[i];
+  ${phase?`<div class="note phase"><b>This week</b>${esc(phase[2])}</div>`:""}
+  ${minDone?`<div class="note phase"><b>Done</b>Minimum routine today (${esc(t.min)}). That counts.</div>`:""}
+  ${t.note?`<details class="note" ${t.note.length<170?"open":""}><summary>Notes and rules</summary>${esc(t.note)}</details>`:""}
+  ${variant}${total?`<div class="steps">${steps.map((x,i)=>`<button type="button" class="step ${s[i]?"on":""}" data-i="${i}"><span class="ck">${s[i]?"✓":""}</span><span>${esc(x)}</span></button>`).join("")}</div>`:""}
+  ${adh&&adh.pct!==null?`<p class="desc" style="margin-top:14px">${adh.label}, last 7 days: ${adh.done} of ${adh.due} done (${adh.pct}%).${adh.target}</p>`:""}
+  <div class="btns"><button class="action p" id="st-all">${isDone?"Mark not done":total?"Mark all done":"Mark done"}</button>${t.min&&!isDone?`<button class="action" id="st-min">Did the minimum</button>`:""}<button class="action" id="st-edit">Edit task</button></div>
+  ${t.min&&!isDone?`<p class="desc" style="margin-top:10px">Low-energy day? Minimum: ${esc(t.min)}. It still counts.</p>`:""}`;
+  const mb=root.querySelector("#st-min");if(mb)mb.onclick=e=>{const dd2=dayData(k);(dd2.minDone=dd2.minDone||{})[id]=true;toggleTask(id,e.currentTarget);draw(root)};
+  const vs=root.querySelector(".vseg");if(vs){const place=()=>{const b=vs.querySelector("button.on"),hl=vs.querySelector(".hl");if(b){hl.style.left=b.offsetLeft+"px";hl.style.width=b.offsetWidth+"px"}};requestAnimationFrame(place);
+   vs.querySelectorAll("button").forEach(b=>b.onclick=()=>{const dd2=dayData(k);dd2.variant=dd2.variant||{};if(b.dataset.v==="1")dd2.variant[id]=true;else delete dd2.variant[id];save();renderToday();draw(root)})}
+  root.querySelectorAll(".step").forEach(b=>b.onclick=()=>{const dd2=dayData(k);dd2.steps=dd2.steps||{};const m=dd2.steps[sk]=dd2.steps[sk]||{};const i=+b.dataset.i;m[i]=!m[i];if(!m[i])delete m[i];
    const all=stepsDone(k,t)===total;if(all&&!dd2.done[id])toggleTask(id,b);else if(!all&&dd2.done[id])toggleTask(id,b);else{save();renderToday()}draw(root)});
-  root.querySelector("#st-all").onclick=e=>{const dd2=dayData(k);dd2.steps=dd2.steps||{};if(dd2.done[id]){dd2.steps[id]={};toggleTask(id,e.currentTarget)}else{dd2.steps[id]=Object.fromEntries((t.steps||[]).map((_,i)=>[i,true]));toggleTask(id,e.currentTarget)}draw(root)};
+  root.querySelector("#st-all").onclick=e=>{const dd2=dayData(k);dd2.steps=dd2.steps||{};if(dd2.done[id]){dd2.steps[sk]={};if(dd2.minDone)delete dd2.minDone[id];toggleTask(id,e.currentTarget)}else{dd2.steps[sk]=Object.fromEntries(steps.map((_,i)=>[i,true]));toggleTask(id,e.currentTarget)}draw(root)};
   root.querySelector("#st-edit").onclick=()=>editTask(id)};
  $("sheet").innerHTML="";$("sheetwrap").hidden=false;draw($("sheet"))}
 function streak(){let n=0;const d=new Date();if(!isComplete(dkey(d)))d.setDate(d.getDate()-1);while(S.days[dkey(d)]&&S.days[dkey(d)].complete){n++;d.setDate(d.getDate()-1)}return n}
@@ -253,7 +422,7 @@ function renderToday(just){const k=dkey(),dd=dayData(k),list=tasksFor(k),req=lis
  $("dnsub").textContent=left[0]?(left[0].rep?(repLabel(left[0])?"Your "+repLabel(left[0]).replace(/s$/,"")+" task.":"From your daily routine."):"Today only.")+(left[0].time?" Planned for "+left[0].time+".":"")+" Finish the list to keep your streak.":list.length?"Everything's done. Your streak is safe.":"Use the box below to build your routine.";
  $("dnxp").textContent=`Level ${level()} · ${S.xp%1000} / 1000 XP`;$("dndone").hidden=$("dnskip").hidden=!left[0];
  let first=true,g="";const html=list.map(t=>{const done=!!dd.done[t.id];const tag=done||t.optional?"":(first?(first=false,'<span class="tag now">NOW</span>'):'');const head=t.g!==g?(g=t.g,`<div class="grp">${esc(g)}</div>`):"";
-  return head+`<div class="it ${done?"done":""} ${t.id===just?"just":""}"><button class="main" data-id="${t.id}"><span class="ck">${done?"✓":""}</span>${tag}<span class="t">${esc(t.t)}</span></button><span class="r">${esc([t.steps&&t.steps.length?stepsDone(k,t)+"/"+t.steps.length+" steps":"",t.time,t.rep?repLabel(t):"today",t.optional?"optional":"",t.note&&!(t.steps&&t.steps.length)?"note":""].filter(Boolean).join(" · "))}</span><button class="ed" data-ed="${t.id}" aria-label="Edit task">✎</button></div>`}).join("");
+  return head+`<div class="it ${done?"done":""} ${t.id===just?"just":""}"><button class="main" data-id="${t.id}"><span class="ck">${done?"✓":""}</span>${tag}<span class="t">${esc(t.t)}</span></button><span class="r">${esc([t.steps&&t.steps.length?stepsDone(k,t)+"/"+stepList(k,t).length+(useAlt(k,t)?" gym":" steps"):"",t.time,t.rep?repLabel(t):"today",t.optional?"optional":"",t.note&&!(t.steps&&t.steps.length)?"note":""].filter(Boolean).join(" · "))}</span><button class="ed" data-ed="${t.id}" aria-label="Edit task">✎</button></div>`}).join("");
  $("tasks").innerHTML=html||`<div class="empty"><b>Build your daily routine</b>Add the things you do every day. They'll come back each morning.</div>`;
  $("tasks").querySelectorAll(".main").forEach(b=>b.onclick=()=>{const t=list.find(x=>x.id===b.dataset.id);if(t&&((t.steps&&t.steps.length)||t.note))openSteps(t.id);else toggleTask(b.dataset.id,b)});$("tasks").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>editTask(b.dataset.ed));
  $("streaklbl").textContent=streak()+(streak()===1?" day":" days")}
@@ -274,7 +443,8 @@ function editTask(id){const k=dkey(),r=S.routine.find(x=>x.id===id),ex=dayData(k
  <div class="btns"><button class="action p" id="t-save">Save</button><button class="action danger" id="t-del">${r?"Remove from routine":"Delete"}</button></div>`,
  root=>{bindOpts(root,(n,v)=>{if(n==="rep")root.querySelector("#t-days").hidden=v!=="weekly"});
   root.querySelectorAll(".days button").forEach(b=>b.onclick=()=>b.classList.toggle("on"));
-  root.querySelector("#t-save").onclick=()=>{const nt={id:t.id,t:root.querySelector("#t-t").value.trim()||t.t,time:root.querySelector("#t-time").value.trim(),g:optVal(root,"g")};const rep=optVal(root,"rep");
+  root.querySelector("#t-save").onclick=()=>{const nt={...t,id:t.id,t:root.querySelector("#t-t").value.trim()||t.t,time:root.querySelector("#t-time").value.trim(),g:optVal(root,"g")};const rep=optVal(root,"rep");
+   for(const f of ["dow","steps","note","optional","rep"])delete nt[f];
    const steps=root.querySelector("#t-steps").value.split("\n").map(x=>x.trim()).filter(Boolean),note=root.querySelector("#t-note").value.trim();if(steps.length)nt.steps=steps;if(note)nt.note=note;if(root.querySelector("#t-opt").checked)nt.optional=true;
    const days=[...root.querySelectorAll(".days button.on")].map(b=>+b.dataset.d);if(rep==="weekly"){if(!days.length){toast("Pick at least one day");return}if(days.length<7)nt.dow=days}
    S.routine=S.routine.filter(x=>x.id!==id);const dd=dayData(k);dd.extra=dd.extra.filter(x=>x.id!==id);if(rep==="once")dd.extra.push(nt);else S.routine.push(nt);save();closeSheet();renderToday();renderWeek();renderCards();toast("Task saved")};
