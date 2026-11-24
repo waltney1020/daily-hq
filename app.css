@@ -186,6 +186,22 @@ body.page-mode .amb-shade{background:linear-gradient(180deg,rgba(2,11,14,.45),rg
 @keyframes noteout{to{opacity:0;transform:translateY(8px) rotate(var(--r,-2deg)) scale(.92)}}
 @media (prefers-reduced-motion:reduce){.wnote.pop,.wnote.out{animation-duration:.01s}}
 .tlwrap{margin-top:14px}
+/* Money: things to buy */
+#moneywish{margin-top:16px}
+.wadd input#w-p{flex:0 1 120px}
+.wlist{margin-top:10px}
+.wi{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);transition:opacity .3s,transform .35s var(--ease)}
+.wi:last-child{border-bottom:0}
+.wi.bought{opacity:0;transform:translateX(24px)}
+.wck{width:26px;height:26px;flex:none;border-radius:50%;border:1.6px solid var(--line2);background:none;cursor:pointer;position:relative;transition:background .2s,border-color .2s}
+.wck:hover{border-color:var(--mint)}
+.wck.on{background:var(--mint);border-color:var(--mint)}
+.wck.on::after{content:"";position:absolute;left:8px;top:5px;width:6px;height:11px;border:solid #0B3324;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.wmain{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:none;border:0;padding:8px 0;text-align:left;cursor:pointer;color:var(--ink)}
+.wmain span{font-size:15px;overflow-wrap:anywhere}.wmain small{font-size:11.5px;color:var(--muted)}
+.wneed{flex:none;font:600 11px var(--f);padding:5px 10px;border-radius:999px;border:1px solid var(--line2);background:none;color:var(--muted);cursor:pointer}
+.wneed.on{background:rgba(239,188,144,.16);border-color:rgba(239,188,144,.5);color:var(--peach)}
+.wi .amt{flex:none;min-width:64px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
 .tline{position:relative;padding-bottom:6px}
 .tline::before{content:"";position:absolute;left:61px;top:8px;bottom:0;width:2px;border-radius:2px;background:var(--line)}
 .tlg{position:relative;margin:20px 0 4px 76px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--peach)}
