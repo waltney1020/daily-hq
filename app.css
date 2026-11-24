@@ -420,8 +420,8 @@ body.hover .tdots .on i::after{animation-play-state:paused}
 .sclist{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .scitem{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;background:none;color:var(--soft);font:500 11.5px var(--f);cursor:pointer;text-align:center}
 .scitem .tile{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;font-size:15px;font-weight:700}
-.scitem .tile.sec{box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
-.scitem .tile.sec svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.scitem .tile.sec{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 6px 14px rgba(0,0,0,.25)}
+.scitem .tile.sec svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .scitem:active .tile{transform:scale(.92)}.scitem .tile{transition:transform .15s}
 
 /* money */
