@@ -1,6 +1,6 @@
 {
-  "name": "Daily HQ",
-  "short_name": "Daily HQ",
+  "name": "Op-Lock In",
+  "short_name": "Op-Lock In",
   "description": "Trade journal, personal journal and daily routine tracker.",
   "start_url": "./#home",
   "scope": "./",
