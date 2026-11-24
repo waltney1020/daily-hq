@@ -1265,10 +1265,10 @@ $("qlog").querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{const q=b.datas
  if(q==="puff"){const X=SM();if(X.active){X.active.puffs++;save();toast(`Puff logged · ${X.active.puffs} this session`)}else{startSmoke(S.ui.smokeLimit??5);SM().active.puffs=1;save()}go("smoke")}
  if(q==="calm")openCalm()});
 /* More sheet */
-const SECTIONS=[["trades","Trades","#1C3A3F","#86D3B0",'<path d="M4 17l5-5 4 4 7-8"/><path d="M15 8h5v5"/>'],
- ["journal","Journal","#3A2C25","#EFBC90",'<path d="M6 4h11a1 1 0 0 1 1 1v15H7a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1z"/><path d="M5 18a2 2 0 0 1 2-2h11M9 8h5"/>'],
- ["food","Food","#2C3622","#C9DE8C",'<path d="M7 3v18M5 3v5a2 2 0 0 0 4 0V3M17 21V3c-2 1.5-3 4-3 7h3"/>'],
- ["smoke","Smoke log","#2A2A3C","#B9B4F0",'<path d="M3 9h11a3 3 0 1 0-3-3M3 15h15a3 3 0 1 1-3 3"/>']];
+const SECTIONS=[["trades","Trades","linear-gradient(160deg,#2BB08C,#167A62)","#fff",'<path d="M4 17l5-5 4 4 7-8"/><path d="M15 8h5v5"/>'],
+ ["journal","Journal","linear-gradient(160deg,#E9A46C,#B86E3C)","#fff",'<path d="M6 4h11a1 1 0 0 1 1 1v15H7a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1z"/><path d="M5 18a2 2 0 0 1 2-2h11M9 8h5"/>'],
+ ["food","Food","linear-gradient(160deg,#8DBE45,#5A8424)","#fff",'<path d="M7 3v18M5 3v5a2 2 0 0 0 4 0V3M17 21V3c-2 1.5-3 4-3 7h3"/>'],
+ ["smoke","Smoke log","linear-gradient(160deg,#8C80E8,#5A4DB8)","#fff",'<path d="M3 9h11a3 3 0 1 0-3-3M3 15h15a3 3 0 1 1-3 3"/>']];
 function moreSheet(){
  openSheet(`<h2>More</h2><h3 class="rh">Sections</h3><div class="sclist">${SECTIONS.map(([v,n,bg,fg,ic])=>`<button class="scitem" data-go="${v}"><span class="tile sec" style="background:${bg};color:${fg}"><svg viewBox="0 0 24 24">${ic}</svg></span>${n}</button>`).join("")}</div>
  <h3 class="rh">Shortcuts</h3><div class="sclist">${SHORTCUTS.map((s,i)=>`<button class="scitem" data-sc="${i}"><span class="tile" style="background:${s.bg};color:${s.fg}">${esc(s.tile)}</span>${esc(s.name)}</button>`).join("")}</div>
