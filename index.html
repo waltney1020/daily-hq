@@ -81,6 +81,19 @@
     <div class="panel"><div class="row sb"><span class="ptitle">Trades</span><button class="link" id="addtrade">+ Add with details</button></div><div id="log"></div></div>
   </section>
 
+  <section class="page" id="p-food">
+    <div class="row sb">
+      <div class="seg" id="who"><span class="hl"></span><button data-w="me">For me</button><button data-w="dog">For the dogs</button></div>
+      <button class="action p" id="newrecipe">+ New recipe</button>
+    </div>
+    <div class="panel foodtop">
+      <input id="fsearch" class="fsearch" type="search" placeholder="Search recipes or ingredients" aria-label="Search recipes" autocomplete="off">
+      <div class="chips" id="fcats"></div>
+    </div>
+    <div id="dogsafe"></div>
+    <div class="recipes" id="recipes"></div>
+  </section>
+
   <section class="page" id="p-journal">
     <div class="books" id="books"></div>
     <div class="panel jbody" id="jpanel"></div>
@@ -105,6 +118,7 @@
       <button class="db" data-v="today" aria-label="Today"><svg viewBox="0 0 24 24"><path d="M10 6h10M10 12h10M10 18h10M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg><span class="badge" id="dbadge" hidden></span><span class="tip">Today</span></button>
       <button class="db" data-v="trades" aria-label="Trades"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M7 15l4-4 3 3 6-6"/></svg><span class="tip">Trades</span></button>
       <button class="db" data-v="journal" aria-label="Journal"><svg viewBox="0 0 24 24"><path d="M6 4h11a1 1 0 0 1 1 1v15H7a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1zM5 18a2 2 0 0 1 2-2h11M9 8h6"/></svg><span class="tip">Journal</span></button>
+      <button class="db" data-v="food" aria-label="Food"><svg viewBox="0 0 24 24"><path d="M7 3v8a2 2 0 0 0 4 0V3M9 11v10M16 21V3c-2 1.5-3 4-3 7s1 4 3 4"/></svg><span class="tip">Food</span></button>
       <span class="glide" id="glide"></span>
     </div>
     <div class="dapps">
