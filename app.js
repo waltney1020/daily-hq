@@ -380,29 +380,68 @@ function stepsDone(k,t){const s=(S.days[k]&&S.days[k].steps&&S.days[k].steps[ste
 function adherence(match,start){let due=0,done=0;const d=new Date();for(let i=0;i<7;i++){const k=dkey(d);if(start&&k<start)break;const dd=S.days[k];
   for(const t of tasksFor(k))if(match(t)&&!t.optional){due++;if(dd&&dd.done[t.id])done++}d.setDate(d.getDate()-1)}return{due,done,pct:due?Math.round(done/due*100):null}}
 const isSkin=t=>/^Skin (AM|PM):/.test(t.t);
-function openSteps(id){const k=dkey(),t=tasksFor(k).find(x=>x.id===id);if(!t)return;
- const draw=root=>{const dd=dayData(k),steps=stepList(k,t),sk=stepKey(k,t),s=(dd.steps||{})[sk]||{},n=stepsDone(k,t),total=steps.length,isDone=!!dd.done[id];
-  const adh=t.g==="Hair care"?{...adherence(x=>x.g==="Hair care",S.hairStart),label:"Hair routine",target:" Target 85–100%."}:isSkin(t)?{...adherence(isSkin,S.skinStart),label:"Skin routines",target:""}:t.main?{...adherence(x=>!!x.main,S.fitStart),label:"Main workouts",target:" Target: 5 a week."}:null;
-  const variant=t.alt?`<div class="seg vseg" style="margin-bottom:12px"><span class="hl"></span><button type="button" data-v="0" class="${useAlt(k,t)?"":"on"}">${esc(t.mainName||"Main")}</button><button type="button" data-v="1" class="${useAlt(k,t)?"on":""}">${esc(t.altName||"Alternative")}</button></div>`:"";
-  const lr=t.link&&ROLE_LABEL[t.link]?recipeFor(t.link,k):null,phase=phaseFor(t,k)||(lr?[0,0,"Week "+mealWeek(k)+" · "+MENU_THEMES[mealWeek(k)-1]+": "+lr.name]:null),minDone=dd.minDone&&dd.minDone[id];
-  root.innerHTML=`<div class="grab"></div><h2>${esc(t.t)}</h2><p class="desc">${esc([t.time,t.rep?repLabel(t)||"Every day":"Today only",t.optional?"Optional":""].filter(Boolean).join(" · "))}${total?` · ${n} of ${total} done`:""}</p>
-  ${phase?`<div class="note phase"><b>This week</b>${esc(phase[2])}</div>`:""}
-  ${minDone?`<div class="note phase"><b>Done</b>Minimum routine today (${esc(t.min)}). That counts.</div>`:""}
-  ${t.note?`<details class="note" ${t.note.length<170?"open":""}><summary>Notes and rules</summary>${esc(t.note)}</details>`:""}
-  ${variant}${total?`<div class="steps">${steps.map((x,i)=>`<button type="button" class="step ${s[i]?"on":""}" data-i="${i}"><span class="ck">${s[i]?"✓":""}</span><span>${esc(x)}</span></button>`).join("")}</div>`:""}
-  ${adh&&adh.pct!==null?`<p class="desc" style="margin-top:14px">${adh.label}, last 7 days: ${adh.done} of ${adh.due} done (${adh.pct}%).${adh.target}</p>`:""}
-  <div class="btns"><button class="action p" id="st-all">${isDone?"Mark not done":total?"Mark all done":"Mark done"}</button>${t.link?`<button class="action" id="st-link">${esc(linkLabel(t.link))} →</button>`:""}${t.recipe?`<button class="action" id="st-rec">Open recipe →</button>`:""}${t.min&&!isDone?`<button class="action" id="st-min">Did the minimum</button>`:""}<button class="action" id="st-edit">Edit task</button></div>
-  ${t.min&&!isDone?`<p class="desc" style="margin-top:10px">Low-energy day? Minimum: ${esc(t.min)}. It still counts.</p>`:""}`;
-  const lb=root.querySelector("#st-link");if(lb)lb.onclick=()=>followLink(t.link,id);
-  const rb=root.querySelector("#st-rec");if(rb)rb.onclick=()=>{closeSheet();openRecipe(t.recipe)};
-  const mb=root.querySelector("#st-min");if(mb)mb.onclick=e=>{const dd2=dayData(k);(dd2.minDone=dd2.minDone||{})[id]=true;toggleTask(id,e.currentTarget);draw(root)};
-  const vs=root.querySelector(".vseg");if(vs){const place=()=>{const b=vs.querySelector("button.on"),hl=vs.querySelector(".hl");if(b){hl.style.left=b.offsetLeft+"px";hl.style.width=b.offsetWidth+"px"}};requestAnimationFrame(place);
-   vs.querySelectorAll("button").forEach(b=>b.onclick=()=>{const dd2=dayData(k);dd2.variant=dd2.variant||{};if(b.dataset.v==="1")dd2.variant[id]=true;else delete dd2.variant[id];save();renderToday();draw(root)})}
-  root.querySelectorAll(".step").forEach(b=>b.onclick=()=>{const dd2=dayData(k);dd2.steps=dd2.steps||{};const m=dd2.steps[sk]=dd2.steps[sk]||{};const i=+b.dataset.i;m[i]=!m[i];if(!m[i])delete m[i];
-   const all=stepsDone(k,t)===total;if(all&&!dd2.done[id])toggleTask(id,b);else if(!all&&dd2.done[id])toggleTask(id,b);else{save();renderToday()}draw(root)});
-  root.querySelector("#st-all").onclick=e=>{const dd2=dayData(k);dd2.steps=dd2.steps||{};if(dd2.done[id]){dd2.steps[sk]={};if(dd2.minDone)delete dd2.minDone[id];toggleTask(id,e.currentTarget)}else{dd2.steps[sk]=Object.fromEntries(steps.map((_,i)=>[i,true]));toggleTask(id,e.currentTarget)}draw(root)};
-  root.querySelector("#st-edit").onclick=()=>editTask(id)};
- $("sheet").innerHTML="";$("sheetwrap").hidden=false;draw($("sheet"))}
+/* ===== Task room: opening a task grows its row into a full-screen page with a mountain header in the
+   task's color, a progress ring, the rule, step tiles and a 7-day strip. Finishing celebrates, then the page
+   shrinks back into the row. (Replaces the old steps sheet; same data and actions.) ===== */
+const STEP_ICONS=[[/bonnet|night|sleep|bed\b/i,"🌙"],[/mist|spray|water/i,"💧"],[/reshape|scrunch|define|curls? with/i,"🌀"],[/peptide|serum|minoxidil|drops?\b/i,"🧪"],[/shampoo|wash|cleans|rinse/i,"🫧"],
+ [/condition|cream|moistur|lotion|oil\b|butter|balm/i,"🧴"],[/spf|sunscreen|\bsun\b/i,"☀️"],[/vitamin c|brighten/i,"🍋"],[/retin|tret|exfoli|\baha\b|\bbha\b|acid/i,"⚗️"],[/towel|t-shirt|diffus|air.?dry/i,"🌬️"],
+ [/comb|brush|detangl/i,"🪮"],[/walk|cardio|\brun\b|bike|treadmill|steps\b/i,"🚶"],[/stretch|mobility|yoga|foam/i,"🧘"],[/\brow\b|pull|\blat\b|deadlift/i,"🏋️"],[/curl|bicep|hammer/i,"💪"],
+ [/press|bench|push|chest|\bdip/i,"🏋️"],[/squat|lunge|\bleg|calf|glute/i,"🦵"],[/plank|core|\babs?\b|crunch/i,"🎯"],[/\bfly\b|delt|shoulder|raise/i,"🪽"],
+ [/\beat\b|meal|cook|prep|protein|breakfast|lunch|dinner|snack/i,"🍽️"],[/read|review|journal|write|plan\b/i,"📝"]];
+const stepIcon=s=>{for(const [re,ic] of STEP_ICONS)if(re.test(s))return ic;return""};
+const splitStep=s=>{const m=/^(.*?)\s*\(([^)]+)\)\s*$/.exec(s);return m?[m[1],m[2]]:[s,""]};
+const roomTheme=t=>t.g==="Hair care"?2:isSkin(t)?1:(t.main||/workout|training|cardio|gym|lift/i.test(t.t))?3:(t.link||t.recipe)?4:0;
+let RO=null,roomGen=0;
+function roomOrigin(id){if(!$("p-today").classList.contains("on"))return null;let el=id===doNextId?$("donext"):null;
+ if(!el){const b=document.querySelector(`#tasks .main[data-id="${id}"]`);el=b&&b.closest(".tlr")}if(!el)return null;
+ const r=el.getBoundingClientRect();return(!r.width||r.bottom<0||r.top>innerHeight)?null:r}
+const roomClip=r=>r?`inset(${Math.max(0,r.top).toFixed(1)}px ${Math.max(0,innerWidth-r.right).toFixed(1)}px ${Math.max(0,innerHeight-r.bottom).toFixed(1)}px ${Math.max(0,r.left).toFixed(1)}px round 14px)`:"inset(42% 18% 42% 18% round 24px)";
+function openSteps(id){const k=dkey(),t=tasksFor(k).find(x=>x.id===id),el=$("troom");if(!t||!el)return;
+ const pi=roomTheme(t),P=PAL[pi%PAL.length];el.style.setProperty("--acc",P.road[0]);el.style.setProperty("--tbg",P.sky[0]);
+ const d=Math.min(2,devicePixelRatio||1);paintScene($("trcv"),pi,Math.round(Math.min(1800,innerWidth*d)),Math.round(340*d),11+id.length);
+ roomGen++;el.getAnimations().forEach(a=>a.cancel());RO={id,k};const r=roomOrigin(id);el.classList.remove("in","cele");el.classList.add("on","entering");drawRoom();$("trs").scrollTop=0;document.body.classList.add("roomopen");
+ if(!RM){el.animate([{clipPath:roomClip(r)},{clipPath:"inset(0px 0px 0px 0px round 0px)"}],{duration:760,easing:"cubic-bezier(.32,.72,0,1)"});
+  document.querySelector(".app").animate([{filter:"none"},{filter:"blur(5px) brightness(.55)"}],{duration:760,fill:"forwards"})}
+ requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add("in")));setTimeout(()=>el.classList.add("in"),120);setTimeout(()=>el.classList.remove("entering"),1100)}
+function closeRoom(instant){const el=$("troom");if(!el||!el.classList.contains("on"))return;const id=RO&&RO.id;el.classList.remove("in","entering");document.body.classList.remove("roomopen");
+ const app=document.querySelector(".app"),gen=++roomGen;let done=false;const fin=()=>{if(done||gen!==roomGen)return;done=true;el.getAnimations().forEach(a=>a.cancel());el.classList.remove("on","cele");app.getAnimations().forEach(a=>a.cancel());if(RO&&RO.id===id)RO=null};
+ if(instant||RM||document.hidden){fin();return}
+ app.getAnimations().forEach(a=>a.reverse());const r=id&&roomOrigin(id);
+ el.animate([{clipPath:"inset(0px 0px 0px 0px round 0px)"},{clipPath:roomClip(r)}],{duration:560,easing:"cubic-bezier(.32,.72,0,1)",fill:"forwards"}).onfinish=fin;
+ setTimeout(fin,700)} // backup: never leave the room stuck on screen if the animation is paused
+function roomCelebrate(){const el=$("troom");el.classList.add("cele");try{navigator.vibrate&&navigator.vibrate([10,40,18])}catch(e){}setTimeout(()=>closeRoom(),1150)}
+function drawRoom(){if(!RO)return;const {id,k}=RO,t=tasksFor(k).find(x=>x.id===id);if(!t){closeRoom(true);return}
+ const dd=dayData(k),steps=stepList(k,t),sk=stepKey(k,t),s=(dd.steps||{})[sk]||{},n=stepsDone(k,t),total=steps.length,isDone=!!dd.done[id],pct=isDone?100:total?Math.round(n/total*100):0,RC=94.25;
+ const adh=t.g==="Hair care"?{...adherence(x=>x.g==="Hair care",S.hairStart),label:"Hair routine",target:" Target 85–100%."}:isSkin(t)?{...adherence(isSkin,S.skinStart),label:"Skin routines",target:""}:t.main?{...adherence(x=>!!x.main,S.fitStart),label:"Main workouts",target:" Target: 5 a week."}:null;
+ const lr=t.link&&ROLE_LABEL[t.link]?recipeFor(t.link,k):null,phase=phaseFor(t,k)||(lr?[0,0,"Week "+mealWeek(k)+" · "+MENU_THEMES[mealWeek(k)-1]+": "+lr.name]:null),minDone=dd.minDone&&dd.minDone[id];
+ const variant=t.alt?`<div class="seg vseg"><span class="hl"></span><button type="button" data-v="0" class="${useAlt(k,t)?"":"on"}">${esc(t.mainName||"Main")}</button><button type="button" data-v="1" class="${useAlt(k,t)?"on":""}">${esc(t.altName||"Alternative")}</button></div>`:"";
+ const bars=[...Array(7)].map((_,i)=>{const x=new Date();x.setDate(x.getDate()-6+i);const kk=dkey(x),due=tasksFor(kk).some(y=>y.id===id),done=!!(S.days[kk]&&S.days[kk].done[id]);return`<i class="${done?"f":due?"":"n"}" title="${x.toLocaleDateString([], {weekday:"short"})}"></i>`}).join("");
+ const meta=[t.rep?repLabel(t)||"Every day":"Today only",t.g&&t.g!=="Anytime"?t.g.replace(/ care$/,""):""].filter(Boolean).join(" · ");
+ $("trs").innerHTML=`<div class="trbar"><button class="trib" id="tr-back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><span class="treb">${esc(meta)}</span><button class="trib" id="tr-edit" aria-label="Edit task"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button></div>
+ <div class="trin">
+  <div class="trhero"><div><h2>${esc(t.t)}</h2><div class="trsub">${total?`${isDone&&n<total?"Done":`${n} of ${total} steps`}`:isDone?"Done":"Tap below when it's done"}${t.time?` · ${esc(t.time)}`:""}${t.optional?" · Optional":""}</div></div>
+   <div class="trring"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,.13)" stroke-width="3"/><circle class="p" cx="18" cy="18" r="15" fill="none" stroke="var(--acc)" stroke-width="3" stroke-linecap="round" stroke-dasharray="${(pct/100*RC).toFixed(1)} ${RC}" transform="rotate(-90 18 18)"/></svg><b>${pct}%</b></div></div>
+  ${phase?`<div class="trnote"><b>This week</b>${esc(phase[2])}</div>`:""}
+  ${minDone?`<div class="trnote"><b>Done</b>Minimum routine today (${esc(t.min)}). That counts.</div>`:""}
+  ${t.note?`<div class="trrule ${t.note.length>150?"clamp":""}" id="tr-rule"><i>!</i><span>${esc(t.note)}</span></div>`:""}
+  ${variant}
+  ${total?`<div class="trgrid">${steps.map((x,i)=>{const [a,w]=splitStep(x),ic=stepIcon(a);return`<button type="button" class="trtile ${s[i]?"on":""} ${total%2&&i===total-1?"wide":""}" data-i="${i}" style="--d:${i}" aria-pressed="${!!s[i]}">${ic?`<span class="tic">${ic}</span>`:`<span class="tic num">${i+1}</span>`}<span class="tx">${esc(a)}${w?`<small>⚠ ${esc(w)}</small>`:""}</span></button>`}).join("")}</div>`:""}
+  <div class="trwk"><span>${bars}</span>${adh&&adh.pct!==null?`${adh.label}: ${adh.done} of ${adh.due} in the last 7 days (${adh.pct}%).${adh.target}`:"Last 7 days"}</div>
+  ${t.min&&!isDone?`<p class="trmin">Low-energy day? Minimum: ${esc(t.min)}. It still counts.</p>`:""}
+ </div>`;
+ $("trfoot").innerHTML=`<div class="trfin"><button class="trp ${isDone?"undo":""}" id="st-all">${isDone?"Mark not done":total?"Mark all done":"Mark done"}</button>${t.link?`<button id="st-link">${esc(linkLabel(t.link))} →</button>`:""}${t.recipe?`<button id="st-rec">Recipe →</button>`:""}${t.min&&!isDone?`<button id="st-min">Did the minimum</button>`:""}</div>`;
+ const R=$("troom"),q=s=>R.querySelector(s);
+ q("#tr-back").onclick=()=>closeRoom();q("#tr-edit").onclick=()=>editTask(id);
+ const rule=q("#tr-rule");if(rule)rule.onclick=()=>rule.classList.toggle("clamp");
+ const lb=q("#st-link");if(lb)lb.onclick=()=>{closeRoom(true);followLink(t.link,id)};
+ const rb=q("#st-rec");if(rb)rb.onclick=()=>openRecipe(t.recipe);
+ const mb=q("#st-min");if(mb)mb.onclick=e=>{const d2=dayData(k);(d2.minDone=d2.minDone||{})[id]=true;toggleTask(id,e.currentTarget);drawRoom();roomCelebrate()};
+ const vs=q(".vseg");if(vs){const place=()=>{const b=vs.querySelector("button.on"),hl=vs.querySelector(".hl");if(b&&hl){hl.style.left=b.offsetLeft+"px";hl.style.width=b.offsetWidth+"px"}};requestAnimationFrame(place);
+  vs.querySelectorAll("button").forEach(b=>b.onclick=()=>{const d2=dayData(k);d2.variant=d2.variant||{};if(b.dataset.v==="1")d2.variant[id]=true;else delete d2.variant[id];save();renderToday();drawRoom()})}
+ R.querySelectorAll(".trtile").forEach(b=>b.onclick=()=>{const d2=dayData(k);d2.steps=d2.steps||{};const m=d2.steps[sk]=d2.steps[sk]||{};const i=+b.dataset.i;m[i]=!m[i];if(!m[i])delete m[i];try{navigator.vibrate&&navigator.vibrate(8)}catch(e){}
+  const all=stepsDone(k,t)===total;let fin=false;if(all&&!d2.done[id]){toggleTask(id,b);fin=true}else if(!all&&d2.done[id])toggleTask(id,b);else{save();renderToday()}drawRoom();if(fin)roomCelebrate()});
+ q("#st-all").onclick=e=>{const d2=dayData(k);d2.steps=d2.steps||{};if(d2.done[id]){d2.steps[sk]={};if(d2.minDone)delete d2.minDone[id];toggleTask(id,e.currentTarget);drawRoom()}
+  else{d2.steps[sk]=Object.fromEntries(steps.map((_,i)=>[i,true]));toggleTask(id,e.currentTarget);drawRoom();roomCelebrate()}}}
 function streak(){let n=0;const d=new Date();if(!isComplete(dkey(d)))d.setDate(d.getDate()-1);while(S.days[dkey(d)]&&S.days[dkey(d)].complete){n++;d.setDate(d.getDate()-1)}return n}
 function renderWeek(){const w=$("week"),d0=new Date();w.innerHTML="";for(let i=0;i<7;i++){const x=new Date(d0);x.setDate(d0.getDate()+i);const k=dkey(x),dd=S.days[k];const b=document.createElement("button");b.setAttribute("aria-pressed",i==0);
   const dot=i==0?(isComplete(k)?'<i class="full"></i>':""):(dd&&dd.extra&&dd.extra.length?"<i></i>":"");
@@ -497,13 +536,16 @@ const watchLayer=(node,name,isOpen,close)=>{if(!node)return;let was=isOpen();new
 watchLayer($("sheetwrap"),"sheet",()=>!$("sheetwrap").hidden,closeSheet);
 watchLayer($("calm"),"calm",()=>!$("calm").hidden,()=>closeCalm(null));
 watchLayer($("qlog"),"qlog",()=>$("qlog").classList.contains("open"),()=>qlog(false));
+watchLayer($("troom"),"room",()=>$("troom").classList.contains("on"),()=>closeRoom());
+// after editing a task from inside the task room, refresh the room
+new MutationObserver(()=>{if($("sheetwrap").hidden&&RO)drawRoom()}).observe($("sheetwrap"),{attributes:true,attributeFilter:["hidden"]});
 // Native back gesture on the Fold (needs @capacitor/app in the APK): close the top layer, else go Home, else leave the app.
 (function(){const A=window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()&&window.Capacitor.Plugins&&window.Capacitor.Plugins.App;if(!A||!A.addListener)return;
  A.addListener("backButton",()=>{if(LAYERS.length)closeTopLayer();else if(S.view!=="home")go("home");else A.minimizeApp?A.minimizeApp():A.exitApp()})})();
 // Tap the dark area around a sheet to close it (only if the press started there too, so drags and text selection don't close it by accident).
 let sheetDown=null;$("sheetwrap").addEventListener("pointerdown",e=>{sheetDown=e.target===$("sheetwrap")});
 $("sheetwrap").addEventListener("click",e=>{if(e.target===$("sheetwrap")&&sheetDown!==false)closeSheet();sheetDown=null});
-addEventListener("keydown",e=>{if(e.key!=="Escape")return;if(!$("calm").hidden)return closeCalm(null);if(!$("sheetwrap").hidden)return closeSheet();qlog(false);orbit(false);if(typeof hideNote==="function")hideNote();if(typeof mHideTip==="function")mHideTip()});
+addEventListener("keydown",e=>{if(e.key!=="Escape")return;if(!$("calm").hidden)return closeCalm(null);if(!$("sheetwrap").hidden)return closeSheet();if($("troom").classList.contains("on"))return closeRoom();qlog(false);orbit(false);if(typeof hideNote==="function")hideNote();if(typeof mHideTip==="function")mHideTip()});
 // Every sheet gets an × in the corner, however it was opened.
 new MutationObserver(()=>{const s=$("sheet");if(!s.firstElementChild||s.querySelector(":scope>.sheetx"))return;const b=document.createElement("button");b.className="sheetx";b.type="button";b.setAttribute("aria-label","Close");b.innerHTML='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';b.onclick=closeSheet;s.prepend(b)}).observe($("sheet"),{childList:true});
 // Swipe a sheet down by its top edge to close it.
