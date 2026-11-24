@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="app.css?v=25">
+<link rel="stylesheet" href="app.css?v=26">
 </head>
 <body>
 <div class="amb" id="ambA" aria-hidden="true"></div><div class="amb b" id="ambB" aria-hidden="true"></div><div class="amb-shade" aria-hidden="true"></div>
@@ -43,16 +43,20 @@
   </main>
 
   <section class="page" id="p-today">
-    <div class="panel donext">
-      <div class="row sb"><div class="row"><span class="eyebrow ink">Do next</span><span class="chip" id="dncount"></span></div><span class="sub" id="dnxp"></span></div>
-      <div class="h1" id="dnt"></div>
-      <p class="sub" id="dnsub"></p>
-      <div class="row" style="margin-top:16px"><button class="action p" id="dndone">Done →</button><button class="action" id="dnskip">Later</button></div>
+    <div class="tdhead">
+      <div><div class="tdtitle" id="tdtitle">Today</div><div class="tdmeta"><span id="prog"></span> done · <span id="dnxp"></span></div></div>
+      <button class="ic" id="alertsbtn" aria-label="Reminders"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0"/></svg></button>
     </div>
-    <div class="panel watercard" id="watercard"></div>
-    <div class="panel">
-      <div class="row sb"><div><div class="ptitle">Your plan for today</div><div class="sub">Routine repeats every day. Today-only tasks clear at midnight.</div></div><div class="row"><button class="action" id="alertsbtn">🔔 Reminders</button><span class="chip" id="prog"></span></div></div>
-      <div id="tasks"></div>
+    <div class="glasses" id="watercard"></div>
+    <div class="donext" id="donext">
+      <div class="row sb"><span class="eyebrow" id="dncount"></span></div>
+      <div class="dnt" id="dnt"></div>
+      <p class="dnsub" id="dnsub"></p>
+      <div class="slide" id="dndone"><span class="slidefill"></span><span class="slidetxt">Slide to mark done</span><button class="knob" id="dnknob" aria-label="Mark done"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+      <button class="dnlater" id="dnskip">Later</button>
+    </div>
+    <div class="tlwrap">
+      <div class="tline" id="tasks"></div>
       <form class="add" id="addf"><input id="nt" placeholder="Pick up groceries" aria-label="New task" autocomplete="off"><select id="rep" aria-label="Repeat"><option value="once">Today only</option><option value="daily">Every day</option><option value="weekly">Every week on this day</option></select><button class="action p">Add</button></form>
     </div>
   </section>
@@ -151,7 +155,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Flip.min.js"></script>
-<script src="art.js?v=25"></script>
-<script src="app.js?v=25"></script>
+<script src="art.js?v=26"></script>
+<script src="app.js?v=26"></script>
 </body>
 </html>
