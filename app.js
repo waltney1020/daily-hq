@@ -15,7 +15,19 @@ const ACCTS={poly:"Polymarket",manual:"Manual",bob:"Bob"};
 const GROUPS=["Morning","Afternoon","Evening","Hair care","Weekly","Anytime"];
 const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],DOWL=["Sundays","Mondays","Tuesdays","Wednesdays","Thursdays","Fridays","Saturdays"];
 /* the user's checklist; bump PACK when it changes so installed apps pick it up */
-const PACK=7;
+const PACK=8;
+/* ---- dogs (pack 8) ---- */
+const DOGS_DEFAULT={list:[{id:"boy",name:"Boy",weight:"",sensitive:true},{id:"girl",name:"Girl",weight:"",sensitive:false}],log:{},freezer:0};
+const HUSKY_RECIPE={who:"dog",cat:"Meal",fav:true,name:"Senior husky meal prep (turkey and rice)",time:"About 1 hour",serves:"One batch of toppers",
+ ingredients:["3 lb 93% lean ground turkey","4 cups cooked white rice","2 cups green beans","1 cup carrots","4 fully cooked eggs (only after both dogs have had normal stool for 48 hours)","Plain water"],
+ steps:["Turkey: cook thoroughly in a large pan with no oil and no seasoning, then drain the fat","Rice: cook white rice with water only","Vegetables: steam or boil carrots and green beans until soft, then chop the carrots fairly small","Eggs (only once stomachs are stable): hard-boil or scramble plain, no butter or oil, then chop","Combine turkey, rice, green beans, carrots (and eggs)","Add a little warm water until moist rather than dry","Let everything cool completely","Divide into small freezer bags or containers (per dog AM/PM, or one bag per day for both)","Flatten the bags so they freeze and thaw quickly","Label: DOG FOOD — WEEK OF [DATE]","Keep about 3 days in the fridge, freeze the rest","Every night, move tomorrow's bag from the freezer to the fridge"],
+ notes:"No seasoning whatsoever: no onion, garlic, salt, butter, oil, broth or sauces. The garlic in your groceries is for your food only, never the dogs.\n\nThis is a topper, not a complete diet. Diamond Naturals kibble stays the nutritional foundation (about 75%), fresh food about 25% maximum. Serve cold, room temperature or slightly warm, never piping hot.\n\nLater: rotate weeks (turkey + rice, chicken + sweet potato, lean beef + rice, turkey + egg) and slowly add salmon, sardines in water, pumpkin, blueberries, sweet potato. One change at a time."};
+const DOG_TASKS=[
+ {t:"Dogs: daily check-in",time:"9:00 PM",g:"Evening",link:"dogs",note:"Log food eaten, water, stool, urine and energy for both dogs. The app uses it to set tomorrow's fresh-food ratio."},
+ {t:"Dogs: move tomorrow's food bag to the fridge",time:"9:10 PM",g:"Evening",link:"freezer",note:"Ticking this takes one bag off the freezer count."},
+ {t:"Dog food: cook and freeze a batch",time:"",g:"Weekly",dow:[1],link:"dogbatch",note:"Meal-prep day. Cook the turkey batch, cool, portion, flatten, label and freeze. Then add the bags to the freezer count in Food → For the dogs."}];
+const DOG_FLAGS="Call your vet if he (or she): refuses all food for a full day, won't drink, vomits repeatedly, has persistent watery diarrhea, becomes weak, has orange, red or brown urine, or struggles to pee. That's a health problem, not a meal-prep problem.";
+const STOOL=["","1 · Very hard","2 · Firm","3 · Normal","4 · Soft","5 · Watery"];
 const WATER_DEFAULT={goal:4000,step:500,log:{},start:"7:00 AM",end:"9:00 PM",every:90,notify:false,lastNotify:0,lastNudge:0};
 const WATER_TASK={t:"Drink 4 L of water",time:"",g:"Anytime",link:"water",note:"Log each glass with +500 ml. This ticks itself off when you reach your goal."};
 /* ---- food (pack 6) ---- */
@@ -290,7 +302,7 @@ function defaults(){return{v:1,created:Date.now(),
  settings:{wallet:"",btcOnly:true,bank:{poly:0,manual:0,bob:0},stake:{poly:10,manual:10,bob:10},label:{poly:"BTC Up/Down",manual:"BTC",bob:"BTC"},book5:"Gratitude"},
  trades:{poly:[],manual:[],bob:[]},sync:{last:0,err:""},
  routine:[],pack:0,
- days:{},journal:{dreams:[],ideas:[],notes:[],emotions:[],gratitude:[]},xp:0,best:0,food:{recipes:[],grocery:{}},weights:{},water:{...WATER_DEFAULT,log:{}},
+ days:{},journal:{dreams:[],ideas:[],notes:[],emotions:[],gratitude:[]},xp:0,best:0,food:{recipes:[],grocery:{}},weights:{},water:{...WATER_DEFAULT,log:{}},dogs:JSON.parse(JSON.stringify(DOGS_DEFAULT)),
  ui:{acct:"poly",tf:"5m",book:"dreams",card:0,shown:30}}}
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){S=null}
@@ -327,6 +339,9 @@ if(!S||S.v!==1)S=defaults();
   const m=S.routine.find(r=>r.t==="Main meal");if(m&&!m.link)Object.assign(m,{link:"prepA",note:"Meal 2: Meal Prep A."})}
  if(pack0<7){S.water={...WATER_DEFAULT,...(S.water||{}),log:(S.water&&S.water.log)||{}};if(!S.routine.some(r=>r.link==="water"))S.routine.push({id:uid(),...WATER_TASK});
   const b=S.routine.find(r=>r.t==="Water and morning nutrition");if(b&&b.note)b.note=b.note.replace("about 3 L","4 L")}
+ if(pack0<8){if(!S.dogs||!S.dogs.list)S.dogs=JSON.parse(JSON.stringify(DOGS_DEFAULT));
+  if(!S.food.recipes.some(r=>r.name===HUSKY_RECIPE.name))S.food.recipes.push({id:uid(),ts:Date.now(),...HUSKY_RECIPE});
+  for(const t of DOG_TASKS)if(!S.routine.some(r=>r.link===t.link))S.routine.push({id:uid(),...t})}
  S.pack=PACK})();
 let saveT;function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Couldn't save. Your phone storage may be full.")}},150)}
 addEventListener("pagehide",()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}});
@@ -493,9 +508,10 @@ function renderToday(just){const k=dkey(),dd=dayData(k),list=tasksFor(k),req=lis
  let first=true,g="";const html=list.map(t=>{const done=!!dd.done[t.id];const tag=done||t.optional?"":(first?(first=false,'<span class="tag now">NOW</span>'):'');const head=t.g!==g?(g=t.g,`<div class="grp">${esc(g)}</div>`):"";
   return head+`<div class="it ${done?"done":""} ${t.id===just?"just":""}"><button class="main" data-id="${t.id}"><span class="ck">${done?"✓":""}</span>${tag}<span class="t">${esc(t.t)}</span></button><span class="r">${esc([t.steps&&t.steps.length?stepsDone(k,t)+"/"+stepList(k,t).length+(useAlt(k,t)?" gym":" steps"):"",t.time,t.rep?repLabel(t):"today",t.optional?"optional":"",t.note&&!(t.steps&&t.steps.length)?"note":""].filter(Boolean).join(" · "))}</span><button class="ed" data-ed="${t.id}" aria-label="Edit task">✎</button></div>`}).join("");
  $("tasks").innerHTML=html||`<div class="empty"><b>Build your daily routine</b>Add the things you do every day. They'll come back each morning.</div>`;
- $("tasks").querySelectorAll(".main").forEach(b=>b.onclick=()=>{const t=list.find(x=>x.id===b.dataset.id);if(t&&t.link==="weigh"&&!dd.done[t.id])weighSheet(t.id);else if(t&&t.link==="water")openWater();else if(t&&((t.steps&&t.steps.length)||t.note||t.link))openSteps(t.id);else toggleTask(b.dataset.id,b)});$("tasks").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>editTask(b.dataset.ed));
+ $("tasks").querySelectorAll(".main").forEach(b=>b.onclick=()=>{const t=list.find(x=>x.id===b.dataset.id);if(t&&t.link==="weigh"&&!dd.done[t.id])weighSheet(t.id);else if(t&&t.link==="water")openWater();else if(t&&t.link==="dogs"&&!dd.done[t.id])dogCheckIn();else if(t&&((t.steps&&t.steps.length)||t.note||t.link))openSteps(t.id);else toggleTask(b.dataset.id,b)});$("tasks").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>editTask(b.dataset.ed));
  $("streaklbl").textContent=streak()+(streak()===1?" day":" days")}
 function toggleTask(id,el){const k=dkey(),dd=dayData(k);dd.done[id]=!dd.done[id];if(!dd.done[id])delete dd.done[id];addXP(dd.done[id]?10:-10,el);
+ const rt=S.routine.find(r=>r.id===id);if(rt&&rt.link==="freezer"&&S.dogs){S.dogs.freezer=Math.max(0,(S.dogs.freezer||0)+(dd.done[id]?-1:1))}
  const was=dd.complete;dd.complete=isComplete(k);const s=streak();if(s>S.best)S.best=s;save();renderToday(dd.done[id]?id:null);renderWeek();renderCards();
  if(dd.complete&&!was){toast("Day cleared. "+s+"-day streak.");burst(el)}else if(dd.done[id])toast("+10 XP")}
 function editTask(id){const k=dkey(),r=S.routine.find(x=>x.id===id),ex=dayData(k).extra.find(x=>x.id===id),t=r||ex;if(!t)return;
@@ -566,7 +582,7 @@ function renderFood(){const who=S.ui.who||"me",cats=FOOD_CATS[who];if(!cats.incl
  document.querySelectorAll("#who button").forEach(b=>b.classList.toggle("on",b.dataset.w===who));requestAnimationFrame(()=>segPlace("who"));
  $("fcats").innerHTML=["All","★ Favorites",...cats].map(c=>`<button class="chip ${S.ui.fcat===c?"on":""}" data-c="${esc(c)}">${esc(c)}</button>`).join("");
  $("fcats").querySelectorAll(".chip").forEach(b=>b.onclick=()=>{S.ui.fcat=b.dataset.c;save();renderFood()});
- if(who==="dog"){$("dogsafe").innerHTML=`<details class="panel safe" ${S.ui.safeSeen?"":"open"}><summary>Dog food safety</summary><div style="margin-top:10px">${DOG_SAFE}</div></details>`;$("dogsafe").querySelector("details").ontoggle=e=>{if(!e.target.open){S.ui.safeSeen=1;save()}}}
+ if(who==="dog"){$("dogsafe").innerHTML=dogDashboard()+`<details class="panel safe" ${S.ui.safeSeen?"":"open"}><summary>Dog food safety</summary><div style="margin-top:10px">${DOG_SAFE}</div></details>`;$("dogsafe").querySelector("details.safe").ontoggle=e=>{if(!e.target.open){S.ui.safeSeen=1;save()}};bindDogDashboard()}
  else{const wk=mealWeek(),ws=weekStartOf(),we=new Date(ws+"T12:00:00");we.setDate(we.getDate()+6);const st=weightStats();
   $("dogsafe").innerHTML=`<div class="grid foodgrid"><div class="panel col2 menu"><div class="row sb"><div><div class="eyebrow">This week · Week ${wk} of 4</div><div class="h1" style="font-size:28px;margin-bottom:4px">${esc(MENU_THEMES[wk-1])} week</div><div class="sub">${new Date(ws+"T12:00:00").toLocaleDateString([], {month:"short",day:"numeric"})} – ${we.toLocaleDateString([], {month:"short",day:"numeric"})}</div></div><button class="action" id="grocbtn">Grocery list</button></div>
    <div class="menulist">${ROLE_ORDER.map(role=>{const r=recipeFor(role);return r?`<button class="mrow" data-id="${r.id}"><small>${esc(ROLE_LABEL[role])}</small><b>${esc(r.name)}</b><span aria-hidden="true">→</span></button>`:""}).join("")}</div>
@@ -630,9 +646,54 @@ function grocerySheet(){const k=dkey(),nextWeek=dowOf(k)===0,ref=new Date(k+"T12
   root.querySelectorAll(".step").forEach(b=>b.onclick=()=>{const x=b.dataset.x;ticks[x]=!ticks[x];if(!ticks[x])delete ticks[x];save();draw(root)});
   root.querySelector("#g-clear").onclick=()=>{for(const x in ticks)delete ticks[x];save();draw(root)}};
  $("sheet").innerHTML="";$("sheetwrap").hidden=false;draw($("sheet"))}
-function linkLabel(link){if(link==="water")return "Log water";if(link==="weigh")return "Log weight";if(link==="grocery")return "Grocery list";if(link==="menu")return "This week's menu";const r=recipeFor(link);return r?"Open recipe":"Open Food"}
-function followLink(link,id){closeSheet();if(link==="water")return openWater();if(link==="weigh")return weighSheet(id);if(link==="grocery")return grocerySheet();if(link==="menu"){S.ui.who="me";return go("food")}
+function linkLabel(link){if(link==="dogs")return "Check in";if(link==="freezer")return "Freezer count";if(link==="dogbatch")return "Open recipe";if(link==="water")return "Log water";if(link==="weigh")return "Log weight";if(link==="grocery")return "Grocery list";if(link==="menu")return "This week's menu";const r=recipeFor(link);return r?"Open recipe":"Open Food"}
+function followLink(link,id){closeSheet();if(link==="dogs")return dogCheckIn();if(link==="freezer"){S.ui.who="dog";return go("food")}if(link==="dogbatch"){const r=S.food.recipes.find(x=>x.name===HUSKY_RECIPE.name);return r?openRecipe(r.id):(S.ui.who="dog",go("food"))}if(link==="water")return openWater();if(link==="weigh")return weighSheet(id);if(link==="grocery")return grocerySheet();if(link==="menu"){S.ui.who="me";return go("food")}
  const r=recipeFor(link);if(r)openRecipe(r.id);else{S.ui.who="me";go("food")}}
+
+/* ================= dogs ================= */
+const dogLog=(k,id)=>(S.dogs.log[k]||{})[id];
+function dogStatus(d){const keys=Object.keys(S.dogs.log).filter(k=>dogLog(k,d.id)&&dogLog(k,d.id).stool).sort().reverse();
+ let streak=0;for(const k of keys){const s=dogLog(k,d.id).stool;if(s===2||s===3)streak++;else break}
+ const fresh=d.sensitive?(streak<2?10:streak<4?20:25):(streak<2?20:25),eggs=streak>=2;
+ const today=dkey(),y=new Date();y.setDate(y.getDate()-1);const yk=dkey(y),t=dogLog(today,d.id),yy=dogLog(yk,d.id);const urgent=[],watch=[];
+ if(t){if(t.food===0)urgent.push("Ate nothing today");if(t.water==="low")watch.push("Drinking less than usual");if(t.urine==="dark")watch.push("Dark urine: keep fresh water out. Orange, red or brown urine is a vet call");if(t.energy===1)urgent.push("Very low energy");
+  if(t.stool===5&&yy&&yy.stool===5)urgent.push("Watery diarrhea two days running");else if(t.stool===5)watch.push("Watery stool today: fresh food drops back to the starting amount until stool is normal again")}
+ return{streak,fresh,eggs,urgent,watch,today:t,logged:!!t,history:[...Array(7)].map((_,i)=>{const x=new Date();x.setDate(x.getDate()-6+i);const l=dogLog(dkey(x),d.id);return l&&l.stool||0})}}
+function dogDashboard(){const D=S.dogs;return `<div class="grid dogs">${D.list.map(d=>{const s=dogStatus(d);return `<div class="panel dogcard ${s.urgent.length?"alert":""}">
+  <div class="row sb"><div><span class="eyebrow">${esc(d.weight?d.weight+" lb":"Weight not set")}${d.sensitive?" · settling stomach":""}</span><div class="h1" style="font-size:26px;margin:4px 0">${esc(d.name)}</div></div><span class="chip ${s.logged?"up":""}">${s.logged?"✓ Checked in":"Not checked in"}</span></div>
+  <div class="ratio"><i style="width:${100-s.fresh}%"></i><b style="width:${s.fresh}%"></b></div>
+  <div class="sub"><b style="color:var(--ink)">Today: ${100-s.fresh}% kibble + ${s.fresh}% fresh.</b> ${s.streak?`${s.streak} normal-stool day${s.streak>1?"s":""} in a row.`:"Step up once stool stays normal."}${s.fresh<25?" Next step after "+(d.sensitive?(s.streak<2?2:4):2)+" normal days.":" Holding at the 25% maximum."}</div>
+  <div class="sub" style="margin-top:6px">Eggs: ${s.eggs?"<span class='up'>OK to add (2–4 per dog per week)</span>":"not yet (wait for 48 hours of normal stool)"}</div>
+  <div class="stools" title="Stool, last 7 days">${s.history.map(v=>`<i class="s${v}"></i>`).join("")}<small>stool, last 7 days</small></div>
+  ${s.urgent.map(x=>`<div class="flag urgent">⚠ ${esc(x)}. Call your vet.</div>`).join("")}${s.watch.map(x=>`<div class="flag">${esc(x)}</div>`).join("")}</div>`}).join("")}
+  <div class="panel freezer"><span class="eyebrow">Freezer bags</span><div class="big" style="font-size:44px">${D.freezer||0}</div><div class="sub">${D.freezer?"bags left":"Cook a batch on meal-prep day"}</div>
+  <div class="row" style="margin-top:12px"><button class="action" id="fz-minus" aria-label="Use one bag">−1</button><button class="action" id="fz-plus" aria-label="Add one bag">+1</button><button class="action" id="fz-batch">+ Add batch</button></div></div></div>
+ <div class="row" style="margin:2px 0 14px"><button class="action p" id="dogcheck">Daily check-in</button><button class="action" id="dogrecipe">Meal-prep recipe</button><button class="action" id="dogedit">Names and weights</button></div>
+ <details class="panel safe redflags"><summary>Red flags</summary><div style="margin-top:10px">${esc(DOG_FLAGS)}</div></details>`}
+function bindDogDashboard(){const D=S.dogs,upd=n=>{D.freezer=Math.max(0,(D.freezer||0)+n);save();renderFood()};
+ $("fz-minus").onclick=()=>upd(-1);$("fz-plus").onclick=()=>upd(1);
+ $("fz-batch").onclick=()=>openSheet(`<h2>Add a batch</h2><p class="desc">How many bags went into the freezer?</p><div class="field"><label for="fz-n">Bags</label><input id="fz-n" type="number" inputmode="numeric" value="7"></div><div class="btns"><button class="action p" id="fz-save">Add bags</button></div>`,root=>{root.querySelector("#fz-save").onclick=()=>{const n=Math.round(+root.querySelector("#fz-n").value);if(!(n>0)){toast("Enter how many bags");return}closeSheet();upd(n);toast(n+" bags added to the freezer")}});
+ $("dogcheck").onclick=()=>dogCheckIn();$("dogrecipe").onclick=()=>{const r=S.food.recipes.find(x=>x.name===HUSKY_RECIPE.name);if(r)openRecipe(r.id)};$("dogedit").onclick=()=>dogEdit()}
+function dogCheckIn(){const k=dkey(),D=S.dogs;
+ openSheet(`<h2>Dog check-in</h2><p class="desc">${new Date().toLocaleDateString([], {weekday:"long",month:"long",day:"numeric"})}. Takes about 20 seconds.</p>
+ ${D.list.map(d=>{const l=dogLog(k,d.id)||{};const o=(n,list,v)=>opts(d.id+"-"+n,list,v===undefined?"":String(v));return `<div class="sec" style="margin-top:10px"><h3>${esc(d.name)}</h3>
+  <div class="field"><label>Food eaten</label>${o("food",[0,25,50,75,100].map(x=>[String(x),x+"%"]),l.food)}</div>
+  <div class="field"><label>Water</label>${o("water",[["low","Low"],["normal","Normal"],["high","High"]],l.water)}</div>
+  <div class="field"><label>Stool</label>${o("stool",[1,2,3,4,5].map(x=>[String(x),String(x)]),l.stool)}<span class="hint">1 very hard · 2 firm · 3 normal · 4 soft · 5 watery</span></div>
+  <div class="field"><label>Urine</label>${o("urine",[["yellow","Yellow"],["dark","Dark"]],l.urine)}</div>
+  <div class="field"><label>Energy</label>${o("energy",[1,2,3,4,5].map(x=>[String(x),String(x)]),l.energy)}<span class="hint">1 very low · 5 full energy</span></div>
+  <div class="field"><label for="${d.id}-note">Note</label><input id="${d.id}-note" value="${esc(l.note||"")}" placeholder="Anything unusual"></div></div>`}).join("")}
+ <div class="btns"><button class="action p" id="dc-save">Save check-in</button></div>`,
+ root=>{bindOpts(root);root.querySelector("#dc-save").onclick=()=>{S.dogs.log[k]=S.dogs.log[k]||{};let any=false;
+   for(const d of D.list){const g=n=>optVal(root,d.id+"-"+n),num=n=>g(n)===undefined||g(n)===""?undefined:+g(n);const e={food:num("food"),water:g("water"),stool:num("stool"),urine:g("urine"),energy:num("energy"),note:root.querySelector("#"+d.id+"-note").value.trim()};
+    if(Object.values(e).some(v=>v!==undefined&&v!=="")){S.dogs.log[k][d.id]=e;any=true}}
+   if(!any){toast("Tap at least one answer");return}const t=S.routine.find(r=>r.link==="dogs"),dd=dayData(k),both=D.list.every(d=>dogLog(k,d.id));save();closeSheet();
+   if(t&&both&&!dd.done[t.id])toggleTask(t.id);else toast("Check-in saved");renderFood();
+   const urgent=D.list.flatMap(d=>dogStatus(d).urgent.map(x=>d.name+": "+x));if(urgent.length)setTimeout(()=>toast("⚠ "+urgent[0]+". Call your vet."),900)}})}
+function dogEdit(){const D=S.dogs;openSheet(`<h2>Names and weights</h2><p class="desc">Weights let us work out exact grams per meal later.</p>
+ ${D.list.map(d=>`<div class="pair"><div class="field"><label for="dn-${d.id}">Name</label><input id="dn-${d.id}" value="${esc(d.name)}"></div><div class="field"><label for="dw-${d.id}">Weight (lb)</label><input id="dw-${d.id}" type="number" inputmode="decimal" value="${esc(d.weight)}" placeholder="55"></div></div>
+ <div class="field"><label><input type="checkbox" id="ds-${d.id}" ${d.sensitive?"checked":""} style="width:auto;margin-right:8px">${esc(d.name)} has a sensitive stomach right now (start at 10% fresh)</label></div>`).join("")}
+ <div class="btns"><button class="action p" id="de-save">Save</button></div>`,root=>{root.querySelector("#de-save").onclick=()=>{for(const d of D.list){d.name=root.querySelector("#dn-"+d.id).value.trim()||d.name;d.weight=root.querySelector("#dw-"+d.id).value.trim();d.sensitive=root.querySelector("#ds-"+d.id).checked}save();closeSheet();renderFood();toast("Saved")}})}
 
 /* ================= water ================= */
 const W=()=>S.water;
