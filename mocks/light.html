@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Light mock</title>
+<meta name="theme-color" content="#071A20">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{--peach:#EFBC90;--ink:#EEF3F0;--muted:#8FA3A1}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#071A20;color:var(--ink);font-family:"Work Sans",system-ui,sans-serif;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.stage{position:relative;height:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;padding:calc(14px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px))}
+/* background scene */
+.bg{position:fixed;inset:0;background:radial-gradient(120% 80% at 70% 10%,#12343B,#071A20 60%)}
+.stars{position:fixed;inset:0;pointer-events:none}
+/* screen light: big soft light that follows the finger (B in the screenshot) */
+.room{position:fixed;inset:0;pointer-events:none;background:radial-gradient(420px circle at var(--sx,50%) var(--sy,40%),rgba(255,226,190,calc(.16*var(--si,0))),rgba(140,200,210,calc(.07*var(--si,0))) 40%,transparent 70%);mix-blend-mode:screen}
+.top{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center}
+.top b{font-size:15px}
+.modes{display:flex;gap:3px;padding:3px;border-radius:12px;background:rgba(16,32,37,.85)}
+.modes button{border:0;background:none;color:var(--muted);font:600 12.5px "Work Sans";padding:8px 11px;border-radius:9px}
+.modes button.on{background:var(--peach);color:#1C3438}
+.hint{position:relative;z-index:2;margin:10px 2px 0;font-size:13px;color:var(--muted);min-height:36px;line-height:1.4}
+/* the card */
+.wrap{position:relative;z-index:2;flex:1;display:grid;place-items:center;perspective:1100px;margin-top:6px}
+.card{position:relative;width:100%;height:min(64vh,560px);border-radius:26px;overflow:hidden;transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) scale(var(--sc,1));transform-style:preserve-3d;box-shadow:0 30px 80px rgba(0,6,10,.55),0 0 0 1px rgba(239,188,144,calc(.4*var(--gi,0)));will-change:transform}
+.card canvas{position:absolute;inset:0;width:100%;height:100%}
+/* card glare (A in the screenshot) */
+.glare{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at var(--gx,50%) var(--gy,50%),rgba(255,236,214,calc(.32*var(--gi,0))),rgba(255,236,214,calc(.09*var(--gi,0))) 30%,transparent 58%);mix-blend-mode:screen}
+/* rim light: the edge nearest the light catches a highlight */
+.rim{position:absolute;inset:0;border-radius:26px;pointer-events:none;padding:1.5px;background:radial-gradient(260px circle at var(--gx,50%) var(--gy,50%),rgba(255,226,190,calc(.85*var(--gi,0))),transparent 60%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.cover{position:absolute;left:24px;right:24px;bottom:26px;transform:translateZ(30px)}
+.cover small{font-size:13px;font-weight:600;color:#DCE7EA}
+.cover strong{display:block;font-size:clamp(40px,11vw,58px);font-weight:500;letter-spacing:-.035em;line-height:1.02;margin-top:6px;color:color-mix(in srgb,var(--peach) calc(var(--gi,0)*100%),#F4F1EC)}
+.cta{display:inline-flex;margin-top:16px;padding:12px 16px;border-radius:12px;background:var(--peach);color:#1C3438;font-weight:700;font-size:14px}
+.k{position:absolute;left:24px;top:22px;font-size:11px;font-weight:700;letter-spacing:.12em;color:rgba(220,231,234,.75)}
+.ripple{position:fixed;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(255,232,205,.55),transparent 70%);animation:rip .8s cubic-bezier(.2,.8,.2,1) forwards;z-index:5}
+@keyframes rip{to{transform:scale(14);opacity:0}}
+.pad{position:relative;z-index:3;margin:12px auto 0;width:150px;height:96px;border-radius:14px;background:rgba(16,32,37,.85);display:none}
+.pad i{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:var(--peach);left:50%;top:50%}
+.pad span{position:absolute;bottom:-20px;left:0;right:0;text-align:center;font-size:11px;color:var(--muted)}
+</style></head><body>
+<div class="bg"></div><canvas class="stars" id="stars"></canvas><div class="room" id="room"></div>
+<div class="stage">
+ <div class="top"><b>Light on touch</b><div class="modes" id="modes"><button data-m="finger" class="on">Finger</button><button data-m="tilt">Tilt</button><button data-m="both">Both</button></div></div>
+ <div class="hint" id="hint"></div>
+ <div class="wrap"><div class="card" id="card"><canvas id="scene"></canvas><div class="glare"></div><div class="rim"></div><span class="k">OP-LOCK IN / FEED</span><div class="cover"><small>Manual and Bob</small><strong>Log Bob's trades</strong><span class="cta">Open trades →</span></div></div></div>
+ <div class="pad" id="pad"><i id="padDot"></i><span>Drag to fake tilting the phone</span></div>
+</div>
+<script>
+const $=id=>document.getElementById(id),root=document.documentElement,card=$("card");
+const HINTS={finger:"Touch and drag anywhere. The light follows your finger, the card tilts toward it and the title warms up. Let go and it fades out slowly.",
+ tilt:"Tilt the phone. The light slides across the card like light catching a surface. No touching needed.",
+ both:"Tilt moves the light while you're just looking. Touch anywhere and your finger takes over, then it drifts back."};
+let mode="finger";
+// draw a simple scene in the app's style
+function scene(){const c=$("scene"),r=c.getBoundingClientRect(),d=devicePixelRatio||1;c.width=r.width*d;c.height=r.height*d;const x=c.getContext("2d");x.scale(d,d);const W=r.width,H=r.height;
+ let g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,"#0A1F26");g.addColorStop(1,"#1C3E44");x.fillStyle=g;x.fillRect(0,0,W,H);
+ for(let i=0;i<50;i++){x.fillStyle=`rgba(255,240,220,${Math.random()*.5})`;x.beginPath();x.arc(Math.random()*W,Math.random()*H*.5,Math.random()*1.3+.3,0,7);x.fill()}
+ x.fillStyle="#F3D9B8";x.shadowColor="#F3D9B8";x.shadowBlur=30;x.beginPath();x.arc(W*.74,H*.18,18,0,7);x.fill();x.shadowBlur=0;
+ ["#1B3A3E","#234A4B","#2F5D59","#3E6E66"].forEach((col,L)=>{const base=H*(.48+L*.12),amp=H*(.05+L*.01);x.fillStyle=col;x.beginPath();x.moveTo(0,H);for(let X=0;X<=W;X+=6)x.lineTo(X,base+Math.sin(X/W*Math.PI*(1.6+L*.5)+L)*amp);x.lineTo(W,H);x.fill()});
+ x.strokeStyle="#D49A66";x.lineWidth=14;x.lineCap="round";x.beginPath();x.moveTo(W*.55,H);x.quadraticCurveTo(W*.8,H*.8,W*1.05,H*.72);x.stroke()}
+function stars(){const c=$("stars"),d=devicePixelRatio||1;c.width=innerWidth*d;c.height=innerHeight*d;const x=c.getContext("2d");for(let i=0;i<80;i++){x.fillStyle=`rgba(200,230,235,${Math.random()*.35})`;x.beginPath();x.arc(Math.random()*c.width,Math.random()*c.height,(Math.random()*1.2+.3)*d,0,7);x.fill()}}
+scene();stars();addEventListener("resize",()=>{scene();stars()});
+// state: target vs current, smoothed every frame (spring-ish lerp) so it feels physical, not jumpy
+const T={x:.5,y:.4,i:0},C={x:.5,y:.4,i:0};let touching=false,tilt={x:.5,y:.4,ok:false},lastTouch=0;
+function frame(){const k=touching?.22:.08;C.x+=(T.x-C.x)*k;C.y+=(T.y-C.y)*k;C.i+=(T.i-C.i)*(T.i>C.i?.18:.045);
+ const r=card.getBoundingClientRect(),px=C.x*innerWidth,py=C.y*innerHeight,gx=(px-r.left)/r.width,gy=(py-r.top)/r.height;
+ root.style.setProperty("--sx",px+"px");root.style.setProperty("--sy",py+"px");root.style.setProperty("--si",C.i.toFixed(3));
+ card.style.setProperty("--gx",(gx*100).toFixed(1)+"%");card.style.setProperty("--gy",(gy*100).toFixed(1)+"%");card.style.setProperty("--gi",C.i.toFixed(3));
+ const cx=Math.max(-.6,Math.min(.6,gx-.5)),cy=Math.max(-.6,Math.min(.6,gy-.5));
+ card.style.setProperty("--ry",(cx*9*C.i).toFixed(2)+"deg");card.style.setProperty("--rx",(-cy*7*C.i).toFixed(2)+"deg");card.style.setProperty("--sc",(1+.015*C.i).toFixed(4));
+ if(!touching&&(mode==="tilt"||mode==="both")&&Date.now()-lastTouch>600){T.x=tilt.x;T.y=tilt.y;T.i=.75}
+ requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+const isUI=e=>e.target&&e.target.closest&&e.target.closest(".modes,.pad");
+addEventListener("pointerdown",e=>{if(isUI(e)||mode==="tilt")return;touching=true;T.x=e.clientX/innerWidth;T.y=e.clientY/innerHeight;T.i=1;C.x=T.x;C.y=T.y;
+ const r=document.createElement("i");r.className="ripple";r.style.left=e.clientX+"px";r.style.top=e.clientY+"px";document.body.append(r);setTimeout(()=>r.remove(),800);try{navigator.vibrate&&navigator.vibrate(6)}catch(_){}});
+addEventListener("pointermove",e=>{if(mode==="tilt")return;if(e.pointerType==="mouse"&&!touching){/* desktop: hover acts like a light finger */T.x=e.clientX/innerWidth;T.y=e.clientY/innerHeight;T.i=.7;return}if(!touching)return;T.x=e.clientX/innerWidth;T.y=e.clientY/innerHeight});
+const up=()=>{if(!touching)return;touching=false;lastTouch=Date.now();T.i=0};addEventListener("pointerup",up);addEventListener("pointercancel",up);
+document.addEventListener("mouseleave",()=>{if(!touching)T.i=0});
+// tilt: phone orientation -> light position
+function onTilt(e){if(e.gamma==null)return;tilt.ok=true;const gx=Math.max(-30,Math.min(30,e.gamma)),by=Math.max(10,Math.min(70,e.beta||40));tilt.x=.5+gx/60;tilt.y=.15+(by-10)/60*.7}
+function startTilt(){if(typeof DeviceOrientationEvent!=="undefined"&&DeviceOrientationEvent.requestPermission){DeviceOrientationEvent.requestPermission().then(s=>{if(s==="granted")addEventListener("deviceorientation",onTilt)}).catch(()=>{})}else addEventListener("deviceorientation",onTilt);
+ setTimeout(()=>{$("pad").style.display=tilt.ok||mode==="finger"?"none":"block"},900)}
+// fake tilt pad for desktop
+(function(){const p=$("pad"),d=$("padDot");let on=false;const mv=e=>{const r=p.getBoundingClientRect(),x=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y=Math.max(0,Math.min(1,(e.clientY-r.top)/r.height));d.style.left=x*100+"%";d.style.top=y*100+"%";tilt.x=.1+x*.8;tilt.y=.15+y*.7};
+ p.addEventListener("pointerdown",e=>{on=true;p.setPointerCapture(e.pointerId);mv(e)});p.addEventListener("pointermove",e=>on&&mv(e));p.addEventListener("pointerup",()=>on=false)})();
+function setMode(m){mode=m;document.querySelectorAll("#modes button").forEach(b=>b.classList.toggle("on",b.dataset.m===m));$("hint").textContent=HINTS[m];if(m==="finger"){T.i=0;$("pad").style.display="none"}else startTilt()}
+document.querySelectorAll("#modes button").forEach(b=>b.onclick=()=>setMode(b.dataset.m));setMode("finger");
+</script>
+</body></html>
