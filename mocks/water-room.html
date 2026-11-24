@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Water room</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{--ink:#EEF3F0;--soft:#C4D5D8;--muted:#8FA3A1;--line:#1C2E33;--line2:#2A4248;--peach:#EFBC90;--acc:#7AB8F0;--bg:#04101A}
+*{box-sizing:border-box}body{margin:0;background:#05090B;font-family:"Work Sans",system-ui,sans-serif;color:var(--ink);padding:24px 16px;display:flex;gap:30px;justify-content:center;flex-wrap:wrap}
+button{font-family:inherit;cursor:pointer}
+.note{width:300px;color:var(--muted);font-size:13px;line-height:1.5}.note h2{color:var(--ink);font-size:18px;margin:0 0 8px;font-weight:600}.note li{margin-bottom:6px}
+.phone{position:relative;width:390px;height:800px;border-radius:38px;overflow:hidden;background:#0A1416;border:8px solid #1A1F22}
+/* Today page stub */
+.today{padding:22px 16px}.today h1{margin:0;font-size:30px;font-weight:600;letter-spacing:-.03em}.today .meta{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--muted);margin-top:4px}
+.chip{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:9px 14px;border-radius:999px;background:#13252A;border:0;color:var(--ink);font-weight:600;font-size:13px}
+.gl{display:flex;gap:8px;margin-top:16px}.gls{flex:1;max-width:40px;aspect-ratio:5/6;border:1.6px solid var(--line2);border-radius:4px 4px 11px 11px;position:relative;overflow:hidden;background:rgba(3,14,18,.35)}.gls i{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(#9CCBF5,#6AAEEB)}
+.ginfo{font-size:13px;color:var(--muted);margin-top:8px}.ginfo b{color:var(--ink)}.ginfo button{border:0;background:none;color:var(--muted);text-decoration:underline;font-size:13px;margin-left:10px}
+.rows{margin-top:18px}.r{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);font-size:14.5px}.r .tm{width:44px;font-size:12px;color:var(--muted);text-align:right}.r .d{width:12px;height:12px;border-radius:50%;border:2px solid var(--line2)}
+/* water room */
+.room{position:absolute;inset:0;z-index:10;display:none;background:var(--bg);overflow:hidden}.room.on{display:block}
+.room canvas{position:absolute;left:0;top:0;width:100%;height:360px}
+.fade{position:absolute;left:0;right:0;top:250px;height:112px;background:linear-gradient(rgba(4,16,26,0),var(--bg))}
+.rs{position:absolute;inset:0;overflow-y:auto;padding:16px 16px 40px;scrollbar-width:none}
+.bar{display:flex;align-items:center;justify-content:space-between}
+.ib{width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(5,12,14,.35);backdrop-filter:blur(8px);color:#fff;display:grid;place-items:center}.ib svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.eb{font-size:11px;font-weight:700;letter-spacing:.14em;color:rgba(255,255,255,.8);text-transform:uppercase}
+.hero{margin-top:118px;display:flex;align-items:flex-end;justify-content:space-between}
+.big{font-size:56px;font-weight:600;letter-spacing:-.045em;line-height:1;text-shadow:0 2px 22px rgba(0,0,0,.45)}.big span{font-size:22px;color:rgba(255,255,255,.7);letter-spacing:-.01em;font-weight:500;margin-left:4px}
+.sub{font-size:13px;color:rgba(255,255,255,.78);margin-top:8px}.sub b{color:var(--peach)}
+.pct{font-size:30px;font-weight:600;color:#BFE0FF;letter-spacing:-.03em}
+.quick{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:8px;margin-top:22px}
+.q{border-radius:18px;padding:16px 10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:var(--ink);font-weight:700;font-size:15px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:transform .12s}
+.q small{font-size:11px;font-weight:500;color:var(--muted)}.q:active{transform:scale(.95)}
+.q.main{background:var(--acc);border-color:var(--acc);color:#05223D;font-size:18px}.q.main small{color:#1E4A73}
+.cust{display:none;gap:8px;margin-top:8px}.cust.on{display:flex}.cust input{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--line2);border-radius:12px;padding:12px;color:var(--ink);font:500 15px "Work Sans"}.cust button{border:0;border-radius:12px;padding:0 18px;background:var(--peach);color:#1C3438;font-weight:700}
+.sec{margin-top:24px}.sec h4{margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--muted);display:flex;justify-content:space-between}
+.log{display:flex;flex-wrap:wrap;gap:6px}.lg{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 12px;border-radius:999px;background:rgba(122,184,240,.1);font-size:13px}.lg small{color:var(--muted)}.lg button{width:22px;height:22px;border-radius:50%;border:0;background:rgba(255,255,255,.08);color:var(--muted);font-size:11px}
+.chart{position:relative;height:120px;display:flex;align-items:flex-end;gap:8px}
+.chart .c{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;position:relative;z-index:1}
+.chart .c i{width:100%;max-width:30px;border-radius:7px 7px 3px 3px;background:rgba(122,184,240,.35);transition:height .5s cubic-bezier(.32,.72,0,1)}
+.chart .c.full i{background:var(--acc)}.chart .c.today i{box-shadow:0 0 0 2px rgba(239,188,144,.6)}
+.chart .c em{font-style:normal;font-size:10px;color:var(--muted);margin-bottom:4px}
+.labels{display:flex;gap:8px;margin-top:6px}.labels span{flex:1;text-align:center;font-size:11px;color:var(--muted)}.labels span.t{color:var(--ink);font-weight:700}
+.goal{position:absolute;left:0;right:0;border-top:1.5px dashed rgba(239,188,144,.7);z-index:2}.goal span{position:absolute;right:0;top:-16px;font-size:10px;color:var(--peach);font-weight:600}
+details{margin-top:24px;border-radius:16px;background:rgba(255,255,255,.04);padding:14px}
+summary{list-style:none;display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:14px;cursor:pointer}summary::-webkit-details-marker{display:none}
+summary small{display:block;font-weight:500;font-size:12px;color:var(--muted);margin-top:2px}summary b{color:var(--muted);transition:transform .2s}details[open] summary b{transform:rotate(90deg)}
+.fld{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.fld label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px}.fld div{background:rgba(0,0,0,.25);border:1px solid var(--line2);border-radius:10px;padding:10px;font-size:14px}
+.seg{display:flex;gap:4px;margin-top:10px}.seg span{flex:1;text-align:center;padding:9px;border-radius:10px;border:1px solid var(--line2);font-size:13px;font-weight:600;color:var(--soft)}.seg span.on{background:var(--peach);border-color:var(--peach);color:#1C3438}
+.cele{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;opacity:0;transition:opacity .3s;z-index:5}.cele.on{opacity:1}.cele div{text-align:center;padding:22px 30px;border-radius:22px;background:rgba(4,16,26,.75);backdrop-filter:blur(10px)}.cele b{display:block;font-size:22px;margin-top:8px}.cele span{color:var(--muted);font-size:13px}
+.hide{opacity:0;transform:translateY(12px)}.room.in .hide{opacity:1;transform:none;transition:opacity .4s ease,transform .55s cubic-bezier(.32,.72,0,1)}
+</style></head><body>
+<div class="note"><h2>Water room · interactive mock</h2>
+<ul>
+<li><b>Tap the 💧 chip, a glass or "Log or remind"</b> on the left phone. It grows into a full-screen water page, like the task room.</li>
+<li>The top of the page is a <b>tank that fills up</b> as you drink: moving waves, rising bubbles, and a peach "pace" mark showing where you should be by now.</li>
+<li><b>Tap +500 ml</b>: the water rises with a splash. Hit 4 L and it celebrates.</li>
+<li>Today's drinks show as small chips (tap × to remove). The 7-day chart has your goal as a dashed line.</li>
+<li>Reminder settings are folded away at the bottom; tap to open.</li>
+</ul><p>The numbers are made up for the mock.</p></div>
+
+<div class="phone" id="phone">
+ <div class="today"><h1>Today</h1><div class="meta">5 OF 32 DONE · LEVEL 1</div>
+  <button class="chip" id="chipw">💧 <span id="chipl">1.5 L / 4 L</span></button>
+  <div class="gl" id="gl"></div>
+  <div class="ginfo"><b id="gtxt">1.5 L</b> of 4 L · 0.9 L behind pace <button id="glog">Log or remind</button></div>
+  <div class="rows"><div class="r"><span class="tm">6:00</span><span class="d"></span>Wake up and review markets</div><div class="r"><span class="tm">7:15</span><span class="d"></span>Water and morning nutrition</div><div class="r"><span class="tm"></span><span class="d"></span>Drink 4 L of water</div></div>
+ </div>
+ <div class="room" id="room"><canvas id="cv"></canvas><div class="fade"></div>
+  <div class="rs">
+   <div class="bar hide"><button class="ib" id="back"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><span class="eb">Water · goal 4 L</span><button class="ib" id="gear"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button></div>
+   <div class="hero hide"><div><div class="big" id="big">1.5<span>L</span></div><div class="sub" id="sub"></div></div><div class="pct" id="pct">38%</div></div>
+   <div class="quick hide"><button class="q main" id="a500">+500 ml<small>a glass</small></button><button class="q" id="a250">+250 ml<small>half</small></button><button class="q" id="acust">Custom<small>any amount</small></button></div>
+   <div class="cust" id="cust"><input placeholder="Amount in ml" inputmode="numeric" id="cin"><button id="clog">Log</button></div>
+   <div class="sec hide"><h4><span>TODAY</span><span id="cnt"></span></h4><div class="log" id="log"></div></div>
+   <div class="sec hide"><h4><span>LAST 7 DAYS</span><span>avg 3.1 L</span></h4><div class="chart" id="chart"></div><div class="labels" id="labels"></div></div>
+   <details class="hide" id="rem"><summary><span>Reminders<small>Every 90 min · 7:00 AM to 9:00 PM · about 10 a day</small></span><b>›</b></summary>
+    <div class="fld"><div><label>From</label><div>7:00 AM</div></div><div><label>Until</label><div>9:00 PM</div></div></div>
+    <div class="seg"><span>60 min</span><span class="on">90 min</span><span>2 hours</span></div>
+    <div class="fld"><div><label>Daily goal (L)</label><div>4</div></div><div><label>Quick button (ml)</label><div>500</div></div></div>
+    <div class="seg"><span class="on" style="flex:2">Save</span><span>Phone reminders</span></div></details>
+  </div>
+  <div class="cele" id="cele"><div><div style="font-size:40px">💧</div><b>Goal reached</b><span>4 L today · nice work</span></div></div>
+ </div>
+</div>
+<script>
+const $=id=>document.getElementById(id),room=$("room"),phone=$("phone"),GOAL=4000;let drunk=1500,log=[[500,"8:10 AM"],[500,"10:44 AM"],[500,"12:30 PM"]];const PACE=2400;
+const WEEK=[[3.6,"W"],[4.1,"T"],[2.8,"F"],[4.0,"S"],[3.2,"S"],[2.9,"M"]];
+const L=ml=>(ml/1000).toFixed(ml%1000===0?0:ml%100===0?1:2);
+function today(){$("gl").innerHTML=[...Array(8)].map((_,i)=>{const f=Math.max(0,Math.min(1,drunk/500-i));return`<span class="gls"><i style="height:${f*82}%"></i></span>`}).join("");$("chipl").textContent=`${L(drunk)} L / 4 L`;$("gtxt").textContent=L(drunk)+" L"}
+function render(){$("big").innerHTML=`${L(drunk)}<span>L</span>`;const behind=Math.max(0,PACE-drunk);$("sub").innerHTML=drunk>=GOAL?"Goal reached today":`of 4 L · ${behind>=250?`<b>${L(behind)} L behind pace</b>`:"on pace"}`;$("pct").textContent=Math.round(Math.min(1,drunk/GOAL)*100)+"%";
+ $("log").innerHTML=log.map((e,i)=>`<span class="lg">💧 ${e[0]} ml <small>${e[1]}</small><button data-i="${i}">✕</button></span>`).join("");$("cnt").textContent=log.length+" drinks";
+ document.querySelectorAll("#log button").forEach(b=>b.onclick=()=>{const e=log.splice(+b.dataset.i,1)[0];drunk-=e[0];render();today()});
+ const all=[...WEEK,[drunk/1000,"T"]],top=Math.max(4.6,...all.map(x=>x[0]));
+ $("chart").innerHTML=all.map((x,i)=>`<div class="c ${x[0]>=4?"full":""} ${i===6?"today":""}"><em>${x[0].toFixed(1)}</em><i style="height:${x[0]/top*100*.82}%"></i></div>`).join("")+`<div class="goal" style="bottom:${4/top*100*.82}%"><span>4 L goal</span></div>`;
+ $("labels").innerHTML=all.map((x,i)=>`<span class="${i===6?"t":""}">${x[1]}</span>`).join("")}
+// animated tank
+let lvl=null,amp=4,anim=null;const bub=[...Array(22)].map(()=>({x:Math.random(),y:1+Math.random(),r:1+Math.random()*2.6,s:.002+Math.random()*.004}));
+const stars=[...Array(50)].map(()=>[Math.random(),Math.random()*.45,Math.random()*.9+.3,Math.random()*.5+.25]);
+function draw(t){const cv=$("cv"),d=devicePixelRatio||1,W=cv.clientWidth,H=360;if(cv.width!==W*d){cv.width=W*d;cv.height=H*d}const c=cv.getContext("2d");c.setTransform(d,0,0,d,0,0);
+ let g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,"#030A12");g.addColorStop(1,"#0A2236");c.fillStyle=g;c.fillRect(0,0,W,H);
+ stars.forEach(s=>{c.fillStyle=`rgba(255,255,255,${s[3]})`;c.beginPath();c.arc(s[0]*W,s[1]*H,s[2],0,7);c.fill()});
+ const frac=Math.min(1,drunk/GOAL),target=H-16-(H-96)*frac;lvl=lvl===null?H:lvl+(target-lvl)*.05;amp+=(4-amp)*.03;const ts=t/1000;
+ const wave=(x,ph,a,f)=>lvl+Math.sin(x/W*Math.PI*2*f+ts*1.3+ph)*a+Math.sin(x/W*Math.PI*2*f*2.3-ts*1.9+ph)*a*.35;
+ // back wave
+ c.beginPath();c.moveTo(0,H);for(let x=0;x<=W;x+=6)c.lineTo(x,wave(x,2,amp*.8,1.2)-6);c.lineTo(W,H);c.fillStyle="rgba(90,160,225,.28)";c.fill();
+ // front wave
+ c.beginPath();c.moveTo(0,H);for(let x=0;x<=W;x+=6)c.lineTo(x,wave(x,0,amp,1.5));c.lineTo(W,H);g=c.createLinearGradient(0,lvl-10,0,H);g.addColorStop(0,"rgba(122,184,240,.9)");g.addColorStop(.4,"#2D6FAE");g.addColorStop(1,"#0B2B4A");c.fillStyle=g;c.fill();
+ c.strokeStyle="rgba(220,240,255,.55)";c.lineWidth=1.5;c.beginPath();for(let x=0;x<=W;x+=6){const y=wave(x,0,amp,1.5);x?c.lineTo(x,y):c.moveTo(x,y)}c.stroke();
+ // bubbles
+ bub.forEach(b=>{b.y-=b.s;const y=b.y*H;if(y<lvl+8){b.y=1+Math.random()*.3;b.x=Math.random()}c.strokeStyle="rgba(220,240,255,.45)";c.lineWidth=1;c.beginPath();c.arc(b.x*W,Math.max(y,lvl+8),b.r,0,7);c.stroke()});
+ // pace mark
+ const py=H-16-(H-96)*Math.min(1,PACE/GOAL);c.setLineDash([5,5]);c.strokeStyle="rgba(239,188,144,.85)";c.lineWidth=1.5;c.beginPath();c.moveTo(W-96,py);c.lineTo(W-14,py);c.stroke();c.setLineDash([]);c.fillStyle="#EFBC90";c.font="600 10px Work Sans";c.textAlign="right";c.fillText("PACE",W-14,py-6);
+ if(room.classList.contains("on"))anim=requestAnimationFrame(draw)}
+function add(ml){drunk+=ml;const n=new Date();log.push([ml,n.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})]);amp=18;render();today();if(drunk>=GOAL&&drunk-ml<GOAL){$("cele").classList.add("on");setTimeout(()=>$("cele").classList.remove("on"),1800)}}
+function open(from){const P=phone.getBoundingClientRect(),r=from.getBoundingClientRect(),t=r.top-P.top-8,l=r.left-P.left-8,b=P.bottom-r.bottom-8,rt=P.right-r.right-8;room.dataset.clip=`inset(${t}px ${rt}px ${b}px ${l}px round 14px)`;
+ room.classList.add("on");lvl=null;render();anim=requestAnimationFrame(draw);room.animate([{clipPath:room.dataset.clip},{clipPath:"inset(0 0 0 0 round 0)"}],{duration:760,easing:"cubic-bezier(.32,.72,0,1)"});
+ document.querySelector(".today").animate([{filter:"none"},{filter:"blur(5px) brightness(.55)"}],{duration:760,fill:"forwards"});
+ document.querySelectorAll(".room .hide").forEach((e,i)=>e.style.transitionDelay=(.1+i*.06)+"s");setTimeout(()=>room.classList.add("in"),60)}
+function close(){room.classList.remove("in");document.querySelectorAll(".room .hide").forEach(e=>e.style.transitionDelay="0s");const a=room.animate([{clipPath:"inset(0 0 0 0 round 0)"},{clipPath:room.dataset.clip}],{duration:560,easing:"cubic-bezier(.32,.72,0,1)"});
+ document.querySelector(".today").getAnimations().forEach(x=>x.reverse());a.onfinish=()=>{room.classList.remove("on");cancelAnimationFrame(anim);document.querySelector(".today").getAnimations().forEach(x=>x.cancel())}}
+$("chipw").onclick=e=>open(e.currentTarget);$("gl").onclick=e=>open($("gl"));$("glog").onclick=e=>open(e.currentTarget);$("back").onclick=close;
+$("a500").onclick=()=>add(500);$("a250").onclick=()=>add(250);$("acust").onclick=()=>{$("cust").classList.toggle("on");$("cin").focus()};$("clog").onclick=()=>{const v=+$("cin").value;if(v>0&&v<=3000){add(v);$("cin").value="";$("cust").classList.remove("on")}};
+$("gear").onclick=()=>{$("rem").open=true;$("rem").scrollIntoView({behavior:"smooth"})};
+today();
+</script>
+</body></html>
