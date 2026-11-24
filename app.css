@@ -285,6 +285,26 @@ body.page-mode .amb-shade{background:linear-gradient(180deg,rgba(2,11,14,.45),rg
 .hd.compact .stripchips .hchip{min-height:42px;border-radius:12px;background:rgba(9,28,34,.45)}
 @media (max-width:640px){.hd.compact .week button{flex-direction:column;gap:2px;padding:7px 0}.hd.compact .week button strong{font-size:15px}.hd.compact .week button span{font-size:10px}.hd.compact .strip{padding:5px}}
 
+/* ===== Home fits one screen + auto-swipe ===== */
+html.fit,html.fit body{height:100%;overflow:hidden;overscroll-behavior:none}
+html.fit .app{min-height:0;padding-bottom:0}
+html.fit .feedon{display:none}
+html.fit .arrow{top:calc(50% - 19px)}
+html.fit .theatre{overflow:clip}
+/* iOS-like glide (the curve Apple uses for sheets and cards) */
+.card{transition:left .8s cubic-bezier(.32,.72,0,1),width .8s cubic-bezier(.32,.72,0,1),height .8s cubic-bezier(.32,.72,0,1),transform .8s cubic-bezier(.32,.72,0,1),opacity .6s ease,filter .6s ease,box-shadow .4s,visibility 0s linear .8s}
+.card.c{transition:left .8s cubic-bezier(.32,.72,0,1),width .8s cubic-bezier(.32,.72,0,1),height .8s cubic-bezier(.32,.72,0,1),transform .3s cubic-bezier(.32,.72,0,1),opacity .6s ease,filter .6s ease,box-shadow .3s}
+.card .cover strong,.card .cover .k{transition:opacity .5s ease .15s}
+.card:not(.c) .cover strong{opacity:.75}
+.tdots{display:flex;justify-content:center;align-items:center;gap:8px;height:30px}
+.tdots button{width:22px;height:22px;display:grid;place-items:center;border:0;background:none;padding:0;cursor:pointer}
+.tdots i{display:block;width:6px;height:6px;border-radius:3px;background:rgba(255,255,255,.22);overflow:hidden;position:relative;transition:width .5s cubic-bezier(.32,.72,0,1)}
+.tdots .on i{width:28px;background:rgba(255,255,255,.16)}
+.tdots .on i::after{content:"";position:absolute;inset:0;width:0;background:var(--peach);border-radius:3px;animation:dotfill 6s linear forwards}
+body.hover .tdots .on i::after{animation-play-state:paused}
+@keyframes dotfill{to{width:100%}}
+@media (prefers-reduced-motion:reduce){.tdots .on i::after{width:100%}}
+
 /* ===== tab bar with + ===== */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:52;display:grid;grid-template-columns:1fr 1fr 92px 1fr 1fr;align-items:end;height:calc(70px + env(safe-area-inset-bottom,0px));padding:0 max(6px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(6px,env(safe-area-inset-left,0px));background:#0B171A;border-top:1px solid #1C2E33}
 .tb{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:64px;border:0;background:none;color:#7F9593;font:500 11px var(--f);cursor:pointer;-webkit-tap-highlight-color:transparent}
