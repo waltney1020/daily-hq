@@ -12,7 +12,23 @@ const timeStr=ts=>new Date(ts).toLocaleTimeString([], {hour:"numeric",minute:"2-
 const whenStr=ts=>{const d=new Date(ts),n=new Date(),y=new Date();y.setDate(n.getDate()-1);if(sameDay(ts,n))return "Today · "+timeStr(ts);if(sameDay(ts,y))return "Yesterday · "+timeStr(ts);return d.toLocaleDateString([], {month:"short",day:"numeric"})+" · "+timeStr(ts)};
 const ago=ts=>{if(!ts)return "never";const s=(Date.now()-ts)/1000;if(s<60)return "just now";if(s<3600)return Math.round(s/60)+" min ago";if(s<86400)return Math.round(s/3600)+" h ago";return Math.round(s/86400)+" d ago"};
 const ACCTS={poly:"Polymarket",manual:"Manual",bob:"Bob"};
-const GROUPS=["Morning","Day","Night","Anytime"];
+const GROUPS=["Morning","Afternoon","Evening","Weekly","Anytime"];
+const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],DOWL=["Sundays","Mondays","Tuesdays","Wednesdays","Thursdays","Fridays","Saturdays"];
+/* the user's checklist; bump PACK when it changes so installed apps pick it up */
+const PACK=2;
+const DAILY_PACK=[
+ ["6:00 AM","Wake up and review markets","Morning"],["6:15 AM","Starter workout","Morning"],["7:00 AM","Outdoor sunlight","Morning"],["7:15 AM","Water and morning nutrition","Morning"],
+ ["7:30 AM","Operator responsibilities","Morning"],["8:00 AM","Face care and grooming","Morning"],["8:30 AM","Morning buffer","Morning"],["9:00 AM","Primary engineering project","Morning"],["11:00 AM","Workout or steam","Morning"],
+ ["12:00 PM","Market review","Afternoon"],["12:30 PM","Main meal","Afternoon"],["1:00 PM","Review/replay trades","Afternoon"],["1:30 PM","Walk or cardio","Afternoon"],["2:00 PM","Engineering/3D printing","Afternoon"],
+ ["3:30 PM","AI Academy","Afternoon"],["4:00 PM","Laundry/maintenance","Afternoon"],["4:20 PM","Secondary project","Afternoon"],
+ ["5:00 PM","Flexible personal time (until 7)","Evening"],["7:00 PM","Shower and hygiene","Evening"],["7:30 PM","Optional light workout/recovery","Evening"],["8:30 PM","Final market review","Evening"],
+ ["9:15 PM","Reset for tomorrow","Evening"],["10:00 PM","End scheduled activities","Evening"]];
+const WEEKLY_PACK=[[1,"","Systems day and plants"],[2,"","Development/recovery"],[3,"","Main training/development"],[4,"","Main training/development"],[5,"","Pet park"],
+ [6,"8:00 AM","Weekly finance update"],[6,"","Grandpa responsibilities as applicable"],[0,"","Deep clean and weekly review"],[0,"","Full hair-progress assessment"]];
+const OLD_DEFAULTS=["Wake up and drink water","Check BTC levels","Write in journal","Trading session","Workout","Log dreams and emotions"];
+function packRoutine(){return[...DAILY_PACK.map(([time,t,g])=>({id:uid(),t,time,g})),...WEEKLY_PACK.map(([d,time,t])=>({id:uid(),t,time,g:"Weekly",dow:[d]}))]}
+const dowOf=k=>new Date(k+"T12:00:00").getDay();
+const repLabel=r=>!r.dow||!r.dow.length||r.dow.length===7?"":r.dow.length===1?DOWL[r.dow[0]]:r.dow.map(d=>DOW[d]).join(", ");
 
 /* ================= state ================= */
 const KEY="dailyhq.v1";
@@ -21,19 +37,16 @@ const MOODS=["Low","Meh","Okay","Good","Great"];
 function defaults(){return{v:1,created:Date.now(),
  settings:{wallet:"",btcOnly:true,bank:{poly:0,manual:0,bob:0},stake:{poly:10,manual:10,bob:10},label:{poly:"BTC Up/Down",manual:"BTC",bob:"BTC"},book5:"Gratitude"},
  trades:{poly:[],manual:[],bob:[]},sync:{last:0,err:""},
- routine:[
-  {id:uid(),t:"Wake up and drink water",time:"6:30",g:"Morning"},
-  {id:uid(),t:"Check BTC levels",time:"7:00",g:"Morning"},
-  {id:uid(),t:"Write in journal",time:"",g:"Morning"},
-  {id:uid(),t:"Trading session",time:"9:00",g:"Day"},
-  {id:uid(),t:"Workout",time:"",g:"Day"},
-  {id:uid(),t:"Log dreams and emotions",time:"",g:"Night"}],
+ routine:packRoutine(),pack:PACK,
  days:{},journal:{dreams:[],ideas:[],notes:[],emotions:[],gratitude:[]},xp:0,best:0,
  ui:{acct:"poly",tf:"5m",book:"dreams",card:0,shown:30}}}
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){S=null}
 if(!S||S.v!==1)S=defaults();
-(function fill(){const d=defaults();for(const k in d)if(S[k]===undefined)S[k]=d[k];for(const k in d.settings)if(S.settings[k]===undefined)S.settings[k]=d.settings[k];for(const k in d.ui)if(S.ui[k]===undefined)S.ui[k]=d.ui[k];for(const b of BOOKS)if(!S.journal[b[0]])S.journal[b[0]]=[]})();
+(function fill(){const d=defaults(),pack0=S.pack||0;for(const k in d)if(S[k]===undefined)S[k]=d[k];for(const k in d.settings)if(S.settings[k]===undefined)S.settings[k]=d.settings[k];for(const k in d.ui)if(S.ui[k]===undefined)S.ui[k]=d.ui[k];for(const b of BOOKS)if(!S.journal[b[0]])S.journal[b[0]]=[];
+ const rg=x=>{if(x.g==="Day")x.g="Afternoon";if(x.g==="Night")x.g="Evening";if(!GROUPS.includes(x.g))x.g="Anytime"};S.routine.forEach(rg);Object.values(S.days).forEach(d=>(d.extra||[]).forEach(rg));
+ if(pack0<PACK){const custom=S.routine.filter(r=>!OLD_DEFAULTS.includes(r.t)),have=new Set(custom.map(r=>r.t.toLowerCase()+"|"+(r.dow||[]).join()));
+  S.routine=[...packRoutine().filter(r=>!have.has(r.t.toLowerCase()+"|"+(r.dow||[]).join())),...custom];S.pack=PACK}})();
 let saveT;function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Couldn't save. Your phone storage may be full.")}},150)}
 addEventListener("pagehide",()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}});
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
@@ -49,8 +62,8 @@ function addXP(n,el){const before=level();S.xp=Math.max(0,S.xp+n);if(n>0&&level(
 function tick(){const d=new Date(),h=d.getHours()%12||12,m=String(d.getMinutes()).padStart(2,"0");$("time").innerHTML=`${h}<i>:</i>${m}`;$("dt").textContent=d.toLocaleDateString([], {weekday:"long",month:"long",day:"numeric"});
  if(tick.day&&tick.day!==dkey()){renderAll()}tick.day=dkey()}
 function dayData(k){return S.days[k]||(S.days[k]={done:{},extra:[]})}
-function tasksFor(k){const d=S.days[k]||{done:{},extra:[]};const list=[...S.routine.map(r=>({...r,rep:true})),...(d.extra||[]).map(x=>({...x,rep:false}))];
- list.sort((a,b)=>GROUPS.indexOf(a.g)-GROUPS.indexOf(b.g)||tmin(a.time)-tmin(b.time));return list}
+function tasksFor(k){const d=S.days[k]||{done:{},extra:[]},wd=dowOf(k);const list=[...S.routine.filter(r=>!r.dow||!r.dow.length||r.dow.includes(wd)).map(r=>({...r,rep:true})),...(d.extra||[]).map(x=>({...x,rep:false}))];
+ const later=d.later||{};list.sort((a,b)=>(later[a.id]?1:0)-(later[b.id]?1:0)||GROUPS.indexOf(a.g)-GROUPS.indexOf(b.g)||tmin(a.time)-tmin(b.time));return list}
 function tmin(t){if(!t)return 9999;const m=/^(\d{1,2})(?::(\d{2}))?\s*([ap]m)?$/i.exec(t.trim());if(!m)return 9998;let h=+m[1];const mm=+(m[2]||0);if(m[3]){const pm=/p/i.test(m[3]);if(pm&&h<12)h+=12;if(!pm&&h==12)h=0}return h*60+mm}
 function isComplete(k){const t=tasksFor(k);if(!t.length)return false;const d=S.days[k];return !!d&&t.every(x=>d.done[x.id])}
 function streak(){let n=0;const d=new Date();if(!isComplete(dkey(d)))d.setDate(d.getDate()-1);while(S.days[dkey(d)]&&S.days[dkey(d)].complete){n++;d.setDate(d.getDate()-1)}return n}
@@ -164,10 +177,10 @@ function editTrade(a,id){const isNew=!id;const t=isNew?{id:uid(),src:"manual",ts
 function renderToday(just){const k=dkey(),dd=dayData(k),list=tasksFor(k),left=list.filter(t=>!dd.done[t.id]);
  $("prog").textContent=(list.length-left.length)+" / "+list.length;const bd=$("dbadge");bd.hidden=!left.length;bd.textContent=left.length;
  $("dnt").textContent=left[0]?left[0].t:list.length?"All clear for today":"Add your first task";$("dncount").textContent=left.length?"1 of "+left.length:"Done";
- $("dnsub").textContent=left[0]?(left[0].rep?"From your daily routine.":"Today only.")+(left[0].time?" Planned for "+left[0].time+".":"")+" Finish the list to keep your streak.":list.length?"Everything's done. Your streak is safe.":"Use the box below to build your routine.";
+ $("dnsub").textContent=left[0]?(left[0].rep?(repLabel(left[0])?"Your "+repLabel(left[0]).replace(/s$/,"")+" task.":"From your daily routine."):"Today only.")+(left[0].time?" Planned for "+left[0].time+".":"")+" Finish the list to keep your streak.":list.length?"Everything's done. Your streak is safe.":"Use the box below to build your routine.";
  $("dnxp").textContent=`Level ${level()} · ${S.xp%1000} / 1000 XP`;$("dndone").hidden=$("dnskip").hidden=!left[0];
  let first=true,g="";const html=list.map(t=>{const done=!!dd.done[t.id];const tag=done?"":(first?(first=false,'<span class="tag now">NOW</span>'):'');const head=t.g!==g?(g=t.g,`<div class="grp">${esc(g)}</div>`):"";
-  return head+`<div class="it ${done?"done":""} ${t.id===just?"just":""}"><button class="main" data-id="${t.id}"><span class="ck">${done?"✓":""}</span>${tag}<span class="t">${esc(t.t)}</span></button><span class="r">${esc(t.time||"")}${t.rep?"":" · today"}</span><button class="ed" data-ed="${t.id}" aria-label="Edit task">✎</button></div>`}).join("");
+  return head+`<div class="it ${done?"done":""} ${t.id===just?"just":""}"><button class="main" data-id="${t.id}"><span class="ck">${done?"✓":""}</span>${tag}<span class="t">${esc(t.t)}</span></button><span class="r">${esc([t.time,t.rep?repLabel(t):"today"].filter(Boolean).join(" · "))}</span><button class="ed" data-ed="${t.id}" aria-label="Edit task">✎</button></div>`}).join("");
  $("tasks").innerHTML=html||`<div class="empty"><b>Build your daily routine</b>Add the things you do every day. They'll come back each morning.</div>`;
  $("tasks").querySelectorAll(".main").forEach(b=>b.onclick=()=>toggleTask(b.dataset.id,b));$("tasks").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>editTask(b.dataset.ed));
  $("streaklbl").textContent=streak()+(streak()===1?" day":" days")}
@@ -175,19 +188,27 @@ function toggleTask(id,el){const k=dkey(),dd=dayData(k);dd.done[id]=!dd.done[id]
  const was=dd.complete;dd.complete=isComplete(k);const s=streak();if(s>S.best)S.best=s;save();renderToday(dd.done[id]?id:null);renderWeek();renderCards();
  if(dd.complete&&!was){toast("Day cleared. "+s+"-day streak.");burst(el)}else if(dd.done[id])toast("+10 XP")}
 function editTask(id){const k=dkey(),r=S.routine.find(x=>x.id===id),ex=dayData(k).extra.find(x=>x.id===id),t=r||ex;if(!t)return;
- openSheet(`<h2>Edit task</h2><p class="desc">${r?"Part of your daily routine.":"Today only."}</p>
+ const weekly=!!(r&&r.dow&&r.dow.length&&r.dow.length<7),sel=new Set(weekly?r.dow:[dowOf(k)]);
+ openSheet(`<h2>Edit task</h2><p class="desc">${r?(weekly?"Repeats on "+esc(repLabel(r))+".":"Part of your daily routine."):"Today only."}</p>
  <div class="field"><label for="t-t">Task</label><input id="t-t" value="${esc(t.t)}" autocomplete="off"></div>
- <div class="pair"><div class="field"><label for="t-time">Time (optional)</label><input id="t-time" value="${esc(t.time||"")}" placeholder="6:30"></div><div class="field"><label>Repeat</label>${opts("rep",[["daily","Every day"],["once","Today only"]],r?"daily":"once")}</div></div>
+ <div class="field"><label for="t-time">Time (optional)</label><input id="t-time" value="${esc(t.time||"")}" placeholder="6:30 AM"></div>
+ <div class="field"><label>Repeat</label>${opts("rep",[["daily","Every day"],["weekly","Certain days"],["once","Today only"]],r?(weekly?"weekly":"daily"):"once")}</div>
+ <div class="field" id="t-days" ${weekly?"":"hidden"}><label>On these days</label><div class="opts days">${DOW.map((d,i)=>`<button type="button" data-d="${i}" class="${sel.has(i)?"on":""}">${d}</button>`).join("")}</div></div>
  <div class="field"><label>Part of the day</label>${opts("g",GROUPS.map(x=>[x,x]),t.g||"Anytime")}</div>
  <div class="btns"><button class="action p" id="t-save">Save</button><button class="action danger" id="t-del">${r?"Remove from routine":"Delete"}</button></div>`,
- root=>{bindOpts(root);root.querySelector("#t-save").onclick=()=>{const nt={id:t.id,t:root.querySelector("#t-t").value.trim()||t.t,time:root.querySelector("#t-time").value.trim(),g:optVal(root,"g")};const rep=optVal(root,"rep");
-   S.routine=S.routine.filter(x=>x.id!==id);const dd=dayData(k);dd.extra=dd.extra.filter(x=>x.id!==id);if(rep==="daily")S.routine.push(nt);else dd.extra.push(nt);save();closeSheet();renderToday();renderWeek();renderCards();toast("Task saved")};
+ root=>{bindOpts(root,(n,v)=>{if(n==="rep")root.querySelector("#t-days").hidden=v!=="weekly"});
+  root.querySelectorAll(".days button").forEach(b=>b.onclick=()=>b.classList.toggle("on"));
+  root.querySelector("#t-save").onclick=()=>{const nt={id:t.id,t:root.querySelector("#t-t").value.trim()||t.t,time:root.querySelector("#t-time").value.trim(),g:optVal(root,"g")};const rep=optVal(root,"rep");
+   const days=[...root.querySelectorAll(".days button.on")].map(b=>+b.dataset.d);if(rep==="weekly"){if(!days.length){toast("Pick at least one day");return}if(days.length<7)nt.dow=days}
+   S.routine=S.routine.filter(x=>x.id!==id);const dd=dayData(k);dd.extra=dd.extra.filter(x=>x.id!==id);if(rep==="once")dd.extra.push(nt);else S.routine.push(nt);save();closeSheet();renderToday();renderWeek();renderCards();toast("Task saved")};
   root.querySelector("#t-del").onclick=()=>{S.routine=S.routine.filter(x=>x.id!==id);const dd=dayData(k);dd.extra=dd.extra.filter(x=>x.id!==id);delete dd.done[id];save();closeSheet();renderToday();renderWeek();renderCards();toast("Task removed")}})}
-$("addf").onsubmit=e=>{e.preventDefault();const v=$("nt").value.trim();if(!v)return;const t={id:uid(),t:v,time:"",g:"Anytime"};if($("rep").value==="daily")S.routine.push(t);else dayData(dkey()).extra.push(t);
- const dd=dayData(dkey());dd.complete=isComplete(dkey());$("nt").value="";save();renderToday();renderWeek();renderCards();toast($("rep").value==="daily"?"Added to your routine":"Added for today")};
+$("addf").onsubmit=e=>{e.preventDefault();const v=$("nt").value.trim();if(!v)return;const rep=$("rep").value,wd=dowOf(dkey()),t={id:uid(),t:v,time:"",g:rep==="weekly"?"Weekly":"Anytime"};
+ if(rep==="once")dayData(dkey()).extra.push(t);else{if(rep==="weekly")t.dow=[wd];S.routine.push(t)}
+ const dd=dayData(dkey());dd.complete=isComplete(dkey());$("nt").value="";save();renderToday();renderWeek();renderCards();toast(rep==="daily"?"Added to your routine":rep==="weekly"?"Added for every "+DOWL[wd].slice(0,-1):"Added for today")};
+function syncRepSelect(){const o=$("rep").querySelector('[value=weekly]');if(o)o.textContent="Every "+DOWL[dowOf(dkey())].slice(0,-1)}
 $("dndone").onclick=e=>{const k=dkey(),t=tasksFor(k).find(x=>!dayData(k).done[x.id]);if(t)toggleTask(t.id,e.currentTarget)};
 $("dnskip").onclick=()=>{const k=dkey(),dd=dayData(k),list=tasksFor(k).filter(x=>!dd.done[x.id]);if(list.length<2){toast("It's the last one left");return}
- const t=list[0];const ex=dd.extra.find(x=>x.id===t.id),r=S.routine.find(x=>x.id===t.id);(ex||r).g="Anytime";(ex||r).time=(ex||r).time||"";save();renderToday();toast("Moved to later")};
+ (dd.later=dd.later||{})[list[0].id]=true;save();renderToday();renderCards();toast("Moved to the end of today")};
 
 /* ================= journal ================= */
 const bookName=k=>k==="gratitude"?(S.settings.book5||"Gratitude"):BOOKS.find(b=>b[0]===k)[1];
@@ -328,7 +349,7 @@ $("orbit").querySelectorAll(".olab").forEach(b=>b.onclick=()=>{orbit(false);cons
  if(a==="entry"){go("journal");setTimeout(()=>editEntry(S.ui.book),380)}});
 
 /* ================= boot ================= */
-function renderAll(){renderWeek();renderToday();renderTrades();renderJournal();renderCards();if(S.view==="home")layout()}
+function renderAll(){syncRepSelect();renderWeek();renderToday();renderTrades();renderJournal();renderCards();if(S.view==="home")layout()}
 tick();setInterval(tick,10000);
 rail.classList.add("still");paintCards();renderAll();layout();requestAnimationFrame(()=>requestAnimationFrame(()=>rail.classList.remove("still")));
 const start=(location.hash||"").slice(1);go(NAMES[start]?start:"home",{instant:true});
