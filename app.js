@@ -15,7 +15,65 @@ const ACCTS={poly:"Polymarket",manual:"Manual",bob:"Bob"};
 const GROUPS=["Morning","Afternoon","Evening","Hair care","Weekly","Anytime"];
 const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],DOWL=["Sundays","Mondays","Tuesdays","Wednesdays","Thursdays","Fridays","Saturdays"];
 /* the user's checklist; bump PACK when it changes so installed apps pick it up */
-const PACK=5;
+const PACK=6;
+/* ---- food (pack 6) ---- */
+const FOOD_CATS={me:["Breakfast","Meal prep","Drinks","Lessons","Other"],dog:["Meal","Treat","Topper"]};
+const MEAL_START="2026-11-23";
+const ROLE_LABEL={breakfast:"Meal 1 · Breakfast",prepA:"Meal 2 · Meal Prep A",prepB:"Meal 3 · Meal Prep B",drink:"Shake / drink",lesson:"Friday cooking lesson"};
+const MP=(week,role,name,ingredients,steps,notes="")=>({who:"me",week,role,name,cat:{breakfast:"Breakfast",prepA:"Meal prep",prepB:"Meal prep",drink:"Drinks",lesson:"Lessons"}[role],ingredients,steps,notes});
+const MENU_THEMES=["Lemon Garlic","Latin / Citrus","Mediterranean","Asian-inspired"];
+const MEAL_RECIPES=[
+ MP(1,"breakfast","Salmon, eggs and avocado toast",["Salmon","Eggs","Avocado","Whole-grain or sourdough bread","Lemon","Fresh fruit"],["Pan-cook salmon","Cook 2–3 eggs","Toast bread","Mash avocado onto toast","Finish salmon with fresh lemon","Serve with fruit"]),
+ MP(1,"prepA","Lemon garlic chicken rice bowls",["Chicken thighs","Jasmine rice","Broccoli","Onion","Fresh garlic","Lemons","Olive oil","Fresh parsley","Salt","Black pepper"],["Chop onion and garlic","Marinate chicken with lemon, garlic, olive oil, salt and pepper","Brown chicken in the pan","Finish cooking until fully cooked (165°F inside)","Cook jasmine rice","Roast or sauté broccoli","Portion chicken + rice + broccoli","Finish with parsley and fresh lemon"]),
+ MP(1,"prepB","Creamy garlic chicken pasta",["Chicken thighs or breast","Pasta","Fresh garlic","Parmesan","Spinach","Milk or light cream","Butter","Olive oil","Lemon","Salt","Black pepper"],["Cook pasta","Brown sliced chicken","Remove chicken","Cook chopped garlic briefly in butter","Add milk/cream","Melt Parmesan into the sauce","Add spinach","Return chicken","Add pasta","Finish with lemon and black pepper"]),
+ MP(1,"drink","Banana peanut butter bulk shake",["Whole milk","Greek yogurt","Banana","Natural peanut butter","Oats","Cinnamon (optional)"],["Add everything to a blender","Blend until smooth"],"No added sugar."),
+ MP(1,"lesson","Pan-seared steak + garlic potatoes",["Steak (ribeye or strip, 1–1.5 inches thick)","Baby or Yukon potatoes","Fresh garlic","Butter","Olive oil or high-heat oil","Fresh herbs (rosemary or thyme)","Salt","Black pepper"],
+  ["Learn: how to properly sear meat","Learn: how to control stainless-steel heat","Learn: how to rest steak","Learn: how to make crispy potatoes","Take the steak out 30 min early, pat dry, salt well","Halve potatoes, boil 8–10 min until just tender, drain and let steam dry","Heat the stainless pan on medium-high until a drop of water dances, then add oil","Sear steak 3–4 min per side without moving it, until a deep crust forms","Add butter, garlic and herbs, spoon the butter over the steak for 1 min","Rest the steak 5–10 min on a board (aim for 130–135°F for medium-rare)","Fry potatoes cut-side down in the same pan until crispy, add garlic at the end","Slice the steak against the grain"],"Most common mistakes: a pan that isn't hot enough, a wet steak, and moving it too early."),
+ MP(2,"breakfast","Steak and egg breakfast bowl",["Steak","Eggs","Avocado","Potatoes","Tomato","Lime","Cilantro"],["Dice and roast potatoes","Sear steak and let it rest","Cook eggs","Chop tomato, cilantro and avocado","Slice steak","Assemble the bowl","Finish with lime"]),
+ MP(2,"prepA","Cilantro-lime chicken bowls",["Chicken thighs","Jasmine rice","Black beans","Corn","Avocado","Tomato","Onion","Garlic","Cilantro","Limes","Olive oil"],["Marinate chicken with lime, garlic, cilantro and olive oil","Cook chicken","Cook rice","Warm beans and corn","Make fresh tomato-onion-cilantro mixture","Portion everything into bowls","Add avocado fresh when eating"]),
+ MP(2,"prepB","Beef tomato pasta",["Lean ground beef","Pasta","Crushed tomatoes","Fresh tomato","Onion","Garlic","Basil","Parmesan","Olive oil"],["Brown beef","Remove excess grease if needed","Cook onion","Add garlic","Add crushed tomatoes","Simmer","Add fresh basil","Combine with cooked pasta","Finish with Parmesan"]),
+ MP(2,"drink","Lime-cucumber water",["Water","Cucumber","Lime","Mint"],["Slice cucumber and lime","Add to a pitcher with mint and water","Chill"],"Make fresh every 1–2 days."),
+ MP(2,"lesson","Homemade chicken tacos",["Chicken thighs","Small corn or flour tortillas","Tomatoes","White onion","Jalapeño (optional)","Cilantro","Limes","Garlic","Avocado","Olive oil","Salt","Cumin and chili powder (optional)"],
+  ["Learn: building flavor with fresh ingredients","Learn: making pico de gallo","Learn: proper chicken slicing","Learn: balancing acid, fat and salt","Marinate chicken in lime, garlic, oil, salt (and spices) for 20+ min","Pico: dice tomato and onion small, chop cilantro, add lime juice and salt, taste and adjust","Cook chicken in a hot pan 5–6 min per side until 165°F inside","Rest 5 min, then slice thin against the grain","Warm tortillas in a dry pan","Build tacos: chicken, pico, avocado, a squeeze of lime","Taste: flat needs salt, heavy needs lime, sharp needs avocado"]),
+ MP(3,"breakfast","Greek breakfast plate",["Eggs","Greek yogurt","Whole-grain toast","Avocado","Tomato","Cucumber","Berries","Olive oil"],["Cook eggs the way you like","Toast bread and top with avocado","Slice tomato and cucumber, drizzle with olive oil and a pinch of salt","Serve Greek yogurt topped with berries"]),
+ MP(3,"prepA","Garlic herb salmon bowls",["Salmon","Basmati or jasmine rice","Cucumber","Tomato","Spinach","Garlic","Lemon","Parsley","Greek yogurt","Olive oil","Yogurt sauce: Greek yogurt, cucumber, lemon, garlic, parsley, a little salt"],["Cook rice","Cook salmon with garlic, olive oil and lemon","Chop cucumber and tomato","Mix the yogurt sauce","Portion rice + salmon + vegetables","Keep the yogurt sauce separate until serving"]),
+ MP(3,"prepB","Beef and spinach garlic pasta",["Lean beef strips or steak","Pasta","Spinach","Garlic","Parmesan","Olive oil","Butter","Lemon","Black pepper"],["Cook pasta","Quickly sear beef","Remove beef","Cook garlic in olive oil/butter","Add spinach","Add pasta","Add Parmesan","Return beef","Finish with lemon"]),
+ MP(3,"drink","Berry yogurt shake",["Whole milk","Greek yogurt","Strawberries or blueberries","Banana","Oats","Peanut butter (optional)"],["Add everything to a blender","Blend until smooth"],"No added sugar."),
+ MP(3,"lesson","Mediterranean chicken plate",["Chicken thighs","Basmati rice","Greek yogurt","Cucumber","Tomato","Red onion","Lemons","Garlic","Olive oil","Dried oregano","Parsley","Salt","Black pepper"],
+  ["Learn: making a fresh marinade","Learn: making yogurt sauce","Learn: proper rice preparation","Learn: building a complete plated meal","Marinade: lemon juice, olive oil, garlic, oregano, salt, pepper. Coat chicken 30+ min","Rinse rice until the water runs clear, then cook 1 part rice to 1.5 parts water, covered, 15 min, rest 10 min","Yogurt sauce: grated cucumber (squeezed dry), yogurt, lemon, garlic, salt","Cook chicken in a hot pan or oven until 165°F, rest 5 min","Make a quick salad: tomato, cucumber, red onion, olive oil, lemon","Plate: rice, sliced chicken, salad, a spoon of sauce, parsley on top"]),
+ MP(4,"breakfast","Egg, salmon and rice bowl",["Eggs","Salmon","Jasmine rice","Avocado","Cucumber","Green onion","Lime"],["Cook or reheat rice","Cook salmon","Cook eggs","Slice cucumber, avocado and green onion","Assemble the bowl","Finish with lime"]),
+ MP(4,"prepA","Fresh ginger garlic chicken rice",["Chicken thighs","Jasmine rice","Broccoli","Bell peppers","Fresh ginger","Fresh garlic","Green onion","Lime","Sesame oil (optional)","Low-sodium soy sauce (optional)"],["Finely chop ginger and garlic","Slice chicken","Brown chicken","Add ginger and garlic","Add vegetables","Add a small amount of soy sauce if using","Serve over rice","Finish with lime and green onion"]),
+ MP(4,"prepB","Garlic shrimp pasta",["Shrimp","Pasta","Fresh garlic","Cherry tomatoes","Spinach","Olive oil","Butter","Lemon","Parsley","Parmesan (optional)"],["Cook pasta","Cook shrimp briefly and remove","Cook chopped garlic in olive oil/butter","Add tomatoes","Add spinach","Add pasta","Return shrimp","Finish with lemon and parsley"]),
+ MP(4,"drink","Ginger-lemon iced green tea",["Green tea","Fresh ginger","Lemon","Water","Mint (optional)"],["Slice ginger and steep with the tea in hot water 3–4 min","Remove tea bags, add lemon (and mint)","Chill"],"No added sugar. Make about 3 days at a time."),
+ MP(4,"lesson","Homemade beef stir-fry",["Flank steak or sirloin","Broccoli","Bell peppers","Onion","Fresh ginger","Fresh garlic","Low-sodium soy sauce","Cornstarch","Neutral oil","Rice","Green onion","Lime"],
+  ["Learn: knife skills","Learn: cutting vegetables evenly","Learn: cooking beef quickly without making it chewy","Learn: managing high heat","Learn: building a simple sauce","Freeze beef 20 min, then slice thin against the grain","Cut all vegetables the same size so they cook evenly","Toss beef with 1 tsp cornstarch and 1 tbsp soy sauce","Sauce: 3 tbsp soy, 1 tsp cornstarch, 1/4 cup water, grated ginger and garlic, lime","Get the pan smoking hot, sear beef in batches 60–90 sec, remove","Stir-fry vegetables 3–4 min, keep them crisp","Add sauce and beef back, toss until glossy, 30 sec","Serve over rice with green onion"],"Cook in small batches. A crowded pan steams the beef and makes it chewy.")];
+const MEAL_TARGETS=`<b>Month 1: lean bulk.</b> Starting weight about 148 lb. Gain lean bodyweight while staying visually lean.<br>
+• Protein: 150–165 g minimum<br>• Meals: 3 meals + 1 shake or drink if needed<br>• Weight: +0.25–0.75 lb per week<br>• Morning weigh-in every day<br>• Water: about 3 L, more around training and heat<br><br>
+<b>Prioritize</b> whole-food proteins, fruit and vegetables, rice, potatoes, oats and pasta, healthy fats, real herbs, citrus and aromatics. Keep ultra-processed food and added sugar minimal. Food doesn't need to be bland.<br><br>
+<b>Adjust</b> · Intake low: add the shake · Appetite low: half the shake between meals, half after training · 7-day average not rising: add about 200–250 calories a day · Gaining too fast and waist growing: ease off slightly.`;
+const GROCERY={Protein:["Salmon","Chicken thighs","Lean beef","Steak","Shrimp","Eggs","Greek yogurt","Cottage cheese"],Carbohydrates:["Jasmine rice","Basmati rice","Pasta","Potatoes","Oats","Whole-grain or sourdough bread","Black beans"],Fruit:["Bananas","Strawberries","Blueberries","Apples","Avocados","Lemons","Limes"],Vegetables:["Broccoli","Spinach","Bell peppers","Tomatoes","Cherry tomatoes","Cucumbers","Onions","Green onions","Corn"],"Flavor":["Fresh garlic","Fresh ginger","Cilantro","Parsley","Basil","Mint","Olive oil","Butter","Parmesan"],"Calorie boosters":["Natural peanut butter","Whole milk","Avocado","Walnuts","Oats"]};
+const MEAL_TASKS=[
+ {t:"Morning weigh-in",time:"6:05 AM",g:"Morning",link:"weigh",note:"Weigh after the bathroom, before food or water. The app tracks your 7-day average."},
+ {t:"Meal 3: Meal Prep B",time:"5:30 PM",g:"Evening",link:"prepB",note:"Meal 3 of 3."},
+ {t:"Shake or drink (if intake is low)",time:"",g:"Anytime",optional:true,link:"drink",note:"Add the shake if your intake is low today. Low appetite: drink half between meals and half after training."},
+ {t:"Meal prep: plan and shop",time:"",g:"Weekly",dow:[0],link:"grocery",steps:["Review the food you have left","Open the grocery list and choose quantities","Defrost proteins for Monday"]},
+ {t:"Meal prep: cook for Mon–Wed",time:"",g:"Weekly",dow:[1],link:"menu",steps:["Cook Meal Prep A","Cook Meal Prep B","Cook rice, pasta or other carbs","Cook vegetables","Portion about 3–4 days into the fridge"]},
+ {t:"Meal prep: second batch for Thu–Sun",time:"",g:"Weekly",dow:[4],link:"menu",steps:["Cook a small batch of Meal Prep A","Cook a small batch of Meal Prep B","Cook carbs and vegetables","Portion for Thursday to Sunday"],note:"Don't keep cooked meat in the fridge for the whole seven days."},
+ {t:"Friday cooking lesson",time:"",g:"Weekly",dow:[5],link:"lesson",note:"Cook one completely new recipe instead of relying only on meal prep."}];
+const STARTER_RECIPES=[
+ {who:"dog",name:"Plain chicken and rice",cat:"Meal",time:"30 min",serves:"Several meals",
+  ingredients:["1 lb boneless, skinless chicken breast","1 cup white rice","Water (no salt, no seasoning)"],
+  steps:["Boil the chicken in plain water 15–20 min until fully cooked","Cook the rice in plain water","Shred the chicken and check there are no bones","Mix about 1 part chicken to 2 parts rice","Cool completely before serving"],
+  notes:"A bland meal for an upset stomach or an occasional topper. It isn't a complete long-term diet, so ask your vet about portion size for your husky."},
+ {who:"dog",name:"Frozen peanut butter banana bites",cat:"Treat",time:"10 min + freezing",serves:"About 20 bites",
+  ingredients:["1 ripe banana","2 tbsp xylitol-free peanut butter","1/2 cup plain unsweetened yogurt"],
+  steps:["Mash the banana","Mix in the peanut butter and yogurt","Spoon into an ice-cube tray or silicone mold","Freeze at least 3 hours"],
+  notes:"Check the peanut butter label for xylitol (also called birch sugar). It's toxic to dogs. A few bites a day is plenty."},
+ {who:"dog",name:"Pumpkin oat biscuits",cat:"Treat",time:"40 min",serves:"About 30 biscuits",
+  ingredients:["1 cup pure pumpkin purée (not pie filling)","2 eggs","2 1/2 cups oat flour (blend rolled oats)","2 tbsp xylitol-free peanut butter (optional)"],
+  steps:["Heat oven to 350°F and line a tray","Mix pumpkin, eggs and peanut butter","Stir in oat flour until a firm dough forms","Roll to about 1/4 inch and cut shapes","Bake 20–25 min until dry and firm, then cool completely"],
+  notes:"Keep in an airtight container for a week, or freeze."}];
+const DOG_SAFE=`<b>Never feed dogs:</b> grapes or raisins, onions, garlic, chives, chocolate, xylitol (birch sugar, found in some peanut butter and gum), macadamia nuts, cooked bones, alcohol, caffeine, or very salty or fatty leftovers.<br><br>Keep treats to about 10% of daily calories. For homemade meals long-term, use a recipe your vet has checked so it's nutritionally complete.`;
 /* ---- training plan (pack 5) ---- */
 const REST_NOTE="Rest between sets: heavy compound lifts 2–3 min · curls, laterals and isolation 60–90 sec · abs 30–60 sec. The weights are starting targets, not mandatory loads for unfamiliar exercises.";
 const LIFT_PHASES=[["2026-11-23","2026-11-29","Week 1: find accurate working weights. Stop each set with 2–3 reps left."],["2026-11-30","2026-12-06","Week 2: add reps at the same weights. Stop with 1–2 reps left."],["2026-12-07","2026-12-13","Week 3: increase the weights you've earned. Stop with 1–2 reps left."],["2026-12-14","2026-12-20","Week 4: consolidate. Cut volume if you're fatigued. Stop with 2–3 reps left."]];
@@ -230,7 +288,7 @@ function defaults(){return{v:1,created:Date.now(),
  settings:{wallet:"",btcOnly:true,bank:{poly:0,manual:0,bob:0},stake:{poly:10,manual:10,bob:10},label:{poly:"BTC Up/Down",manual:"BTC",bob:"BTC"},book5:"Gratitude"},
  trades:{poly:[],manual:[],bob:[]},sync:{last:0,err:""},
  routine:[],pack:0,
- days:{},journal:{dreams:[],ideas:[],notes:[],emotions:[],gratitude:[]},xp:0,best:0,
+ days:{},journal:{dreams:[],ideas:[],notes:[],emotions:[],gratitude:[]},xp:0,best:0,food:{recipes:[],grocery:{}},weights:{},
  ui:{acct:"poly",tf:"5m",book:"dreams",card:0,shown:30}}}
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){S=null}
@@ -260,6 +318,11 @@ if(!S||S.v!==1)S=defaults();
   const nt=S.routine.find(r=>r.t==="Optional light workout/recovery");if(nt&&!nt.steps)Object.assign(nt,{t:"Optional night workout",steps:NIGHT_STEPS,optional:true,note:"Maximum 2–3 nights a week, and only when you're recovering well. Deliberately light."});
   if(!S.journal.notes.some(e=>e.title===FIT_NOTE.title))S.journal.notes.push({id:uid(),ts:Date.now(),...FIT_NOTE});
   S.fitStart=S.fitStart||dkey()}
+ if(pack0<6){S.food=S.food||{recipes:[]};S.food.grocery=S.food.grocery||{};S.weights=S.weights||{};
+  for(const r of [...MEAL_RECIPES,...STARTER_RECIPES])if(!S.food.recipes.some(x=>x.name===r.name))S.food.recipes.push({id:uid(),ts:Date.now(),fav:false,starter:true,...r});
+  const has=t=>S.routine.some(r=>r.t===t);for(const m of MEAL_TASKS)if(!has(m.t))S.routine.push({id:uid(),...m});
+  const b=S.routine.find(r=>r.t==="Water and morning nutrition");if(b&&!b.link)Object.assign(b,{link:"breakfast",note:"Meal 1: this week's breakfast. Water target about 3 L today."});
+  const m=S.routine.find(r=>r.t==="Main meal");if(m&&!m.link)Object.assign(m,{link:"prepA",note:"Meal 2: Meal Prep A."})}
  S.pack=PACK})();
 let saveT;function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Couldn't save. Your phone storage may be full.")}},150)}
 addEventListener("pagehide",()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}});
@@ -291,15 +354,17 @@ function openSteps(id){const k=dkey(),t=tasksFor(k).find(x=>x.id===id);if(!t)ret
  const draw=root=>{const dd=dayData(k),steps=stepList(k,t),sk=stepKey(k,t),s=(dd.steps||{})[sk]||{},n=stepsDone(k,t),total=steps.length,isDone=!!dd.done[id];
   const adh=t.g==="Hair care"?{...adherence(x=>x.g==="Hair care",S.hairStart),label:"Hair routine",target:" Target 85–100%."}:isSkin(t)?{...adherence(isSkin,S.skinStart),label:"Skin routines",target:""}:t.main?{...adherence(x=>!!x.main,S.fitStart),label:"Main workouts",target:" Target: 5 a week."}:null;
   const variant=t.alt?`<div class="seg vseg" style="margin-bottom:12px"><span class="hl"></span><button type="button" data-v="0" class="${useAlt(k,t)?"":"on"}">${esc(t.mainName||"Main")}</button><button type="button" data-v="1" class="${useAlt(k,t)?"on":""}">${esc(t.altName||"Alternative")}</button></div>`:"";
-  const phase=phaseFor(t,k),minDone=dd.minDone&&dd.minDone[id];
+  const lr=t.link&&ROLE_LABEL[t.link]?recipeFor(t.link,k):null,phase=phaseFor(t,k)||(lr?[0,0,"Week "+mealWeek(k)+" · "+MENU_THEMES[mealWeek(k)-1]+": "+lr.name]:null),minDone=dd.minDone&&dd.minDone[id];
   root.innerHTML=`<div class="grab"></div><h2>${esc(t.t)}</h2><p class="desc">${esc([t.time,t.rep?repLabel(t)||"Every day":"Today only",t.optional?"Optional":""].filter(Boolean).join(" · "))}${total?` · ${n} of ${total} done`:""}</p>
   ${phase?`<div class="note phase"><b>This week</b>${esc(phase[2])}</div>`:""}
   ${minDone?`<div class="note phase"><b>Done</b>Minimum routine today (${esc(t.min)}). That counts.</div>`:""}
   ${t.note?`<details class="note" ${t.note.length<170?"open":""}><summary>Notes and rules</summary>${esc(t.note)}</details>`:""}
   ${variant}${total?`<div class="steps">${steps.map((x,i)=>`<button type="button" class="step ${s[i]?"on":""}" data-i="${i}"><span class="ck">${s[i]?"✓":""}</span><span>${esc(x)}</span></button>`).join("")}</div>`:""}
   ${adh&&adh.pct!==null?`<p class="desc" style="margin-top:14px">${adh.label}, last 7 days: ${adh.done} of ${adh.due} done (${adh.pct}%).${adh.target}</p>`:""}
-  <div class="btns"><button class="action p" id="st-all">${isDone?"Mark not done":total?"Mark all done":"Mark done"}</button>${t.min&&!isDone?`<button class="action" id="st-min">Did the minimum</button>`:""}<button class="action" id="st-edit">Edit task</button></div>
+  <div class="btns"><button class="action p" id="st-all">${isDone?"Mark not done":total?"Mark all done":"Mark done"}</button>${t.link?`<button class="action" id="st-link">${esc(linkLabel(t.link))} →</button>`:""}${t.recipe?`<button class="action" id="st-rec">Open recipe →</button>`:""}${t.min&&!isDone?`<button class="action" id="st-min">Did the minimum</button>`:""}<button class="action" id="st-edit">Edit task</button></div>
   ${t.min&&!isDone?`<p class="desc" style="margin-top:10px">Low-energy day? Minimum: ${esc(t.min)}. It still counts.</p>`:""}`;
+  const lb=root.querySelector("#st-link");if(lb)lb.onclick=()=>followLink(t.link,id);
+  const rb=root.querySelector("#st-rec");if(rb)rb.onclick=()=>{closeSheet();openRecipe(t.recipe)};
   const mb=root.querySelector("#st-min");if(mb)mb.onclick=e=>{const dd2=dayData(k);(dd2.minDone=dd2.minDone||{})[id]=true;toggleTask(id,e.currentTarget);draw(root)};
   const vs=root.querySelector(".vseg");if(vs){const place=()=>{const b=vs.querySelector("button.on"),hl=vs.querySelector(".hl");if(b){hl.style.left=b.offsetLeft+"px";hl.style.width=b.offsetWidth+"px"}};requestAnimationFrame(place);
    vs.querySelectorAll("button").forEach(b=>b.onclick=()=>{const dd2=dayData(k);dd2.variant=dd2.variant||{};if(b.dataset.v==="1")dd2.variant[id]=true;else delete dd2.variant[id];save();renderToday();draw(root)})}
@@ -424,7 +489,7 @@ function renderToday(just){const k=dkey(),dd=dayData(k),list=tasksFor(k),req=lis
  let first=true,g="";const html=list.map(t=>{const done=!!dd.done[t.id];const tag=done||t.optional?"":(first?(first=false,'<span class="tag now">NOW</span>'):'');const head=t.g!==g?(g=t.g,`<div class="grp">${esc(g)}</div>`):"";
   return head+`<div class="it ${done?"done":""} ${t.id===just?"just":""}"><button class="main" data-id="${t.id}"><span class="ck">${done?"✓":""}</span>${tag}<span class="t">${esc(t.t)}</span></button><span class="r">${esc([t.steps&&t.steps.length?stepsDone(k,t)+"/"+stepList(k,t).length+(useAlt(k,t)?" gym":" steps"):"",t.time,t.rep?repLabel(t):"today",t.optional?"optional":"",t.note&&!(t.steps&&t.steps.length)?"note":""].filter(Boolean).join(" · "))}</span><button class="ed" data-ed="${t.id}" aria-label="Edit task">✎</button></div>`}).join("");
  $("tasks").innerHTML=html||`<div class="empty"><b>Build your daily routine</b>Add the things you do every day. They'll come back each morning.</div>`;
- $("tasks").querySelectorAll(".main").forEach(b=>b.onclick=()=>{const t=list.find(x=>x.id===b.dataset.id);if(t&&((t.steps&&t.steps.length)||t.note))openSteps(t.id);else toggleTask(b.dataset.id,b)});$("tasks").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>editTask(b.dataset.ed));
+ $("tasks").querySelectorAll(".main").forEach(b=>b.onclick=()=>{const t=list.find(x=>x.id===b.dataset.id);if(t&&t.link==="weigh"&&!dd.done[t.id])weighSheet(t.id);else if(t&&((t.steps&&t.steps.length)||t.note||t.link))openSteps(t.id);else toggleTask(b.dataset.id,b)});$("tasks").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>editTask(b.dataset.ed));
  $("streaklbl").textContent=streak()+(streak()===1?" day":" days")}
 function toggleTask(id,el){const k=dkey(),dd=dayData(k);dd.done[id]=!dd.done[id];if(!dd.done[id])delete dd.done[id];addXP(dd.done[id]?10:-10,el);
  const was=dd.complete;dd.complete=isComplete(k);const s=streak();if(s>S.best)S.best=s;save();renderToday(dd.done[id]?id:null);renderWeek();renderCards();
@@ -453,7 +518,7 @@ $("addf").onsubmit=e=>{e.preventDefault();const v=$("nt").value.trim();if(!v)ret
  if(rep==="once")dayData(dkey()).extra.push(t);else{if(rep==="weekly")t.dow=[wd];S.routine.push(t)}
  const dd=dayData(dkey());dd.complete=isComplete(dkey());$("nt").value="";save();renderToday();renderWeek();renderCards();toast(rep==="daily"?"Added to your routine":rep==="weekly"?"Added for every "+DOWL[wd].slice(0,-1):"Added for today")};
 function syncRepSelect(){const o=$("rep").querySelector('[value=weekly]');if(o)o.textContent="Every "+DOWL[dowOf(dkey())].slice(0,-1)}
-$("dndone").onclick=e=>{const k=dkey(),t=tasksFor(k).find(x=>!x.optional&&!dayData(k).done[x.id]);if(!t)return;if(t.steps&&t.steps.length)openSteps(t.id);else toggleTask(t.id,e.currentTarget)};
+$("dndone").onclick=e=>{const k=dkey(),t=tasksFor(k).find(x=>!x.optional&&!dayData(k).done[x.id]);if(!t)return;if(t.link==="weigh")weighSheet(t.id);else if(t.steps&&t.steps.length)openSteps(t.id);else toggleTask(t.id,e.currentTarget)};
 $("dnskip").onclick=()=>{const k=dkey(),dd=dayData(k),list=tasksFor(k).filter(x=>!x.optional&&!dd.done[x.id]);if(list.length<2){toast("It's the last one left");return}
  (dd.later=dd.later||{})[list[0].id]=true;save();renderToday();renderCards();toast("Moved to the end of today")};
 
@@ -478,6 +543,92 @@ function editEntry(k,id){const isNew=!id,e=isNew?{id:uid(),title:"",body:"",ts:D
  root=>{bindOpts(root);root.querySelector("#e-save").onclick=()=>{const title=root.querySelector("#e-t").value.trim(),body=root.querySelector("#e-b").value.trim();if(!title&&!body){toast("Write something first");return}
    Object.assign(e,{title:title||(body.split("\n")[0].slice(0,57)),body,mood:k==="emotions"?+optVal(root,"mood"):null});if(isNew){S.journal[k].push(e);addXP(5)}save();closeSheet();renderJournal();renderCards();toast(isNew?"Saved · +5 XP":"Entry updated")};
   const d=root.querySelector("#e-del");if(d)d.onclick=()=>{if(!d.dataset.sure){d.dataset.sure=1;d.textContent="Tap again to delete";return}S.journal[k]=S.journal[k].filter(x=>x.id!==e.id);save();closeSheet();renderJournal();renderCards();toast("Entry deleted")}})}
+
+/* ================= food ================= */
+const daysBetween=(a,b)=>Math.round((new Date(b+"T12:00:00")-new Date(a+"T12:00:00"))/864e5);
+const mealWeek=(k=dkey())=>{const d=daysBetween(MEAL_START,k);return d<0?1:Math.floor(d/7)%4+1};
+const weekStartOf=(k=dkey())=>{const d=Math.max(0,daysBetween(MEAL_START,k)),s=new Date(MEAL_START+"T12:00:00");s.setDate(s.getDate()+Math.floor(d/7)*7);return dkey(s)};
+const recipeFor=(role,k=dkey())=>S.food.recipes.find(r=>r.who==="me"&&r.role===role&&r.week===mealWeek(k));
+const ROLE_ORDER=["breakfast","prepA","prepB","drink","lesson"];
+let foodArt={};
+function artFor(r){const map=r.who==="dog"?{Meal:3,Treat:1,Topper:0}:{Breakfast:1,"Meal prep":0,Drinks:4,Lessons:3,Other:2};const pi=map[r.cat]??2;
+ if(!foodArt[pi]){const cv=document.createElement("canvas");paintScene(cv,pi,480,300,pi*11+5);foodArt[pi]=cv.toDataURL("image/jpeg",.7)}return foodArt[pi]}
+function weightStats(){const e=Object.entries(S.weights||{}).sort((a,b)=>a[0]<b[0]?-1:1);if(!e.length)return null;const today=dkey();
+ const avg=(from,to)=>{const v=e.filter(([k])=>{const d=daysBetween(k,today);return d>=from&&d<=to}).map(x=>x[1]);return v.length?v.reduce((s,x)=>s+x,0)/v.length:null};
+ const a7=avg(0,6),p7=avg(7,13),last=e[e.length-1];let msg="Keep weighing in every morning. Guidance starts after two weeks of entries.",tone="";
+ if(a7!==null&&p7!==null){const ch=a7-p7;if(ch<0.25){msg=`7-day average ${ch>=0?"up":"down"} ${Math.abs(ch).toFixed(2)} lb. Below target: add about 200–250 calories a day.`;tone="dn"}else if(ch>0.75){msg=`7-day average up ${ch.toFixed(2)} lb. Faster than planned: if your waist is growing, ease off slightly.`;tone="dn"}else{msg=`7-day average up ${ch.toFixed(2)} lb. Right in the +0.25–0.75 lb target.`;tone="up"}}
+ return{last,a7,p7,msg,tone,count:e.length}}
+function renderFood(){const who=S.ui.who||"me",cats=FOOD_CATS[who];if(!cats.includes(S.ui.fcat))S.ui.fcat="All";
+ document.querySelectorAll("#who button").forEach(b=>b.classList.toggle("on",b.dataset.w===who));requestAnimationFrame(()=>segPlace("who"));
+ $("fcats").innerHTML=["All","★ Favorites",...cats].map(c=>`<button class="chip ${S.ui.fcat===c?"on":""}" data-c="${esc(c)}">${esc(c)}</button>`).join("");
+ $("fcats").querySelectorAll(".chip").forEach(b=>b.onclick=()=>{S.ui.fcat=b.dataset.c;save();renderFood()});
+ if(who==="dog"){$("dogsafe").innerHTML=`<details class="panel safe" ${S.ui.safeSeen?"":"open"}><summary>Dog food safety</summary><div style="margin-top:10px">${DOG_SAFE}</div></details>`;$("dogsafe").querySelector("details").ontoggle=e=>{if(!e.target.open){S.ui.safeSeen=1;save()}}}
+ else{const wk=mealWeek(),ws=weekStartOf(),we=new Date(ws+"T12:00:00");we.setDate(we.getDate()+6);const st=weightStats();
+  $("dogsafe").innerHTML=`<div class="grid foodgrid"><div class="panel col2 menu"><div class="row sb"><div><div class="eyebrow">This week · Week ${wk} of 4</div><div class="h1" style="font-size:28px;margin-bottom:4px">${esc(MENU_THEMES[wk-1])} week</div><div class="sub">${new Date(ws+"T12:00:00").toLocaleDateString([], {month:"short",day:"numeric"})} – ${we.toLocaleDateString([], {month:"short",day:"numeric"})}</div></div><button class="action" id="grocbtn">Grocery list</button></div>
+   <div class="menulist">${ROLE_ORDER.map(role=>{const r=recipeFor(role);return r?`<button class="mrow" data-id="${r.id}"><small>${esc(ROLE_LABEL[role])}</small><b>${esc(r.name)}</b><span aria-hidden="true">→</span></button>`:""}).join("")}</div>
+   <details class="targets"><summary>Daily targets and rules</summary><div>${MEAL_TARGETS}</div></details></div>
+   <div class="panel wcard"><span class="eyebrow">Morning weight</span><div class="big" style="font-size:40px">${st?st.last[1].toFixed(1)+" lb":"–"}</div>
+   <div class="sub">${st?(st.a7!==null?"7-day average "+st.a7.toFixed(1)+" lb · ":"")+st.count+" entries":"Start: about 148 lb"}</div>
+   <p class="sub ${st?st.tone:""}" style="margin-top:8px">${st?esc(st.msg):"Log your first weigh-in to start tracking."}</p><button class="action p" id="weighbtn" style="margin-top:12px">Log today's weight</button></div></div>`;
+  $("grocbtn").onclick=()=>grocerySheet();$("weighbtn").onclick=()=>weighSheet();$("dogsafe").querySelectorAll(".mrow").forEach(b=>b.onclick=()=>openRecipe(b.dataset.id))}
+ const q=($("fsearch").value||"").trim().toLowerCase();
+ let list=S.food.recipes.filter(r=>r.who===who&&(S.ui.fcat==="All"||(S.ui.fcat==="★ Favorites"?r.fav:r.cat===S.ui.fcat))&&(!q||(r.name+" "+(r.ingredients||[]).join(" ")).toLowerCase().includes(q)));
+ list.sort((a,b)=>(b.fav-a.fav)||((a.week||9)-(b.week||9))||(ROLE_ORDER.indexOf(a.role)-ROLE_ORDER.indexOf(b.role))||a.name.localeCompare(b.name));
+ $("recipes").innerHTML=list.length?list.map(r=>`<button class="rcard" data-id="${r.id}" style="background-image:url(${artFor(r)})"><span class="rlab"><small>${esc(r.week?"Week "+r.week+" · "+MENU_THEMES[r.week-1]:r.cat)}</small><b>${esc(r.name)}</b><small>${esc([r.week?ROLE_LABEL[r.role].replace(/^Meal \d · /,""):"",r.time,r.serves?"serves "+r.serves:""].filter(Boolean).join(" · "))}</small></span>${r.fav?'<span class="fav" aria-label="Favorite">★</span>':""}</button>`).join("")
+  :`<div class="panel empty"><b>${q?"No recipes match that search":"No recipes here yet"}</b>Tap + New recipe to add one.</div>`;
+ $("recipes").querySelectorAll(".rcard").forEach(b=>b.onclick=()=>openRecipe(b.dataset.id))}
+$("fsearch").addEventListener("input",()=>renderFood());
+document.querySelectorAll("#who button").forEach(b=>b.onclick=()=>{S.ui.who=b.dataset.w;S.ui.fcat="All";save();renderFood()});
+$("newrecipe").onclick=()=>editRecipe();
+function openRecipe(id){const r=S.food.recipes.find(x=>x.id===id);if(!r)return;const tick={i:{},s:{}};
+ const draw=root=>{root.innerHTML=`<div class="grab"></div><div class="rhero" style="background-image:url(${artFor(r)})"></div><h2>${esc(r.name)}</h2>
+  <p class="desc">${esc([r.who==="dog"?"For the dogs":"",r.week?"Week "+r.week+" · "+MENU_THEMES[r.week-1]+" · "+ROLE_LABEL[r.role]:r.cat,r.time,r.serves?"Serves "+r.serves:"",r.protein?"Protein "+r.protein:""].filter(Boolean).join(" · "))}</p>
+  ${r.notes?`<div class="note">${esc(r.notes)}</div>`:""}
+  ${(r.ingredients||[]).length?`<h3 class="rh">Ingredients</h3><div class="steps">${r.ingredients.map((x,i)=>`<button type="button" class="step ${tick.i[i]?"on":""}" data-k="i" data-i="${i}"><span class="ck">${tick.i[i]?"✓":""}</span><span>${esc(x)}</span></button>`).join("")}</div>`:""}
+  ${(r.steps||[]).length?`<h3 class="rh">Steps</h3><div class="steps">${r.steps.map((x,i)=>`<button type="button" class="step ${tick.s[i]?"on":""}" data-k="s" data-i="${i}"><span class="ck">${tick.s[i]?"✓":i+1}</span><span>${esc(x)}</span></button>`).join("")}</div>`:""}
+  <div class="btns"><button class="action p" id="r-today">Add to today</button><button class="action" id="r-fav">${r.fav?"★ Favorited":"☆ Favorite"}</button><button class="action" id="r-edit">Edit</button></div>`;
+  root.querySelectorAll(".step").forEach(b=>b.onclick=()=>{const m=tick[b.dataset.k],i=+b.dataset.i;m[i]=!m[i];draw(root)});
+  root.querySelector("#r-fav").onclick=()=>{r.fav=!r.fav;save();renderFood();draw(root)};
+  root.querySelector("#r-edit").onclick=()=>editRecipe(r.id);
+  root.querySelector("#r-today").onclick=()=>{const dd=dayData(dkey());if(dd.extra.some(e=>e.recipe===r.id)){toast("Already on today's list");return}
+   dd.extra.push({id:uid(),t:(r.who==="dog"?"Make for the dogs: ":"Cook: ")+r.name,time:"",g:"Anytime",recipe:r.id,steps:[...(r.steps||[])],note:(r.ingredients||[]).length?"Ingredients: "+r.ingredients.join(", "):""});
+   dd.complete=isComplete(dkey());save();renderToday();renderWeek();toast("Added to today","Open Today",()=>{closeSheet();go("today")})}};
+ $("sheet").innerHTML="";$("sheetwrap").hidden=false;draw($("sheet"))}
+function editRecipe(id){const isNew=!id,r=isNew?{id:uid(),who:S.ui.who||"me",name:"",cat:FOOD_CATS[S.ui.who||"me"][0],time:"",serves:"",protein:"",ingredients:[],steps:[],notes:"",fav:false,ts:Date.now()}:S.food.recipes.find(x=>x.id===id);if(!r)return;
+ const catOpts=w=>opts("cat",FOOD_CATS[w].map(c=>[c,c]),FOOD_CATS[w].includes(r.cat)?r.cat:FOOD_CATS[w][0]);
+ openSheet(`<h2>${isNew?"New recipe":"Edit recipe"}</h2>${r.week?`<p class="desc">Part of your Week ${r.week} meal plan.</p>`:""}
+ <div class="field"><label for="r-n">Name</label><input id="r-n" value="${esc(r.name)}" placeholder="${r.who==="dog"?"Frozen yogurt pupsicles":"Honey garlic salmon"}" autocomplete="off"></div>
+ <div class="field"><label>For</label>${opts("who",[["me","Me"],["dog","The dogs"]],r.who)}</div>
+ <div class="field"><label>Category</label><div id="r-cats">${catOpts(r.who)}</div></div>
+ <div class="pair"><div class="field"><label for="r-t">Time</label><input id="r-t" value="${esc(r.time||"")}" placeholder="25 min"></div><div class="field"><label for="r-s">Serves</label><input id="r-s" value="${esc(r.serves||"")}" placeholder="2"></div></div>
+ ${r.who==="me"?`<div class="field"><label for="r-p">Protein (optional)</label><input id="r-p" value="${esc(r.protein||"")}" placeholder="40 g"></div>`:""}
+ <div class="field"><label for="r-i">Ingredients (one per line)</label><textarea id="r-i" placeholder="1 lb chicken thighs&#10;2 lemons">${esc((r.ingredients||[]).join("\n"))}</textarea></div>
+ <div class="field"><label for="r-st">Steps (one per line)</label><textarea id="r-st">${esc((r.steps||[]).join("\n"))}</textarea></div>
+ <div class="field"><label for="r-no">Notes</label><textarea id="r-no" style="min-height:70px">${esc(r.notes||"")}</textarea></div>
+ <div class="btns"><button class="action p" id="r-save">${isNew?"Add recipe":"Save changes"}</button>${isNew?"":`<button class="action danger" id="r-del">Delete</button>`}</div>`,
+ root=>{bindOpts(root,(n,v)=>{if(n==="who"){root.querySelector("#r-cats").innerHTML=catOpts(v);bindOpts(root.querySelector("#r-cats"))}});
+  root.querySelector("#r-save").onclick=()=>{const name=root.querySelector("#r-n").value.trim();if(!name){toast("Give the recipe a name");return}const lines=s=>root.querySelector(s).value.split("\n").map(x=>x.trim()).filter(Boolean);
+   Object.assign(r,{name,who:optVal(root,"who"),cat:optVal(root,"cat"),time:root.querySelector("#r-t").value.trim(),serves:root.querySelector("#r-s").value.trim(),protein:(root.querySelector("#r-p")||{value:r.protein||""}).value.trim(),ingredients:lines("#r-i"),steps:lines("#r-st"),notes:root.querySelector("#r-no").value.trim()});
+   if(isNew)S.food.recipes.push(r);S.ui.who=r.who;save();closeSheet();renderFood();toast(isNew?"Recipe added":"Recipe saved")};
+  const d=root.querySelector("#r-del");if(d)d.onclick=()=>{if(!d.dataset.sure){d.dataset.sure=1;d.textContent="Tap again to delete";return}S.food.recipes=S.food.recipes.filter(x=>x.id!==r.id);save();closeSheet();renderFood();toast("Recipe deleted")}})}
+function weighSheet(taskId){const st=weightStats(),k=dkey(),cur=S.weights[k];
+ openSheet(`<h2>Morning weigh-in</h2><p class="desc">After the bathroom, before food or water. Goal: +0.25–0.75 lb a week.</p>
+ <div class="field"><label for="wt">Weight (lb)</label><input id="wt" type="number" inputmode="decimal" step="0.1" value="${cur??(st?st.last[1]:148)}"></div>
+ ${st?`<p class="sub ${st.tone}" style="margin-top:10px">${esc(st.msg)}</p>`:""}
+ <div class="btns"><button class="action p" id="wt-save">Save weight</button></div>`,
+ root=>{root.querySelector("#wt-save").onclick=()=>{const v=+root.querySelector("#wt").value;if(!(v>50&&v<500)){toast("Enter your weight in pounds");return}S.weights[k]=Math.round(v*10)/10;
+   const t=taskId||(S.routine.find(r=>r.link==="weigh")||{}).id;const dd=dayData(k);save();closeSheet();if(t&&!dd.done[t])toggleTask(t);else toast("Weight saved");renderFood()}})}
+function grocerySheet(){const k=dkey(),nextWeek=dowOf(k)===0,ref=new Date(k+"T12:00:00");if(nextWeek)ref.setDate(ref.getDate()+1);const rk=dkey(ref),wk=mealWeek(rk),ws=weekStartOf(rk);
+ const ticks=S.food.grocery[ws]=S.food.grocery[ws]||{};const draw=root=>{root.innerHTML=`<div class="grab"></div><h2>Grocery list</h2><p class="desc">${nextWeek?"For next week":"For this week"}: Week ${wk}, ${esc(MENU_THEMES[wk-1])}. Tick what you've got.</p>
+  <div class="note">This week's meals: ${ROLE_ORDER.map(r=>recipeFor(r,rk)).filter(Boolean).map(r=>esc(r.name)).join(" · ")}</div>
+  ${Object.entries(GROCERY).map(([cat,items])=>`<h3 class="rh">${esc(cat)}</h3><div class="steps">${items.map(x=>`<button type="button" class="step ${ticks[x]?"on":""}" data-x="${esc(x)}"><span class="ck">${ticks[x]?"✓":""}</span><span>${esc(x)}</span></button>`).join("")}</div>`).join("")}
+  <div class="btns"><button class="action" id="g-clear">Clear ticks</button></div>`;
+  root.querySelectorAll(".step").forEach(b=>b.onclick=()=>{const x=b.dataset.x;ticks[x]=!ticks[x];if(!ticks[x])delete ticks[x];save();draw(root)});
+  root.querySelector("#g-clear").onclick=()=>{for(const x in ticks)delete ticks[x];save();draw(root)}};
+ $("sheet").innerHTML="";$("sheetwrap").hidden=false;draw($("sheet"))}
+function linkLabel(link){if(link==="weigh")return "Log weight";if(link==="grocery")return "Grocery list";if(link==="menu")return "This week's menu";const r=recipeFor(link);return r?"Open recipe":"Open Food"}
+function followLink(link,id){closeSheet();if(link==="weigh")return weighSheet(id);if(link==="grocery")return grocerySheet();if(link==="menu"){S.ui.who="me";return go("food")}
+ const r=recipeFor(link);if(r)openRecipe(r.id);else{S.ui.who="me";go("food")}}
 
 /* ================= settings ================= */
 function openSettings(focus){const s=S.settings,hidden=S.trades.poly.filter(t=>t.hidden).length+S.trades.manual.filter(t=>t.hidden).length+S.trades.bob.filter(t=>t.hidden).length;
@@ -572,14 +723,14 @@ $("won").onclick=e=>quickLog(true,e.currentTarget);$("lost").onclick=e=>quickLog
 $("addtrade").onclick=()=>editTrade(S.ui.acct);
 
 /* ================= routing + dock ================= */
-const NAMES={home:"Home",today:"Today",trades:"Trades",journal:"Journal"},PALOF={today:1,trades:0,journal:2};
+const NAMES={home:"Home",today:"Today",trades:"Trades",journal:"Journal",food:"Food"},PALOF={today:1,trades:0,journal:2,food:3};
 function go(v,o={}){S.view=v;if(o.acct)S.ui.acct=o.acct;if(o.book)S.ui.book=o.book;
  $("v-home").classList.toggle("off",v!=="home");document.querySelectorAll(".page").forEach(p=>p.classList.toggle("on",p.id==="p-"+v));document.body.classList.toggle("page-mode",v!=="home");
  $("dcore").querySelectorAll(".db").forEach(b=>b.classList.toggle("on",b.dataset.v===v));glide();
  const cr=$("crumb");cr.textContent=NAMES[v];cr.classList.remove("swap");void cr.offsetWidth;cr.classList.add("swap");
  if(v==="home"){renderCards();layout()}else setAmbient(PALOF[v]);
  if(v==="trades"){shownBal=null;renderTrades();const l=$("spark").querySelector(".line");if(l){l.style.animation="none";void l.offsetWidth;l.style.animation=""}if(S.ui.acct==="poly"&&S.settings.wallet&&Date.now()-S.sync.last>60000)sync(false)}
- if(v==="journal")renderJournal();if(v==="today")renderToday();
+ if(v==="journal")renderJournal();if(v==="today")renderToday();if(v==="food")renderFood();
  save();scrollTo({top:0,behavior:o.instant?"auto":"smooth"});history.replaceState(null,"","#"+v)}
 function glide(){const b=$("dcore").querySelector(".db.on"),g=$("glide");if(!b){g.style.opacity=0;return}g.style.opacity=1;g.style.left=(b.offsetLeft+12)+"px";g.style.width=(b.offsetWidth-24)+"px"}
 $("dcore").querySelectorAll(".db").forEach(b=>b.onclick=()=>go(b.dataset.v));
@@ -596,7 +747,7 @@ $("orbit").querySelectorAll(".olab").forEach(b=>b.onclick=()=>{orbit(false);cons
  if(a==="entry"){go("journal");setTimeout(()=>editEntry(S.ui.book),380)}});
 
 /* ================= boot ================= */
-function renderAll(){syncRepSelect();renderWeek();renderToday();renderTrades();renderJournal();renderCards();if(S.view==="home")layout()}
+function renderAll(){syncRepSelect();renderWeek();renderToday();renderTrades();renderJournal();renderFood();renderCards();if(S.view==="home")layout()}
 tick();setInterval(tick,10000);
 rail.classList.add("still");paintCards();renderAll();layout();requestAnimationFrame(()=>requestAnimationFrame(()=>rail.classList.remove("still")));
 const start=(location.hash||"").slice(1);go(NAMES[start]?start:"home",{instant:true});
