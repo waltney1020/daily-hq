@@ -756,7 +756,7 @@ async function nativeInit(){if(!LN)return;try{
  const perm=await LN.checkPermissions();if(perm.display!=="granted")await LN.requestPermissions();
  LN.addListener("localNotificationActionPerformed",ev=>setTimeout(()=>handleNotif(ev),300));
  nativeReady=true;await scheduleNative()}catch(e){console.warn("native init failed",e)}}
-function handleNotif(ev){const n=ev.notification||{},x=n.extra||{},a=ev.actionId;
+function handleNotif(ev){const n=ev.notification||{},x=n.extra||{},a=ev.actionId;closeSheet();orbit(false);
  if(x.kind==="water"){if(a==="log")addWater(W().step);else{go("today");openWater()}return}
  if(!x.id)return;const dd=dayData(x.k),t=tasksFor(x.k).find(y=>y.id===x.id);
  if(a==="done"){if(!dd.done[x.id])toggleTask(x.id,null,x.k);go("today");toast("Checked off: "+(t?t.t:"task"));return}
