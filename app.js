@@ -906,7 +906,7 @@ $("orbit").querySelectorAll(".olab").forEach(b=>b.onclick=()=>{orbit(false);cons
 function renderAll(){syncRepSelect();renderWeek();renderToday();renderWater();renderTrades();renderJournal();renderFood();renderCards();if(S.view==="home")layout()}
 tick();setInterval(tick,10000);
 rail.classList.add("still");paintCards();renderAll();layout();requestAnimationFrame(()=>requestAnimationFrame(()=>rail.classList.remove("still")));
-const start=(location.hash||"").slice(1);go(NAMES[start]?start:"home",{instant:true});
+const start=(location.hash||"").slice(1);if(start==="dogs"){S.ui.who="dog";go("food",{instant:true})}else go(NAMES[start]?start:"home",{instant:true});
 addEventListener("resize",()=>{glide();segAll()});
 setInterval(waterTick,60000);setTimeout(waterTick,4000);$("waterbtn").onclick=()=>openWater();
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){tick();waterTick();if(S.settings.wallet&&Date.now()-S.sync.last>120000)sync(false)}});
