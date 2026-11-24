@@ -254,6 +254,8 @@ body.page-mode .amb-shade{background:linear-gradient(180deg,rgba(2,11,14,.45),rg
 .hchips{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
 .hchip{position:relative;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 13px;border:0;border-radius:999px;background:#13252A;color:#C4D5D8;font:600 13px var(--f);cursor:pointer;font-variant-numeric:tabular-nums}
 .hchip:active{transform:scale(.96)}
+.hchips{flex-wrap:nowrap}.hchips .hchip{flex:1;justify-content:center;min-height:40px;padding:0 8px;white-space:nowrap}
+@media (min-width:761px){.hchips{max-width:640px}}
 .hchip .dot{position:absolute;top:4px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--peach)}
 .hd .strip{display:block;width:auto;min-height:0;margin:16px 0 0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
 .hd .week{display:flex;justify-content:space-between;gap:0;max-width:640px}
@@ -289,6 +291,7 @@ body.page-mode .amb-shade{background:linear-gradient(180deg,rgba(2,11,14,.45),rg
 html.fit,html.fit body{height:100%;overflow:hidden;overscroll-behavior:none}
 html.fit .app{min-height:0;padding-bottom:0}
 html.fit .feedon{display:none}
+html.fit .toast{bottom:auto;top:calc(14px + env(safe-area-inset-top,0px))}
 html.fit .arrow{top:calc(50% - 19px)}
 html.fit .theatre{overflow:clip}
 /* iOS-like glide (the curve Apple uses for sheets and cards) */
