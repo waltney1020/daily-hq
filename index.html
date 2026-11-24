@@ -96,6 +96,15 @@
     <div class="recipes" id="recipes"></div>
   </section>
 
+  <section class="page" id="p-smoke">
+    <button class="calmbtn" id="calmbtn"><span>I'm about to smoke</span><b>but I don't want to</b><i>Tap for 2 minutes of calm first</i></button>
+    <div class="grid">
+      <div class="panel col2" id="smokesession"></div>
+      <div class="panel" id="smokestats"></div>
+    </div>
+    <div class="panel" id="smokelog"></div>
+  </section>
+
   <section class="page" id="p-journal">
     <div class="books" id="books"></div>
     <div class="panel jbody" id="jpanel"></div>
@@ -121,6 +130,7 @@
       <button class="db" data-v="trades" aria-label="Trades"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M7 15l4-4 3 3 6-6"/></svg><span class="tip">Trades</span></button>
       <button class="db" data-v="journal" aria-label="Journal"><svg viewBox="0 0 24 24"><path d="M6 4h11a1 1 0 0 1 1 1v15H7a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1zM5 18a2 2 0 0 1 2-2h11M9 8h6"/></svg><span class="tip">Journal</span></button>
       <button class="db" data-v="food" aria-label="Food"><svg viewBox="0 0 24 24"><path d="M7 3v8a2 2 0 0 0 4 0V3M9 11v10M16 21V3c-2 1.5-3 4-3 7s1 4 3 4"/></svg><span class="tip">Food</span></button>
+      <button class="db" data-v="smoke" aria-label="Smoke log"><svg viewBox="0 0 24 24"><path d="M3 15h13v4H3zM18 15v4M21 15v4M18 11c0-2 2-2 2-4s-2-2-2-4M15 11c0-1.5 1.5-1.5 1.5-3"/></svg><span class="tip">Smoke log</span></button>
       <span class="glide" id="glide"></span>
     </div>
     <div class="dapps">
@@ -135,6 +145,7 @@
   <button class="db assist" id="assist" aria-label="Quick add"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8z"/></svg><span class="tip">Quick add</span></button>
 </nav>
 
+<div class="calm" id="calm" hidden aria-modal="true" role="dialog" aria-label="Calm mode"><canvas id="calmcv" aria-hidden="true"></canvas><div class="calm-in" id="calmin"></div></div>
 <div class="sheetwrap" id="sheetwrap" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <input type="file" id="importfile" accept="application/json,.json" hidden>
 
