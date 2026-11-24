@@ -1203,7 +1203,7 @@ addEventListener("load",()=>fitHome());if(document.fonts&&document.fonts.ready)d
 /* auto-swipe: glide to the next card every 6 s, pause while touched, hovered, or busy */
 const AUTO_MS=6000;let autoPause=0,autoLast=Date.now(),mouseHover=false;rail.addEventListener("pointerover",e=>{if(e.pointerType==="mouse")mouseHover=true});rail.addEventListener("pointerleave",()=>mouseHover=false);document.addEventListener("visibilitychange",()=>{drag.on=false});
 function pauseAuto(ms=12000){autoPause=Date.now()+ms;autoLast=Date.now()}
-setInterval(()=>{if(S.view!=="home"||document.hidden||RM||!$("sheetwrap").hidden||(typeof calm!=="undefined"&&calm)||$("qlog")&&!$("qlog").hidden)return autoLast=Date.now();
+setInterval(()=>{if(S.view!=="home"||document.hidden||RM||!$("sheetwrap").hidden||(typeof calm!=="undefined"&&calm)||qOpen())return autoLast=Date.now();
  if(Date.now()<autoPause||drag.on||(mouseHover&&matchMedia("(hover:hover)").matches))return autoLast=Date.now();
  if(Date.now()-autoLast>=AUTO_MS){autoLast=Date.now();step(1)}},250);
 function morphWeek(on,instant){const hd=document.querySelector(".hd");if(!hd)return;const wide=innerWidth>760;hd.classList.toggle("wide",wide);
@@ -1225,9 +1225,10 @@ document.querySelectorAll("#dock .tb[data-v]").forEach(b=>b.onclick=()=>go(b.dat
 document.querySelector('#dock [data-k="more"]').onclick=()=>moreSheet();
 $("setbtn").onclick=()=>aboutSheet();$("syncbtn").onclick=()=>sync(true);$("streakbtn").onclick=()=>go("today");$("donebtn").onclick=()=>go("today");$("levelpill").onclick=()=>go("today");
 /* quick log (+) */
-function qlog(open){const q=$("qlog"),p=$("plusbtn");if(!q)return;q.hidden=!open;p.classList.toggle("open",!!open);p.setAttribute("aria-expanded",!!open)}
-$("plusbtn").onclick=e=>{e.stopPropagation();qlog($("qlog").hidden)};
-document.addEventListener("click",e=>{if(!e.target.closest("#qlog,#plusbtn"))qlog(false)});
+const qOpen=()=>$("qlog").classList.contains("open");
+function qlog(open){const q=$("qlog"),p=$("plusbtn");if(!q)return;q.classList.toggle("open",!!open);q.setAttribute("aria-hidden",!open);p.classList.toggle("open",!!open);p.setAttribute("aria-expanded",!!open);if(open)try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}}
+$("plusbtn").onclick=e=>{e.stopPropagation();qlog(!qOpen())};
+$("qscrim").onclick=()=>qlog(false);addEventListener("keydown",e=>{if(e.key==="Escape")qlog(false)});
 $("qlog").querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{const q=b.dataset.q;qlog(false);
  if(q==="purchase"){go("money");setTimeout(()=>$("m-amt")&&$("m-amt").focus(),350)}
  if(q==="water")addWater(W().step,b);
