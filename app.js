@@ -1153,14 +1153,14 @@ let ambFront="ambA";
 function setAmbient(pal){const cd=CARDS.find(c=>c.pal===pal)||CARDS[0],back=ambFront==="ambA"?"ambB":"ambA";if(!cd.amb)return;$(back).style.backgroundImage=`url(${cd.amb})`;$(back).classList.remove("b");$(ambFront).classList.add("b");ambFront=back;
  const P=PAL[pal%PAL.length];document.documentElement.style.setProperty("--glow",P.glow);document.documentElement.style.setProperty("--glow2",P.glow2);document.querySelector('meta[name=theme-color]').content=P.sky[0]}
 function layout(){const n=CARDS.length;CARDS.forEach((cd,i)=>{let d=i-S.ui.card;if(d>n/2)d-=n;if(d<-n/2)d+=n;cd.el.className="card "+(d===0?"c":Math.abs(d)<=2?"s"+d:"far");cd.el.setAttribute("aria-current",d===0)});setAmbient(CARDS[S.ui.card].pal);renderDots()}
-function renderDots(){let d=$("tdots");if(!d){d=document.createElement("div");d.id="tdots";d.className="tdots";$("theatre").appendChild(d)}d.innerHTML=CARDS.map((_,i)=>`<button aria-label="Card ${i+1}" class="${i===S.ui.card?"on":""}"><i></i></button>`).join("");d.querySelectorAll("button").forEach((b,i)=>b.onclick=()=>{pauseAuto();S.ui.card=i;save();layout()})}
+function renderDots(){let d=$("tdots");if(!d){d=document.createElement("div");d.id="tdots";d.className="tdots";$("theatre").appendChild(d)}d.innerHTML=CARDS.map((_,i)=>`<button aria-label="Card ${i+1}" class="${i===S.ui.card?"on":""}"><i></i></button>`).join("");d.querySelectorAll("button").forEach((b,i)=>b.onclick=()=>{pauseAuto(4000);S.ui.card=i;save();layout()})}
 const step=d=>{S.ui.card=(S.ui.card+d+CARDS.length)%CARDS.length;save();layout()};
-$("prev").onclick=()=>{pauseAuto();step(-1)};$("next").onclick=()=>{pauseAuto();step(1)};
+$("prev").onclick=()=>{pauseAuto(4000);step(-1)};$("next").onclick=()=>{pauseAuto(4000);step(1)};
 addEventListener("keydown",e=>{if(S.view!=="home"||e.target.closest("input,select,textarea")||!$("sheetwrap").hidden)return;if(e.key==="ArrowLeft")step(-1);if(e.key==="ArrowRight")step(1)});
 const drag={x:0,y:0,on:false,moved:false};
-rail.addEventListener("pointerdown",e=>{pauseAuto();if(e.target.closest(".cta"))return;drag.on=true;drag.moved=false;drag.x=e.clientX;drag.y=e.clientY});
+rail.addEventListener("pointerdown",e=>{autoLast=Date.now();if(e.target.closest(".cta"))return;drag.on=true;drag.moved=false;drag.x=e.clientX;drag.y=e.clientY});
 addEventListener("pointermove",e=>{if(!drag.on)return;const dx=e.clientX-drag.x;if(Math.abs(dx)>8)drag.moved=true;if(!drag.moved)return;rail.querySelectorAll(".card").forEach(c=>{c.style.setProperty("--dx",dx*.55+"px");c.style.transitionDuration="0s"})});
-const endDrag=e=>{if(!drag.on)return;drag.on=false;const dx=e.clientX-drag.x;rail.querySelectorAll(".card").forEach(c=>{c.style.transitionDuration="";c.style.setProperty("--dx","0px")});if(drag.moved&&Math.abs(dx)>50)step(dx<0?1:-1);setTimeout(()=>drag.moved=false,0)};
+const endDrag=e=>{if(!drag.on)return;drag.on=false;pauseAuto(2500);const dx=e.clientX-drag.x;rail.querySelectorAll(".card").forEach(c=>{c.style.transitionDuration="";c.style.setProperty("--dx","0px")});if(drag.moved&&Math.abs(dx)>50)step(dx<0?1:-1);setTimeout(()=>drag.moved=false,0)};
 addEventListener("pointerup",endDrag);addEventListener("pointercancel",endDrag);
 addEventListener("pointermove",e=>{if(RM||e.pointerType==="touch")return;$("atmo").style.setProperty("--px",((e.clientX/innerWidth-.5)*-28).toFixed(1)+"px");$("atmo").style.setProperty("--py",((e.clientY/innerHeight-.5)*-18).toFixed(1)+"px")});
 function openCard(i){const cd=CARDS[i],el=cd.el;el.classList.remove("peek");if(cd.go[0]==="trades"&&cd.b()==="Set up sync"){openSettings("wallet");return}
@@ -1194,16 +1194,17 @@ let weekCompact=null;if(window.gsap&&window.Flip)gsap.registerPlugin(Flip);
 function fitHome(){const th=$("theatre"),rail=$("rail");if(!th||!rail)return;const home=S.view==="home";document.documentElement.classList.toggle("fit",home);
  if(!home){th.style.cssText="";rail.style.cssText="";return}
  const top=th.getBoundingClientRect().top,tb=$("dock").getBoundingClientRect().height,avail=Math.max(300,innerHeight-top-tb-14),narrow=innerWidth<=760;
- const dots=30,railH=avail-dots-8,heroH=Math.min(railH,narrow?560:520),heroW=narrow?Math.min(innerWidth*.86,heroH*.9):Math.min(innerWidth*.6,heroH*1.75,900);
- th.style.cssText=`min-height:${avail}px;height:${avail}px;--hero-h:${heroH}px;--hero-w:${heroW}px;--side-h:${Math.round(heroH*.84)}px;--side-w:${Math.round(narrow?innerWidth*.72:Math.min(heroW*.62,520))}px;--side-off:${Math.round(narrow?innerWidth*.82:heroW/2+Math.min(heroW*.62,520)/2+24)}px`;
+ const dots=30,railH=avail-dots-6,heroH=railH,W=innerWidth,peek=narrow?14:Math.min(140,W*.08);
+ const heroW=narrow?W-2*peek-16:Math.min(W-2*peek-2*28,heroH*2.1),sideW=narrow?W*.8:Math.min(heroW*.55,560),sideOff=heroW/2+sideW/2+(narrow?10:22);
+ th.style.cssText=`min-height:${avail}px;height:${avail}px;--hero-h:${heroH}px;--hero-w:${Math.round(heroW)}px;--side-h:${Math.round(heroH*.86)}px;--side-w:${Math.round(sideW)}px;--side-off:${Math.round(sideOff)}px`;
  rail.style.cssText=`height:${railH}px;margin-top:4px`}
 addEventListener("resize",()=>requestAnimationFrame(fitHome));
 addEventListener("load",()=>fitHome());if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>fitHome());setTimeout(fitHome,400);
 /* auto-swipe: glide to the next card every 6 s, pause while touched, hovered, or busy */
-const AUTO_MS=6000;let autoPause=0,autoLast=Date.now();
+const AUTO_MS=6000;let autoPause=0,autoLast=Date.now(),mouseHover=false;rail.addEventListener("pointerover",e=>{if(e.pointerType==="mouse")mouseHover=true});rail.addEventListener("pointerleave",()=>mouseHover=false);document.addEventListener("visibilitychange",()=>{drag.on=false});
 function pauseAuto(ms=12000){autoPause=Date.now()+ms;autoLast=Date.now()}
 setInterval(()=>{if(S.view!=="home"||document.hidden||RM||!$("sheetwrap").hidden||(typeof calm!=="undefined"&&calm)||$("qlog")&&!$("qlog").hidden)return autoLast=Date.now();
- if(Date.now()<autoPause||drag.on||document.body.classList.contains("hover"))return autoLast=Date.now();
+ if(Date.now()<autoPause||drag.on||(mouseHover&&matchMedia("(hover:hover)").matches))return autoLast=Date.now();
  if(Date.now()-autoLast>=AUTO_MS){autoLast=Date.now();step(1)}},250);
 function morphWeek(on,instant){const hd=document.querySelector(".hd");if(!hd)return;const wide=innerWidth>760;hd.classList.toggle("wide",wide);
  if(weekCompact===on&&!instant)return;const animate=!instant&&weekCompact!==null&&!RM;weekCompact=on;
