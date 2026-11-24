@@ -15,7 +15,9 @@ const ACCTS={poly:"Polymarket",manual:"Manual",bob:"Bob"};
 const GROUPS=["Morning","Afternoon","Evening","Hair care","Weekly","Anytime"];
 const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],DOWL=["Sundays","Mondays","Tuesdays","Wednesdays","Thursdays","Fridays","Saturdays"];
 /* the user's checklist; bump PACK when it changes so installed apps pick it up */
-const PACK=9;
+const PACK=10;
+const ONE_OFFS=[["2026-11-24",{t:"Patch the holes in the room",time:"7:45 PM",g:"Evening",steps:["Gather spackle, putty knife, sandpaper and touch-up paint","Clean loose bits and dust out of each hole","Fill each hole slightly overfilled","Let it dry (check the spackle label)","Sand smooth and wipe the dust","Touch up with paint once fully dry"],note:"Bigger holes may need a second thin coat after the first one dries."}],
+ ["2026-11-24",{t:"Finish the room development",time:"8:00 PM",g:"Evening",note:"Finish the remaining room setup and workspace improvements. If it's a big job, write down the last few pieces left so tomorrow knows exactly where to pick up."}]];
 /* portions: RER = 70 × kg^0.75, daily = RER × activity factor. Fresh mix ≈ 1.3 kcal/g, ≈ 230 kcal/cup; one batch ≈ 2,650 kcal (no eggs). */
 const FRESH_KCAL_G=1.3,FRESH_KCAL_CUP=230,BATCH_KCAL=2650,BATCH_G=2050;
 const ACTIVITY=[["1.2","Very inactive / weight loss"],["1.4","Senior or calm"],["1.6","Normal adult"],["1.8","Very active"]];
@@ -349,6 +351,7 @@ if(!S||S.v!==1)S=defaults();
   for(const d of S.dogs.list){if(!d.weight&&wt[d.id])d.weight=wt[d.id];d.factor=d.factor||1.4;d.wlog=d.wlog||{};if(!Object.keys(d.wlog).length&&parseFloat(d.weight))d.wlog[dkey()]=parseFloat(d.weight)}
   const g=S.dogs.list.find(d=>d.id==="girl");if(g&&!g.goal){g.goal="lose";g.target=Math.round(parseFloat(g.weight||55)*0.9*2)/2}
   if(!S.routine.some(r=>r.link==="dogweigh"))S.routine.push({id:uid(),t:"Weigh the dogs",time:"",g:"Weekly",dow:[0],link:"dogweigh",note:"Weekly weigh-in for the weight-loss plan. Enter the numbers under Names and weights; the app shows whether she's on pace (0.5–1 lb a week)."})}
+ if(pack0<10){for(const [k,x] of ONE_OFFS){if(k<dkey())continue;const dd=S.days[k]||(S.days[k]={done:{},extra:[]});if(!dd.extra.some(e=>e.t===x.t))dd.extra.push({id:uid(),...x})}}
  S.pack=PACK})();
 let saveT;function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Couldn't save. Your phone storage may be full.")}},150)}
 addEventListener("pagehide",()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}});
