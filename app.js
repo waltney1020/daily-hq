@@ -845,7 +845,32 @@ function renderMoney(){const M=MO(),st=moneyStats();
  $("moneycats").innerHTML=`<span class="ptitle">Where it went</span><div class="sub">This month by category</div>${st.cats.length?`<div class="catbars">${st.cats.map(([c,v])=>`<div class="cb"><div class="row sb"><span><i style="background:${MCOL[c]||"#A9BBB9"}"></i>${esc(c)}</span><b>${usd(v)}</b></div><div class="cbar"><i style="width:${v/mx*100}%;background:${MCOL[c]||"#A9BBB9"}"></i></div></div>`).join("")}</div>`:`<div class="empty"><b>Nothing logged this month</b>Your categories show up here.</div>`}`;
  const list=[...M.items].sort((a,b)=>b.ts-a.ts).slice(0,60),groups={};list.forEach(x=>(groups[dkey(new Date(x.ts))]=groups[dkey(new Date(x.ts))]||[]).push(x));
  $("moneylog").innerHTML=`<div class="row sb"><span class="ptitle">Purchases</span><span class="sub">Tap one to edit</span></div>${list.length?Object.entries(groups).map(([k,l])=>`<div class="mday"><span>${sameDay(l[0].ts)?"Today":new Date(k+"T12:00").toLocaleDateString([], {weekday:"long",month:"short",day:"numeric"})}</span><b>${usd(l.reduce((t,x)=>t+x.amt,0))}</b></div>${l.map(x=>`<button class="tr" data-mid="${x.id}"><span class="mdot" style="background:${MCOL[x.cat]||"#A9BBB9"}"></span><span class="ti"><div>${esc(x.note||x.cat)}</div><small>${esc(x.cat)} · ${timeStr(x.ts)} · ${esc(x.pay||"")}</small></span><span class="amt">${usd(x.amt)}</span></button>`).join("")}`).join(""):`<div class="empty"><b>Log your first purchase</b>Type the amount, tap a category, done. It takes about 5 seconds.</div>`}`;
- $("moneylog").querySelectorAll("[data-mid]").forEach(b=>b.onclick=()=>editMoney(b.dataset.mid))}
+ $("moneylog").querySelectorAll("[data-mid]").forEach(b=>b.onclick=()=>editMoney(b.dataset.mid));renderWish()}
+// Things to buy: a running list. Tap the circle when you buy it and it's logged as a purchase.
+function renderWish(){const M=MO(),W=M.wish||(M.wish=[]),host=$("moneywish");if(!host)return;
+ const list=[...W].sort((a,b)=>(b.need?1:0)-(a.need?1:0)||a.ts-b.ts),total=W.reduce((t,x)=>t+(+x.price||0),0),priced=W.filter(x=>+x.price>0).length;
+ host.innerHTML=`<div class="row sb"><div><span class="ptitle">Things to buy</span><div class="sub">${W.length?`${W.length} on the list${priced?` · about ${usd(total)}`:""}`:"Stuff you need to pick up or are saving for"}</div></div></div>
+ <form class="add wadd" id="w-add"><input id="w-t" placeholder="New running shoes" aria-label="Thing to buy" autocomplete="off"><input id="w-p" inputmode="decimal" placeholder="$ price" aria-label="Price (optional)" autocomplete="off"><button class="action p">Add</button></form>
+ ${list.length?`<div class="wlist">${list.map(x=>`<div class="wi" data-row="${x.id}"><button class="wck" data-wb="${x.id}" aria-label="Bought ${esc(x.t)}"></button><button class="wmain" data-we="${x.id}"><span>${esc(x.t)}</span><small>${esc(x.cat||"Shopping")}</small></button><button class="wneed ${x.need?"on":""}" data-wn="${x.id}">${x.need?"Need":"Want"}</button><span class="amt">${+x.price>0?usd(x.price):""}</span></div>`).join("")}</div>
+ <div class="sub" style="margin-top:10px">Tap the circle when you buy something and it's logged as a purchase. Tap Need/Want to switch.</div>`:`<div class="empty"><b>Nothing on the list</b>Add things as you think of them so you don't forget, or so you can save up.</div>`}`;
+ $("w-add").onsubmit=e=>{e.preventDefault();const t=$("w-t").value.trim();if(!t){$("w-t").focus();return}const p=Math.round((parseFloat(String($("w-p").value).replace(/[$,]/g,""))||0)*100)/100;
+  W.push({id:uid(),t,price:p>0?p:0,cat:"Shopping",need:false,ts:Date.now()});save();renderWish();toast("Added to Things to buy");$("w-t").focus()};
+ host.querySelectorAll("[data-wn]").forEach(b=>b.onclick=()=>{const x=W.find(i=>i.id===b.dataset.wn);if(x){x.need=!x.need;save();renderWish()}});
+ host.querySelectorAll("[data-we]").forEach(b=>b.onclick=()=>editWish(b.dataset.we));
+ host.querySelectorAll("[data-wb]").forEach(b=>b.onclick=()=>{const x=W.find(i=>i.id===b.dataset.wb);if(!x)return;b.classList.add("on");b.closest(".wi").classList.add("bought");
+  setTimeout(()=>{M.wish=M.wish.filter(i=>i.id!==x.id);
+   if(+x.price>0){const p={id:uid(),ts:Date.now(),amt:+x.price,cat:x.cat||"Shopping",note:x.t,pay:M.pay||"Card"};M.items.push(p);save();renderMoney();burst(b,["#86D3B0","#EFBC90"]);
+    toast(`Bought · logged ${usd(p.amt)}`,"Undo",()=>{M.items=M.items.filter(i=>i.id!==p.id);M.wish.push(x);save();renderMoney()})}
+   else{mDraft={amt:"",cat:x.cat||"Shopping",note:x.t};save();renderMoney();toast("Bought · enter what you paid","Undo",()=>{M.wish.push(x);mDraft={amt:"",cat:"Groceries",note:""};save();renderMoney()});
+    $("moneyadd").scrollIntoView({behavior:"smooth",block:"start"});setTimeout(()=>$("m-amt")&&$("m-amt").focus(),450)}},380)})}
+function editWish(id){const M=MO(),x=(M.wish||[]).find(i=>i.id===id);if(!x)return;
+ openSheet(`<h2>Thing to buy</h2><div class="field"><label for="we-t">What</label><input id="we-t" value="${esc(x.t)}" autocomplete="off"></div>
+ <div class="field"><label for="we-p">Price ($, optional)</label><input id="we-p" type="number" inputmode="decimal" step="0.01" value="${+x.price>0?x.price:""}"></div>
+ <div class="field"><label>Category</label>${opts("cat",MCATS.map(([c])=>[c,c]),x.cat||"Shopping")}</div>
+ <div class="field"><label>Priority</label>${opts("need",[["want","Want"],["need","Need"]],x.need?"need":"want")}</div>
+ <div class="btns"><button class="action p" id="we-s">Save</button><button class="action danger" id="we-d">Remove</button></div>`,r=>{bindOpts(r);
+  r.querySelector("#we-s").onclick=()=>{Object.assign(x,{t:r.querySelector("#we-t").value.trim()||x.t,price:Math.max(0,Math.round((+r.querySelector("#we-p").value||0)*100)/100),cat:optVal(r,"cat"),need:optVal(r,"need")==="need"});save();closeSheet();renderWish();toast("Saved")};
+  r.querySelector("#we-d").onclick=()=>{M.wish=M.wish.filter(i=>i.id!==x.id);save();closeSheet();renderWish();toast("Removed","Undo",()=>{M.wish.push(x);save();renderWish()})}})}
 function editMoney(id){const M=MO(),x=M.items.find(i=>i.id===id);if(!x)return;
  openSheet(`<h2>Edit purchase</h2><div class="pair"><div class="field"><label for="me-a">Amount ($)</label><input id="me-a" type="number" inputmode="decimal" step="0.01" value="${x.amt}"></div><div class="field"><label for="me-t">When</label><input id="me-t" type="datetime-local" value="${toLocalInput(x.ts)}"></div></div>
  <div class="field"><label>Category</label>${opts("cat",MCATS.map(([c])=>[c,c]),x.cat)}</div><div class="field"><label for="me-n">What was it?</label><input id="me-n" value="${esc(x.note||"")}"></div>
