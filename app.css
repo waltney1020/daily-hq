@@ -186,8 +186,68 @@ body.page-mode .amb-shade{background:linear-gradient(180deg,rgba(2,11,14,.45),rg
 @keyframes noteout{to{opacity:0;transform:translateY(8px) rotate(var(--r,-2deg)) scale(.92)}}
 @media (prefers-reduced-motion:reduce){.wnote.pop,.wnote.out{animation-duration:.01s}}
 .tlwrap{margin-top:14px}
+/* Money v2: summary, tabs, one chart card with switchable views */
+.msum{padding:4px 2px 0}
+.msrow{display:flex;align-items:center;gap:14px}
+.msring{position:relative;width:68px;height:68px;flex:none;border:0;background:none;padding:0;cursor:pointer;color:var(--ink)}
+.msring svg{width:100%;height:100%;display:block}
+.msring b{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font-size:12.5px;font-weight:700;line-height:1.1}
+.msmain{min-width:0}
+.msbig{font-size:clamp(30px,5vw,38px);font-weight:600;letter-spacing:-.03em;line-height:1.1;font-variant-numeric:tabular-nums}
+.msmain .sub{font-size:12.5px;margin-top:3px}
+.msminis{display:flex;gap:6px;margin-top:12px}
+.msminis div{flex:1;min-width:0;padding:8px 11px;border-radius:12px;background:rgba(255,255,255,.045)}
+.msminis small{display:block;font-size:11px;color:var(--muted)}
+.msminis b{font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.msminis b.up{color:var(--mint)}.msminis b.dn{color:var(--rose)}
+.mtabs{position:sticky;top:6px;z-index:6;display:flex;gap:3px;padding:4px;margin:16px 0 14px;border-radius:14px;background:rgba(16,32,37,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 8px 20px rgba(0,0,0,.25)}
+.mtabs button{flex:1;position:relative;z-index:1;border:0;background:none;color:var(--muted);font:600 13px var(--f);padding:10px 0;border-radius:10px;cursor:pointer;transition:color .2s}
+.mtabs button.on{color:#1C3438}
+.mtabs .hl{position:absolute;top:4px;bottom:4px;left:4px;width:0;border-radius:10px;background:var(--peach);transition:left .35s cubic-bezier(.32,.72,0,1),width .35s cubic-bezier(.32,.72,0,1)}
+.mview{display:none}.mview.on{display:block;animation:mfade .3s ease}
+@keyframes mfade{from{opacity:0;transform:translateY(6px)}}
+.mcard{background:rgba(14,28,32,.82);border-radius:18px;padding:14px;margin-bottom:12px}
+.mchead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mchead>b{font-size:14.5px;font-weight:600}
+.mseg{display:flex;gap:2px;padding:3px;border-radius:10px;background:rgba(0,0,0,.28)}
+.mseg button{border:0;background:none;color:var(--muted);font:600 12px var(--f);padding:7px 10px;border-radius:8px;cursor:pointer}
+.mseg button.on{background:rgba(255,255,255,.12);color:var(--ink)}
+.mcwrap{position:relative;margin-top:10px;touch-action:pan-y}
+.mcwrap svg{display:block;width:100%;overflow:visible}
+.mcwrap [data-hit]{cursor:pointer}
+.mtip{position:absolute;z-index:3;pointer-events:none;min-width:120px;background:#1E3238;border:1px solid var(--line2);border-radius:10px;padding:8px 10px;font-size:12px;transform:translate(-50%,-100%);opacity:0;transition:opacity .12s;box-shadow:0 10px 24px rgba(0,0,0,.4)}
+.mtip.on{opacity:1}
+.mtip b{display:block;font-size:13px;font-weight:600;white-space:nowrap}.mtip>span{color:var(--muted);white-space:nowrap}
+.mtl{display:grid;grid-template-columns:auto auto;gap:2px 12px;margin-top:4px}
+.mtl span{color:var(--muted);white-space:nowrap}.mtl span i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}
+.mtl em{font-style:normal;text-align:right;font-variant-numeric:tabular-nums}
+.mcap{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.4}
+.mlegend{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:2px 14px;margin-top:8px}
+.mlg{display:flex;align-items:center;gap:8px;border:0;background:none;color:var(--soft);font:500 12.5px var(--f);padding:6px 0;text-align:left;cursor:pointer;transition:opacity .2s}
+.mlg i{width:10px;height:10px;border-radius:3px;flex:none}.mlg span{flex:1;min-width:0}.mlg b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.mlg.dim{opacity:.35}.mlg.dim span{text-decoration:line-through}
+.mtblbtn{border:0;background:none;color:var(--muted);font:500 12px var(--f);padding:8px 0 0;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+#mtbl table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+#mtbl th{text-align:left;color:var(--muted);font-weight:600;padding:4px 0}#mtbl th:last-child,#mtbl td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+#mtbl td{padding:5px 0;border-top:1px solid var(--line)}
+.mcat{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.mcat:last-child{border-bottom:0}
+.mcat>i{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;font-style:normal;font-size:15px;flex:none}
+.mcat .m{flex:1;min-width:0}.mcat .m small{display:block;font-size:11px;color:var(--muted)}
+.mcat .bar{height:5px;border-radius:3px;background:rgba(255,255,255,.07);margin-top:5px;overflow:hidden}.mcat .bar b{display:block;height:100%;border-radius:3px}
+.mcat .num{font-weight:600;font-variant-numeric:tabular-nums}
+.mlog{padding:0 2px}
+.mhf{margin:0 0 4px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+.mhf .chip{flex:none;cursor:pointer;border:1px solid var(--line2);background:none}
+.mhf .chip i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.mhf .chip.on{background:rgba(239,188,144,.15);border-color:var(--peach);color:var(--peach)}
+.mhrow{display:flex;align-items:center;gap:12px;width:100%;padding:10px 0;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);text-align:left;cursor:pointer;font-size:14px}
+.mhrow .mic{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-size:16px;flex:none}
+.mhrow .ti{flex:1;min-width:0}.mhrow .tn{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mhrow small{display:block;font-size:11.5px;color:var(--muted);margin-top:1px}
+.mhrow .amt{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
 /* Money: things to buy */
-#moneywish{margin-top:16px}
+#moneywish{margin-top:0}
 .wadd input#w-p{flex:0 1 120px}
 .wlist{margin-top:10px}
 .wi{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);transition:opacity .3s,transform .35s var(--ease)}
