@@ -415,11 +415,12 @@ details.note[open] summary{margin-bottom:6px}
 .dock{position:fixed;z-index:52;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;max-width:calc(100vw - 16px);padding:7px 9px;border:1px solid rgba(255,255,255,.125);border-radius:20px;background:rgba(18,42,48,.94);box-shadow:0 20px 58px rgba(3,15,20,.44);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
 .stage{display:grid;grid-template-areas:"s"}
 .dcore,.dapps{grid-area:s;display:flex;align-items:center;justify-content:center;gap:4px;transition:transform .32s var(--ease),opacity .2s ease;position:relative}
-.dapps{transform:translateY(120%);opacity:0;pointer-events:none;gap:6px}
+.dapps{transform:translateY(120%);opacity:0;pointer-events:none;gap:6px;width:0;min-width:100%;overflow-x:auto;justify-content:flex-start;scrollbar-width:none;padding:36px 4px 4px;margin-top:-32px}
+.dapps::-webkit-scrollbar{display:none}
 .dock.apps .dcore{transform:translateY(-120%);opacity:0;pointer-events:none}
 .dock.apps .dapps{transform:none;opacity:1;pointer-events:auto}
-.dapps a{transform:translateY(14px);opacity:0;transition:transform .32s var(--ease) calc(var(--i)*35ms),opacity .25s calc(var(--i)*35ms)}
-.dock.apps .dapps a{transform:none;opacity:1}
+.dapps [data-sc]{transform:translateY(14px);opacity:0;transition:transform .32s var(--ease) calc(var(--i)*35ms),opacity .25s calc(var(--i)*35ms)}
+.dock.apps .dapps [data-sc]{transform:none;opacity:1}
 .db{display:grid;position:relative;width:54px;min-width:54px;height:54px;padding:0;place-items:center;border:0;border-radius:13px;background:transparent;color:#CAD8D6;text-decoration:none;cursor:pointer;transform-origin:50% 100%;transition:transform .2s var(--ease),margin .2s var(--ease),background .14s}
 @media (hover:hover){
  .db:hover{background:rgba(255,255,255,.09)}
@@ -442,7 +443,7 @@ details.note[open] summary{margin-bottom:6px}
 .vsep{width:1px;height:30px;background:var(--line2);margin:0 4px}
 .glide{position:absolute;bottom:-9px;height:3px;border-radius:2px;background:var(--peach);transition:left .35s var(--ease),width .35s var(--ease)}
 .assist>svg{background:rgba(23,64,72,.9)!important;border-color:rgba(122,184,184,.45)!important;color:#CDEBEA!important}
-@media (max-width:620px){.db{width:50px;min-width:50px;height:52px}.dock{gap:2px;padding:6px}.vsep{margin:0 2px}.dock>[data-k=apps],.dock>.vsep:first-of-type{display:none}}
+@media (max-width:620px){.db{width:50px;min-width:50px;height:52px}.dock{gap:2px;padding:6px}.vsep{margin:0 2px}.dock>.vsep{display:none}}
 @media (max-width:400px){.db{width:44px;min-width:44px}.db>svg{width:34px;height:34px;padding:7px}}
 
 /* orbit */
