@@ -729,6 +729,22 @@ function routineCalendar(){const BY=["SU","MO","TU","WE","TH","FR","SA"],stamp=n
  const dl=()=>{const u=URL.createObjectURL(file),x=document.createElement("a");x.href=u;x.download=file.name;document.body.appendChild(x);x.click();setTimeout(()=>{URL.revokeObjectURL(u);x.remove()},1500);toast(`${n} routine reminders saved. Open the file to add them to your Calendar.`)};
  if(navigator.canShare&&navigator.canShare({files:[file]}))navigator.share({files:[file],title:"Op-Lock In routine"}).then(()=>toast("Pick your Calendar app to add the reminders")).catch(e=>{if(e&&e.name!=="AbortError")dl()});else dl()}
 
+/* ================= dock shortcuts: open the installed app when possible ================= */
+const SHORTCUTS=[
+ {name:"Polymarket",tile:"PM",bg:"#2E5BFF",fg:"#fff",pkg:"com.polymarket.android",url:"https://polymarket.com/crypto/5M"},
+ {name:"Coinbase",tile:"C",bg:"#0052FF",fg:"#fff",pkg:"com.coinbase.android",url:"https://www.coinbase.com/home"},
+ {name:"TradingView",tile:"TV",bg:"#131722",fg:"#fff",pkg:"com.tradingview.tradingviewapp",url:"https://www.tradingview.com/chart/?symbol=BTCUSD"},
+ {name:"Liquid Brokers",tile:"LB",bg:"#0E3B43",fg:"#7FE3D0",url:"https://my.liquidbrokers.com/auth/login"},
+ {name:"THTrader",tile:"TH",bg:"#1F1F2E",fg:"#F1C39D",url:"https://main.thtrader.app"},
+ {name:"Slack",tile:"#",bg:"#4A154B",fg:"#fff",pkg:"com.Slack",url:"https://app.slack.com/client"},
+ {name:"Calendar",tile:"31",bg:"#fff",fg:"#1A73E8",pkg:"com.samsung.android.calendar",url:"https://calendar.google.com"},
+ {name:"YouTube",tile:"▶",bg:"#FF0033",fg:"#fff",pkg:"com.google.android.youtube",url:"https://www.youtube.com"}];
+const AL=(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()&&window.Capacitor.Plugins)?window.Capacitor.Plugins.AppLauncher:null;
+async function openShortcut(s){if(AL&&s.pkg){try{const r=await AL.canOpenUrl({url:s.pkg});if(r&&r.value){await AL.openUrl({url:s.pkg});return}}catch(e){}}
+ const a=document.createElement("a");a.href=s.url;a.target="_blank";a.rel="noopener";document.body.appendChild(a);a.click();a.remove()}
+(function renderShortcuts(){const host=$("shortcuts");if(!host)return;host.innerHTML=SHORTCUTS.map((s,i)=>`<button class="db" data-sc="${i}" style="--i:${i+1}" aria-label="Open ${esc(s.name)}"><span class="tile" style="background:${s.bg};color:${s.fg}">${esc(s.tile)}</span><span class="tip">${esc(s.name)}</span></button>`).join("");
+ host.querySelectorAll("[data-sc]").forEach(b=>b.onclick=()=>openShortcut(SHORTCUTS[+b.dataset.sc]))})();
+
 /* ================= native Android notifications (Capacitor) ================= */
 const CAP=window.Capacitor,NATIVE=!!(CAP&&CAP.isNativePlatform&&CAP.isNativePlatform()),LN=NATIVE&&CAP.Plugins?CAP.Plugins.LocalNotifications:null;
 const nid=s=>{let h=7;for(const c of String(s))h=(h*31+c.charCodeAt(0))|0;return Math.abs(h)%2000000000+1};
