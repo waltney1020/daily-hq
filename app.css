@@ -259,6 +259,12 @@ body.page-mode .amb-shade{background:linear-gradient(180deg,rgba(2,11,14,.45),rg
 .sheet .btns .action{flex:1}
 .sheet .sec{margin-top:22px;padding-top:16px;border-top:1px solid var(--line)}
 .sheet .sec h3{margin:0 0 4px;font-size:15px;font-weight:600}
+.note{margin:4px 0 12px;padding:12px 14px;border-radius:10px;background:rgba(239,188,144,.08);border:1px solid rgba(239,188,144,.25);color:#E9D9C8;font-size:13px;line-height:1.5;white-space:pre-wrap}
+.steps{display:flex;flex-direction:column;gap:6px}
+.step{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.035);text-align:left;font-size:14px;cursor:pointer;transition:background .15s}
+.step:hover{background:rgba(255,255,255,.07)}
+.step.on .ck{background:var(--mint);border-color:var(--mint);color:#0B3324;animation:tick .35s var(--pop)}
+.step.on span:last-child{color:var(--muted);text-decoration:line-through}
 .confirm{margin-top:10px;padding:12px;border-radius:10px;background:rgba(238,142,134,.1);border:1px solid rgba(238,142,134,.35);font-size:13px}
 
 /* dock */
