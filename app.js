@@ -712,22 +712,22 @@ function taskTick(){const k=dkey();if(S.view==="today")renderToday();if(S.view==
    navigator.serviceWorker&&navigator.serviceWorker.ready.then(r=>r.showNotification("Now: "+t.t,{body:(t.time?t.time+". ":"")+(up?`Up next: ${up.t} at ${up.time}.`:"Last timed task today."),tag:"task",renotify:true,icon:"icon-192.png",badge:"icon-192.png",data:{url:"./#today"}})).catch(()=>{})}}}
 function alertsSheet(){const on=S.settings.taskAlerts&&typeof Notification!=="undefined"&&Notification.permission==="granted",timed=S.routine.filter(r=>tmin(r.time)<9998).length;
  openSheet(`<h2>Task reminders</h2><p class="desc">Get pinged when each timed task starts. ${timed} of your routine tasks have a time.</p>
- <div class="note"><b>Phone calendar (recommended).</b> Adds your timed routine as repeating calendar events with an alert at the start time. They go off even when Daily HQ is closed. Weekly tasks only repeat on their day.</div>
+ <div class="note"><b>Phone calendar (recommended).</b> Adds your timed routine as repeating calendar events with an alert at the start time. They go off even when Op-Lock In is closed. Weekly tasks only repeat on their day.</div>
  <div class="btns" style="margin-top:0"><button class="action p" id="al-cal">Add my routine to my calendar</button></div>
- <p class="desc" style="margin-top:6px">If you change times later, add it again and delete the old "Daily HQ" events in your calendar.</p>
- ${typeof Notification!=="undefined"?`<div class="sec"><h3>App notifications</h3><p class="desc">"Now: Gym · Up next: AI Academy at 3:30 PM". These only arrive while Daily HQ is running in the background.</p><div class="btns" style="margin-top:8px"><button class="action" id="al-notif">${on?"On · turn off":"Turn on"}</button></div></div>`:""}`,
+ <p class="desc" style="margin-top:6px">If you change times later, add it again and delete the old "Op-Lock In" events in your calendar.</p>
+ ${typeof Notification!=="undefined"?`<div class="sec"><h3>App notifications</h3><p class="desc">"Now: Gym · Up next: AI Academy at 3:30 PM". These only arrive while Op-Lock In is running in the background.</p><div class="btns" style="margin-top:8px"><button class="action" id="al-notif">${on?"On · turn off":"Turn on"}</button></div></div>`:""}`,
  root=>{root.querySelector("#al-cal").onclick=()=>routineCalendar();const nb=root.querySelector("#al-notif");if(nb)nb.onclick=async()=>{if(on){S.settings.taskAlerts=false;save();closeSheet();toast("Task notifications off");return}
   const r=await Notification.requestPermission();if(r==="granted"){S.settings.taskAlerts=true;save();closeSheet();toast("Task notifications on")}else toast("Notifications are blocked. Allow them for this app in Android settings.")}})}
 function routineCalendar(){const BY=["SU","MO","TU","WE","TH","FR","SA"],stamp=new Date().toISOString().replace(/[-:]/g,"").slice(0,15)+"Z";
- const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Daily HQ//Routine//EN","CALSCALE:GREGORIAN"];let n=0;
+ const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Op-Lock In//Routine//EN","CALSCALE:GREGORIAN"];let n=0;
  const clean=s=>String(s).replace(/[\\;,]/g,m=>"\\"+m).replace(/\n/g,"\\n");
  for(const r of S.routine){const m=tmin(r.time);if(m>=9998)continue;const hh=String(Math.floor(m/60)).padStart(2,"0"),mm=String(m%60).padStart(2,"0");
   const d=new Date();if(r.dow&&r.dow.length&&r.dow.length<7){while(!r.dow.includes(d.getDay()))d.setDate(d.getDate()+1)}const ds=dkey(d).replace(/-/g,"");n++;
   L.push("BEGIN:VEVENT",`UID:dailyhq-${r.id}@dailyhq`,`DTSTAMP:${stamp}`,`DTSTART:${ds}T${hh}${mm}00`,"DURATION:PT15M",r.dow&&r.dow.length&&r.dow.length<7?`RRULE:FREQ=WEEKLY;BYDAY=${r.dow.map(x=>BY[x]).join(",")}`:"RRULE:FREQ=DAILY",
-   `SUMMARY:${clean(r.t)}`,`DESCRIPTION:${clean("Daily HQ"+(r.optional?" (optional)":"")+(r.steps&&r.steps.length?" · "+r.steps.length+" steps":""))}`,"TRANSP:TRANSPARENT","BEGIN:VALARM","ACTION:DISPLAY",`DESCRIPTION:${clean(r.t)}`,"TRIGGER:PT0M","END:VALARM","END:VEVENT")}
+   `SUMMARY:${clean(r.t)}`,`DESCRIPTION:${clean("Op-Lock In"+(r.optional?" (optional)":"")+(r.steps&&r.steps.length?" · "+r.steps.length+" steps":""))}`,"TRANSP:TRANSPARENT","BEGIN:VALARM","ACTION:DISPLAY",`DESCRIPTION:${clean(r.t)}`,"TRIGGER:PT0M","END:VALARM","END:VEVENT")}
  L.push("END:VCALENDAR");const file=new File([L.join("\r\n")],"daily-hq-routine.ics",{type:"text/calendar"});
  const dl=()=>{const u=URL.createObjectURL(file),x=document.createElement("a");x.href=u;x.download=file.name;document.body.appendChild(x);x.click();setTimeout(()=>{URL.revokeObjectURL(u);x.remove()},1500);toast(`${n} routine reminders saved. Open the file to add them to your Calendar.`)};
- if(navigator.canShare&&navigator.canShare({files:[file]}))navigator.share({files:[file],title:"Daily HQ routine"}).then(()=>toast("Pick your Calendar app to add the reminders")).catch(e=>{if(e&&e.name!=="AbortError")dl()});else dl()}
+ if(navigator.canShare&&navigator.canShare({files:[file]}))navigator.share({files:[file],title:"Op-Lock In routine"}).then(()=>toast("Pick your Calendar app to add the reminders")).catch(e=>{if(e&&e.name!=="AbortError")dl()});else dl()}
 
 /* ================= native Android notifications (Capacitor) ================= */
 const CAP=window.Capacitor,NATIVE=!!(CAP&&CAP.isNativePlatform&&CAP.isNativePlatform()),LN=NATIVE&&CAP.Plugins?CAP.Plugins.LocalNotifications:null;
@@ -763,16 +763,16 @@ function handleNotif(ev){const n=ev.notification||{},x=n.extra||{},a=ev.actionId
  if(a==="snooze"&&LN){LN.schedule({notifications:[{id:nid(x.id+Date.now()),title:n.title,body:n.body,channelId:"tasks",actionTypeId:"TASK",extra:x,smallIcon:"ic_stat_dailyhq",iconColor:"#EFBC90",schedule:{at:new Date(Date.now()+600000),allowWhileIdle:true}}]});toast("Snoozed for 10 minutes");return}
  go("today");if(t&&x.k===dkey()&&((t.steps&&t.steps.length)||t.note||t.link))setTimeout(()=>{if(t.link==="water")openWater();else if(t.link==="dogs")dogCheckIn();else openSteps(t.id)},450)}
 function nativeAlertsSheet(){const N=nset(),nx=S.native&&S.native.next;
- openSheet(`<h2>Notifications</h2><p class="desc">Scheduled on your phone, so they arrive even when Daily HQ is closed. ${S.native?S.native.count+" coming up over the next "+NOTIF_DAYS+" days.":""}${nx?` Next: “${esc(nx.t)}” at ${new Date(nx.at).toLocaleString([], {weekday:"short",hour:"numeric",minute:"2-digit"})}.`:""}</p>
+ openSheet(`<h2>Notifications</h2><p class="desc">Scheduled on your phone, so they arrive even when Op-Lock In is closed. ${S.native?S.native.count+" coming up over the next "+NOTIF_DAYS+" days.":""}${nx?` Next: “${esc(nx.t)}” at ${new Date(nx.at).toLocaleString([], {weekday:"short",hour:"numeric",minute:"2-digit"})}.`:""}</p>
  <div class="field"><label><input type="checkbox" id="nt-start" ${N.start?"checked":""} style="width:auto;margin-right:8px">When each task starts, with what's up next</label></div>
  <div class="field"><label>Heads-up before each task</label>${opts("pre",[["0","Off"],["5","5 min"],["10","10 min"],["15","15 min"]],String(N.pre||0))}</div>
  <div class="field"><label><input type="checkbox" id="nt-missed" ${N.missed?"checked":""} style="width:auto;margin-right:8px">When I miss a task (skipped if I already checked it off)</label></div>
  <div class="field"><label><input type="checkbox" id="nt-water" ${N.water?"checked":""} style="width:auto;margin-right:8px">Water reminders (${esc(W().start)}–${esc(W().end)}, every ${W().every} min, stop once I hit ${fmtL(W().goal)})</label></div>
  <div class="btns"><button class="action p" id="nt-save">Save</button><button class="action" id="nt-test">Send a test in 5 seconds</button></div>
- <p class="desc" style="margin-top:12px">Notifications have buttons: Done, Snooze 10 min, and Log ${W().step} ml. If they don't arrive, open Android Settings → Apps → Daily HQ → Notifications and make sure they're allowed, and set Battery to Unrestricted.</p>`,
+ <p class="desc" style="margin-top:12px">Notifications have buttons: Done, Snooze 10 min, and Log ${W().step} ml. If they don't arrive, open Android Settings → Apps → Op-Lock In → Notifications and make sure they're allowed, and set Battery to Unrestricted.</p>`,
  root=>{bindOpts(root);root.querySelector("#nt-save").onclick=async()=>{Object.assign(N,{start:root.querySelector("#nt-start").checked,missed:root.querySelector("#nt-missed").checked,water:root.querySelector("#nt-water").checked,pre:+optVal(root,"pre")||0});save();await scheduleNative();closeSheet();toast(`Saved · ${S.native.count} notifications scheduled`)};
-  root.querySelector("#nt-test").onclick=async()=>{const perm=await LN.checkPermissions();if(perm.display!=="granted"){const r=await LN.requestPermissions();if(r.display!=="granted"){toast("Notifications are off for Daily HQ in Android settings");return}}
-   const nx2=nextInfo();await LN.schedule({notifications:[{id:nid("test"+Date.now()),title:nx2.t?"Now: "+nx2.t.t:"Daily HQ test",body:"This is how your reminders will look.",channelId:"tasks",actionTypeId:"TASK",extra:nx2.t?{k:dkey(),id:nx2.t.id,kind:"task"}:{},smallIcon:"ic_stat_dailyhq",iconColor:"#EFBC90",schedule:{at:new Date(Date.now()+5000),allowWhileIdle:true}}]});toast("Test coming in 5 seconds. You can close the app.")}})}
+  root.querySelector("#nt-test").onclick=async()=>{const perm=await LN.checkPermissions();if(perm.display!=="granted"){const r=await LN.requestPermissions();if(r.display!=="granted"){toast("Notifications are off for Op-Lock In in Android settings");return}}
+   const nx2=nextInfo();await LN.schedule({notifications:[{id:nid("test"+Date.now()),title:nx2.t?"Now: "+nx2.t.t:"Op-Lock In test",body:"This is how your reminders will look.",channelId:"tasks",actionTypeId:"TASK",extra:nx2.t?{k:dkey(),id:nx2.t.id,kind:"task"}:{},smallIcon:"ic_stat_dailyhq",iconColor:"#EFBC90",schedule:{at:new Date(Date.now()+5000),allowWhileIdle:true}}]});toast("Test coming in 5 seconds. You can close the app.")}})}
 
 /* ================= smoke log ================= */
 const MOODS_SMOKE=["Boredom","Stress","Anxiety","Habit","Craving","After eating","With friends","Tired","Bad mood","Work break","Waking up","Celebrating"];
@@ -817,7 +817,7 @@ function renderSmoke(){const X=SM(),a=X.active,st=smokeStats();clearInterval(smo
  $("smokelog").querySelectorAll("[data-sid]").forEach(b=>b.onclick=()=>editSmoke(b.dataset.sid))}
 function startSmoke(limit,moods=[]){const X=SM();if(X.active)return;X.active={start:Date.now(),puffs:0,moods:[...moods],notes:"",limit:+limit||0};save();renderSmoke();toast("Session started");
  if(X.active.limit){clearTimeout(smokeLimitT);smokeLimitT=setTimeout(()=>{if(SM().active){try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(e){}toast(`${limit} minutes are up`)}},limit*60000);
-  if(LN)LN.schedule({notifications:[{id:SMOKE_NOTIF_ID,title:`⏱ ${limit} minutes are up`,body:"End your session in Daily HQ when you're done.",channelId:"tasks",smallIcon:"ic_stat_dailyhq",iconColor:"#EFBC90",extra:{kind:"smoke"},schedule:{at:new Date(Date.now()+limit*60000),allowWhileIdle:true}}]}).catch(()=>{})}}
+  if(LN)LN.schedule({notifications:[{id:SMOKE_NOTIF_ID,title:`⏱ ${limit} minutes are up`,body:"End your session in Op-Lock In when you're done.",channelId:"tasks",smallIcon:"ic_stat_dailyhq",iconColor:"#EFBC90",extra:{kind:"smoke"},schedule:{at:new Date(Date.now()+limit*60000),allowWhileIdle:true}}]}).catch(()=>{})}}
 function endSmoke(){const X=SM(),a=X.active;if(!a)return;clearTimeout(smokeLimitT);if(LN)LN.cancel({notifications:[{id:SMOKE_NOTIF_ID}]}).catch(()=>{});
  X.sessions.push({id:uid(),start:a.start,end:Date.now(),puffs:a.puffs,moods:a.moods,notes:(a.notes||"").trim()});X.active=null;save();renderSmoke();toast(`Logged · ${a.puffs} puff${a.puffs===1?"":"s"}`)}
 function editSmoke(id){const X=SM(),isNew=!id,s=isNew?{id:uid(),start:Date.now()-10*60000,end:Date.now()-5*60000,puffs:3,moods:[],notes:""}:X.sessions.find(x=>x.id===id);if(!s)return;const moods=[...(s.moods||[])];
@@ -984,9 +984,9 @@ function drawWaterSheet(root){const k=dkey(),p=waterPace(),g=W().goal,log=waterL
  <div class="field"><label>Every</label>${opts("every",[["60","60 min"],["90","90 min"],["120","2 hours"]],String(W().every))}</div>
  <div class="pair"><div class="field"><label for="ws-goal">Daily goal (L)</label><input id="ws-goal" type="number" step="0.25" inputmode="decimal" value="${g/1000}"></div><div class="field"><label for="ws-step">Quick button (ml)</label><input id="ws-step" type="number" step="50" inputmode="numeric" value="${W().step}"></div></div>
  <div class="btns"><button class="action p" id="ws-save">Save settings</button></div>
- <div class="note" style="margin-top:14px"><b>Phone reminders (recommended).</b> Adds repeating reminders to your phone's calendar. They go off even when Daily HQ is closed.</div>
+ <div class="note" style="margin-top:14px"><b>Phone reminders (recommended).</b> Adds repeating reminders to your phone's calendar. They go off even when Op-Lock In is closed.</div>
  <div class="btns" style="margin-top:0"><button class="action" id="ws-cal">Add reminders to my calendar</button></div>
- ${notifOK?`<div class="btns"><button class="action" id="ws-notif">${W().notify&&Notification.permission==="granted"?"App notifications: on · turn off":"Turn on app notifications"}</button></div><p class="desc" style="margin-top:6px">App notifications only arrive while Daily HQ is running in the background. They include a Log ${W().step} ml button.</p>`:""}`;
+ ${notifOK?`<div class="btns"><button class="action" id="ws-notif">${W().notify&&Notification.permission==="granted"?"App notifications: on · turn off":"Turn on app notifications"}</button></div><p class="desc" style="margin-top:6px">App notifications only arrive while Op-Lock In is running in the background. They include a Log ${W().step} ml button.</p>`:""}`;
  bindOpts(root);
  root.querySelector("#ws-add").onclick=e=>addWater(W().step,e.currentTarget);root.querySelector("#ws-250").onclick=e=>addWater(250,e.currentTarget);
  root.querySelector("#ws-log").onclick=()=>{const v=+root.querySelector("#ws-ml").value;if(!(v>0&&v<=3000)){toast("Enter an amount between 1 and 3000 ml");return}addWater(v)};
@@ -998,9 +998,9 @@ function drawWaterSheet(root){const k=dkey(),p=waterPace(),g=W().goal,log=waterL
  const nb=root.querySelector("#ws-notif");if(nb)nb.onclick=async()=>{if(W().notify&&Notification.permission==="granted"){W().notify=false;save();drawWaterSheet(root);toast("App notifications off");return}
   const r=await Notification.requestPermission();if(r==="granted"){W().notify=true;W().lastNotify=Date.now();save();toast("App notifications on")}else toast("Notifications are blocked. Allow them for this app in Android settings.");drawWaterSheet(root)}}
 function calendarReminders(){const a=tmin(W().start),b=tmin(W().end),ev=W().every,d=dkey().replace(/-/g,""),stamp=new Date().toISOString().replace(/[-:]/g,"").slice(0,15)+"Z";
- const lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Daily HQ//Water//EN","CALSCALE:GREGORIAN"];let n=0;
+ const lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Op-Lock In//Water//EN","CALSCALE:GREGORIAN"];let n=0;
  for(let m=a;m<=b;m+=ev){const hh=String(Math.floor(m/60)).padStart(2,"0"),mm=String(m%60).padStart(2,"0");n++;
-  lines.push("BEGIN:VEVENT",`UID:dailyhq-water-${hh}${mm}@dailyhq`,`DTSTAMP:${stamp}`,`DTSTART:${d}T${hh}${mm}00`,"DURATION:PT5M","RRULE:FREQ=DAILY",`SUMMARY:💧 Drink water (${W().step} ml)`,`DESCRIPTION:Log it in Daily HQ. Goal ${fmtL(W().goal)} a day.`,"TRANSP:TRANSPARENT","BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:Drink water","TRIGGER:PT0M","END:VALARM","END:VEVENT")}
+  lines.push("BEGIN:VEVENT",`UID:dailyhq-water-${hh}${mm}@dailyhq`,`DTSTAMP:${stamp}`,`DTSTART:${d}T${hh}${mm}00`,"DURATION:PT5M","RRULE:FREQ=DAILY",`SUMMARY:💧 Drink water (${W().step} ml)`,`DESCRIPTION:Log it in Op-Lock In. Goal ${fmtL(W().goal)} a day.`,"TRANSP:TRANSPARENT","BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:Drink water","TRIGGER:PT0M","END:VALARM","END:VEVENT")}
  lines.push("END:VCALENDAR");const file=new File([lines.join("\r\n")],"daily-hq-water-reminders.ics",{type:"text/calendar"});
  const dl=()=>{const u=URL.createObjectURL(file),x=document.createElement("a");x.href=u;x.download=file.name;document.body.appendChild(x);x.click();setTimeout(()=>{URL.revokeObjectURL(u);x.remove()},1500);toast(`${n} daily reminders saved. Open the file and add it to your Calendar.`)};
  if(navigator.canShare&&navigator.canShare({files:[file]}))navigator.share({files:[file],title:"Water reminders"}).then(()=>toast("Pick your Calendar app to add the reminders")).catch(e=>{if(e&&e.name!=="AbortError")dl()});else dl()}
@@ -1014,8 +1014,13 @@ function waterTick(){if(!S.water)return;renderWater();const p=waterPace(),now=Da
 navigator.serviceWorker&&navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.water)addWater(+e.data.water)});
 
 /* ================= settings ================= */
+const APP_NAME="Op-Lock In",APP_VERSION="v1.5",APP_OWNER="James";
+function aboutSheet(){openSheet(`<div class="about"><img src="icon-192.png" alt="" width="84" height="84"><h2>${APP_NAME}</h2><span class="chip">${APP_VERSION}</span>
+ <p class="made">Made for <b>${APP_OWNER}</b></p>
+ <blockquote>Thank you for trying my app. I hope it can help you organize your life like it has done for me.</blockquote></div>
+ <div class="btns" style="justify-content:center"><button class="link" id="ab-setup">App setup</button></div>`,root=>{root.querySelector("#ab-setup").onclick=()=>{closeSheet();openSettings()}})}
 function openSettings(focus){const s=S.settings,hidden=S.trades.poly.filter(t=>t.hidden).length+S.trades.manual.filter(t=>t.hidden).length+S.trades.bob.filter(t=>t.hidden).length;
- openSheet(`<h2>Settings</h2><p class="desc">Everything is saved on this phone. Make a backup now and then.</p>
+ openSheet(`<h2>App setup</h2><p class="desc">Everything is saved on this phone. Make a backup now and then.</p>
  <div class="sec" style="margin-top:6px;border-top:0;padding-top:0"><h3>Polymarket sync</h3><p class="desc">Paste your Polymarket wallet address. On Polymarket, open your profile and copy the address that starts with 0x. It only lets this app read your public trades. It can't trade or move money.</p>
   <div class="field"><label for="s-w">Wallet address</label><input id="s-w" value="${esc(s.wallet)}" placeholder="0x…" autocomplete="off" autocapitalize="off" spellcheck="false"><span class="hint" id="s-werr"></span></div>
   <div class="field"><label><input type="checkbox" id="s-btc" ${s.btcOnly?"checked":""} style="width:auto;margin-right:8px">Only track Bitcoin Up or Down markets</label></div></div>
@@ -1038,7 +1043,7 @@ function openSettings(focus){const s=S.settings,hidden=S.trades.poly.filter(t=>t
   const r=root.querySelector("#s-reset");r.onclick=()=>{if(!r.dataset.sure){r.dataset.sure=1;r.textContent="Tap again to erase";root.querySelector("#s-conf").innerHTML=`<div class="confirm">This deletes all trades, tasks, journal entries and settings on this phone. Save a backup first if you might want them back.</div>`;return}
    S=defaults();save();closeSheet();renderAll();toast("Everything erased")}})}
 function exportData(){const blob=new Blob([JSON.stringify(S,null,1)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`daily-hq-backup-${dkey()}.json`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);toast("Backup saved to your downloads")}
-$("importfile").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(d.v!==1||!d.trades||!d.journal)throw 0;S=d;save();closeSheet();renderAll();toast("Backup restored")}catch(x){toast("That file isn't a Daily HQ backup")}e.target.value=""};
+$("importfile").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(d.v!==1||!d.trades||!d.journal)throw 0;S=d;save();closeSheet();renderAll();toast("Backup restored")}catch(x){toast("That file isn't a Op-Lock In backup")}e.target.value=""};
 
 /* ================= home theatre ================= */
 const CARDS=[
@@ -1064,7 +1069,7 @@ const CARDS=[
   f:()=>{const b=stats("bob","All"),m=stats("manual","All");return[["Bob P&L",pnlStr(b.pnl)],["Manual P&L",pnlStr(m.pnl)],["Today",pnlStr(b.today+m.today)]]},b:()=>"See Bob's trades"}];
 const rail=$("rail");
 CARDS.forEach((cd,i)=>{const el=document.createElement("article");el.className="card";el.tabIndex=0;
- el.innerHTML=`<div class="surf"><canvas></canvas><div class="shade"></div><div class="glare"></div><div class="meta"><span>Daily HQ / Feed</span><span>${String(i+1).padStart(2,"0")} / ${String(CARDS.length).padStart(2,"0")}</span></div>
+ el.innerHTML=`<div class="surf"><canvas></canvas><div class="shade"></div><div class="glare"></div><div class="meta"><span>Op-Lock In / Feed</span><span>${String(i+1).padStart(2,"0")} / ${String(CARDS.length).padStart(2,"0")}</span></div>
  <div class="cover"><div class="k"></div><strong></strong><div class="insight"><div class="ins"></div><div class="facts"></div></div></div><button class="cta"></button></div>`;
  cd.el=el;rail.appendChild(el);
  el.addEventListener("click",e=>{if(drag.moved)return;if(i!==S.ui.card){S.ui.card=i;save();layout();return}
@@ -1119,7 +1124,7 @@ function glide(){const b=$("dcore").querySelector(".db.on"),g=$("glide");if(!b){
 $("dcore").querySelectorAll(".db").forEach(b=>b.onclick=()=>go(b.dataset.v));
 document.querySelector('[data-k="apps"]').onclick=()=>$("dock").classList.toggle("apps");
 document.querySelector('[data-k="back"]').onclick=()=>$("dock").classList.remove("apps");
-$("logbtn").onclick=()=>go("trades");$("setbtn").onclick=()=>openSettings();$("syncbtn").onclick=()=>sync(true);$("streakbtn").onclick=()=>go("today");$("levelpill").onclick=()=>go("today");
+$("logbtn").onclick=()=>go("trades");$("setbtn").onclick=()=>aboutSheet();$("syncbtn").onclick=()=>sync(true);$("streakbtn").onclick=()=>go("today");$("levelpill").onclick=()=>go("today");
 
 /* ================= orbit ================= */
 function orbit(o){$("orbit").classList.toggle("open",o);$("scrim").classList.toggle("on",o);$("orbit").setAttribute("aria-hidden",!o)}
