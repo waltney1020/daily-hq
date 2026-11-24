@@ -59,7 +59,7 @@ body.page-mode .amb-shade{background:linear-gradient(180deg,rgba(2,11,14,.45),rg
 .sysc .dot{position:absolute;top:9px;right:9px;width:6px;height:6px;border-radius:50%;background:var(--peach)}
 .sysc.spin svg{animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media (max-width:640px){.week button{flex-direction:column;gap:0}.week button strong{font-size:14px}.sys .lbl{display:none}}
+@media (max-width:640px){.week button{flex-direction:column;gap:0}.week button strong{font-size:14px}.sys .lbl{display:none}#syncbtn{display:none}.sysc{min-width:42px;padding:0 8px}}
 .dayCard{position:absolute;top:calc(100% + 8px);z-index:30;width:min(400px,calc(100vw - 32px));padding:18px;border-radius:18px;background:rgba(7,22,27,.86);box-shadow:0 22px 58px rgba(0,8,12,.4);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1px solid var(--line);animation:reveal .32s var(--ease) both}
 @keyframes reveal{from{opacity:0;transform:translateY(-8px) scale(.985);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
 .dayCard h3{margin:2px 0 8px;font-size:19px;font-weight:500}
@@ -234,6 +234,23 @@ body.page-mode .amb-shade{background:linear-gradient(180deg,rgba(2,11,14,.45),rg
 .entry .when{font-size:12px;color:var(--muted);margin-top:6px;display:flex;gap:8px;align-items:center}
 .mood{display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(239,188,144,.14);color:#F1C39D;font-size:11px;font-weight:600}
 .jbody>*{animation:unfold .4s var(--ease) both}
+
+/* water */
+.watercard{border-color:rgba(122,184,240,.3);background:linear-gradient(120deg,rgba(30,62,84,.78),rgba(20,44,58,.78))}
+.wnum{font-size:clamp(28px,4vw,38px);font-weight:500;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin-top:4px}
+.wnum span{font-size:.55em;color:var(--muted)}
+.wbtn{background:#7AB8F0;border-color:#7AB8F0;color:#0A2638;font-weight:700}
+.wbtn:hover{background:#94C8F4}
+.wbar{position:relative;height:10px;border-radius:6px;background:rgba(255,255,255,.08);margin-top:14px;overflow:visible}
+.wbar.big{height:14px;margin:14px 0 6px}
+.wbar i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#5FA8E8,#9FD4F7);transition:width .6s var(--ease)}
+.wbar b{position:absolute;top:-4px;bottom:-4px;width:2px;border-radius:1px;background:var(--peach);transform:translateX(-1px)}
+.wweek{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;height:90px;align-items:end}
+.wweek div{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+.wweek i{width:100%;max-width:26px;border-radius:5px 5px 2px 2px;background:#5FA8E8;min-height:3px}
+.wweek i.full{background:var(--mint)}
+.wweek small{font-size:11px;color:var(--muted)}
+#waterbtn svg{stroke:#9FD4F7}
 
 /* food */
 .db[data-v=food]>svg{background:rgba(196,140,90,.17);color:#E9BF95}
