@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="app.css?v=30">
+<link rel="stylesheet" href="app.css?v=31">
 </head>
 <body>
 <div class="amb" id="ambA" aria-hidden="true"></div><div class="amb b" id="ambB" aria-hidden="true"></div><div class="amb-shade" aria-hidden="true"></div>
@@ -107,15 +107,21 @@
   </section>
 
   <section class="page" id="p-money">
-    <div class="grid">
-      <div class="panel col2" id="moneyadd"></div>
-      <div class="panel" id="moneysum"></div>
+    <div class="msum" id="moneysum"></div>
+    <div class="mtabs" id="mtabs" role="tablist" aria-label="Money views"><span class="hl" id="mtabhl"></span><button role="tab" data-mt="log">Log</button><button role="tab" data-mt="ov">Overview</button><button role="tab" data-mt="buy">To buy</button><button role="tab" data-mt="hist">History</button></div>
+    <div class="mview" id="mv-log"><div class="mlog" id="moneyadd"></div></div>
+    <div class="mview" id="mv-ov">
+      <div class="mcard">
+        <div class="mchead"><b id="mctitle">Daily spending</b><div class="mseg" id="mcview"><button data-v="days">Days</button><button data-v="split">Split</button><button data-v="months">Months</button></div></div>
+        <div class="mcwrap" id="mcwrap"><svg id="mchart" role="img" aria-label="Spending chart"></svg><div class="mtip" id="mtip"></div></div>
+        <div class="mcap" id="mccap"></div>
+        <div class="mlegend" id="mlegend"></div>
+        <button class="mtblbtn" id="mtblbtn">Show as table</button><div id="mtbl" hidden></div>
+      </div>
+      <div class="mcard" id="moneycats"></div>
     </div>
-    <div class="panel" id="moneywish"></div>
-    <div class="grid">
-      <div class="panel" id="moneycats"></div>
-      <div class="panel col2" id="moneylog"></div>
-    </div>
+    <div class="mview" id="mv-buy"><div id="moneywish"></div></div>
+    <div class="mview" id="mv-hist"><div id="moneylog"></div></div>
   </section>
 
   <section class="page" id="p-journal">
@@ -157,7 +163,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Flip.min.js"></script>
-<script src="art.js?v=30"></script>
-<script src="app.js?v=30"></script>
+<script src="art.js?v=31"></script>
+<script src="app.js?v=31"></script>
 </body>
 </html>
