@@ -15,7 +15,7 @@ const ACCTS={poly:"Polymarket",manual:"Manual",bob:"Bob"};
 const GROUPS=["Morning","Afternoon","Evening","Hair care","Weekly","Anytime"];
 const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],DOWL=["Sundays","Mondays","Tuesdays","Wednesdays","Thursdays","Fridays","Saturdays"];
 /* the user's checklist; bump PACK when it changes so installed apps pick it up */
-const PACK=10;
+const PACK=11;
 const ONE_OFFS=[["2026-11-24",{t:"Patch the holes in the room",time:"7:45 PM",g:"Evening",steps:["Gather spackle, putty knife, sandpaper and touch-up paint","Clean loose bits and dust out of each hole","Fill each hole slightly overfilled","Let it dry (check the spackle label)","Sand smooth and wipe the dust","Touch up with paint once fully dry"],note:"Bigger holes may need a second thin coat after the first one dries."}],
  ["2026-11-24",{t:"Finish the room development",time:"8:00 PM",g:"Evening",note:"Finish the remaining room setup and workspace improvements. If it's a big job, write down the last few pieces left so tomorrow knows exactly where to pick up."}]];
 /* portions: RER = 70 × kg^0.75, daily = RER × activity factor. Fresh mix ≈ 1.3 kcal/g, ≈ 230 kcal/cup; one batch ≈ 2,650 kcal (no eggs). */
@@ -307,7 +307,7 @@ function defaults(){return{v:1,created:Date.now(),
  settings:{wallet:"",btcOnly:true,bank:{poly:0,manual:0,bob:0},stake:{poly:10,manual:10,bob:10},label:{poly:"BTC Up/Down",manual:"BTC",bob:"BTC"},book5:"Gratitude"},
  trades:{poly:[],manual:[],bob:[]},sync:{last:0,err:""},
  routine:[],pack:0,
- days:{},journal:{dreams:[],ideas:[],notes:[],emotions:[],gratitude:[]},xp:0,best:0,food:{recipes:[],grocery:{}},weights:{},water:{...WATER_DEFAULT,log:{}},smoke:{sessions:[],urges:[],active:null},dogs:JSON.parse(JSON.stringify(DOGS_DEFAULT)),
+ days:{},journal:{dreams:[],ideas:[],notes:[],emotions:[],gratitude:[]},xp:0,best:0,food:{recipes:[],grocery:{}},weights:{},water:{...WATER_DEFAULT,log:{}},smoke:{sessions:[],urges:[],active:null},money:{items:[],budget:0,pay:"Card"},dogs:JSON.parse(JSON.stringify(DOGS_DEFAULT)),
  ui:{acct:"poly",tf:"5m",book:"dreams",card:0,shown:30}}}
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){S=null}
@@ -351,6 +351,7 @@ if(!S||S.v!==1)S=defaults();
   for(const d of S.dogs.list){if(!d.weight&&wt[d.id])d.weight=wt[d.id];d.factor=d.factor||1.4;d.wlog=d.wlog||{};if(!Object.keys(d.wlog).length&&parseFloat(d.weight))d.wlog[dkey()]=parseFloat(d.weight)}
   const g=S.dogs.list.find(d=>d.id==="girl");if(g&&!g.goal){g.goal="lose";g.target=Math.round(parseFloat(g.weight||55)*0.9*2)/2}
   if(!S.routine.some(r=>r.link==="dogweigh"))S.routine.push({id:uid(),t:"Weigh the dogs",time:"",g:"Weekly",dow:[0],link:"dogweigh",note:"Weekly weigh-in for the weight-loss plan. Enter the numbers under Names and weights; the app shows whether she's on pace (0.5–1 lb a week)."})}
+ if(pack0<11){const fin=S.routine.find(r=>r.t==="Weekly finance update");if(fin&&!fin.link)Object.assign(fin,{link:"money",note:"Review this month in Money: total vs budget, top categories, anything to cut."});S.money=S.money||{items:[],budget:0,pay:"Card"}}
  if(pack0<10){for(const [k,x] of ONE_OFFS){if(k<dkey())continue;const dd=S.days[k]||(S.days[k]={done:{},extra:[]});if(!dd.extra.some(e=>e.t===x.t))dd.extra.push({id:uid(),...x})}}
  S.pack=PACK})();
 let saveT;function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Couldn't save. Your phone storage may be full.")}if(typeof scheduleSoon==="function")scheduleSoon()},150)}
@@ -699,8 +700,8 @@ function grocerySheet(){const k=dkey(),nextWeek=dowOf(k)===0,ref=new Date(k+"T12
   root.querySelectorAll(".step").forEach(b=>b.onclick=()=>{const x=b.dataset.x;ticks[x]=!ticks[x];if(!ticks[x])delete ticks[x];save();draw(root)});
   root.querySelector("#g-clear").onclick=()=>{for(const x in ticks)delete ticks[x];save();draw(root)}};
  $("sheet").innerHTML="";$("sheetwrap").hidden=false;draw($("sheet"))}
-function linkLabel(link){if(link==="dogweigh")return "Enter weights";if(link==="dogs")return "Check in";if(link==="freezer")return "Freezer count";if(link==="dogbatch")return "Open recipe";if(link==="water")return "Log water";if(link==="weigh")return "Log weight";if(link==="grocery")return "Grocery list";if(link==="menu")return "This week's menu";const r=recipeFor(link);return r?"Open recipe":"Open Food"}
-function followLink(link,id){closeSheet();if(link==="dogweigh")return dogEdit();if(link==="dogs")return dogCheckIn();if(link==="freezer"){S.ui.who="dog";return go("food")}if(link==="dogbatch"){const r=S.food.recipes.find(x=>x.name===HUSKY_RECIPE.name);return r?openRecipe(r.id):(S.ui.who="dog",go("food"))}if(link==="water")return openWater();if(link==="weigh")return weighSheet(id);if(link==="grocery")return grocerySheet();if(link==="menu"){S.ui.who="me";return go("food")}
+function linkLabel(link){if(link==="money")return "Open Money";if(link==="dogweigh")return "Enter weights";if(link==="dogs")return "Check in";if(link==="freezer")return "Freezer count";if(link==="dogbatch")return "Open recipe";if(link==="water")return "Log water";if(link==="weigh")return "Log weight";if(link==="grocery")return "Grocery list";if(link==="menu")return "This week's menu";const r=recipeFor(link);return r?"Open recipe":"Open Food"}
+function followLink(link,id){closeSheet();if(link==="money")return go("money");if(link==="dogweigh")return dogEdit();if(link==="dogs")return dogCheckIn();if(link==="freezer"){S.ui.who="dog";return go("food")}if(link==="dogbatch"){const r=S.food.recipes.find(x=>x.name===HUSKY_RECIPE.name);return r?openRecipe(r.id):(S.ui.who="dog",go("food"))}if(link==="water")return openWater();if(link==="weigh")return weighSheet(id);if(link==="grocery")return grocerySheet();if(link==="menu"){S.ui.who="me";return go("food")}
  const r=recipeFor(link);if(r)openRecipe(r.id);else{S.ui.who="me";go("food")}}
 
 /* ================= task alerts ================= */
@@ -789,6 +790,55 @@ function nativeAlertsSheet(){const N=nset(),nx=S.native&&S.native.next;
  root=>{bindOpts(root);root.querySelector("#nt-save").onclick=async()=>{Object.assign(N,{start:root.querySelector("#nt-start").checked,missed:root.querySelector("#nt-missed").checked,water:root.querySelector("#nt-water").checked,pre:+optVal(root,"pre")||0});save();await scheduleNative();closeSheet();toast(`Saved · ${S.native.count} notifications scheduled`)};
   root.querySelector("#nt-test").onclick=async()=>{const perm=await LN.checkPermissions();if(perm.display!=="granted"){const r=await LN.requestPermissions();if(r.display!=="granted"){toast("Notifications are off for Op-Lock In in Android settings");return}}
    const nx2=nextInfo();await LN.schedule({notifications:[{id:nid("test"+Date.now()),title:nx2.t?"Now: "+nx2.t.t:"Op-Lock In test",body:"This is how your reminders will look.",channelId:"tasks",actionTypeId:"TASK",extra:nx2.t?{k:dkey(),id:nx2.t.id,kind:"task"}:{},smallIcon:"ic_stat_dailyhq",iconColor:"#EFBC90",schedule:{at:new Date(Date.now()+5000),allowWhileIdle:true}}]});toast("Test coming in 5 seconds. You can close the app.")}})}
+
+/* ================= money (expenses) ================= */
+const MCATS=[["Groceries","#86D3B0"],["Eating out","#EFBC90"],["Gas & transport","#9ECBD7"],["Bills & utilities","#7AB8B8"],["Subscriptions","#BBB8DA"],["Shopping","#E9A3C0"],["Health & care","#A9D5D0"],["Pets","#E9C46A"],["Smoking","#B7A3E0"],["Fun","#F08C8C"],["Trading fees","#5FA8E8"],["Other","#A9BBB9"]];
+const MCOL=Object.fromEntries(MCATS);
+const MO=()=>S.money||(S.money={items:[],budget:0,pay:"Card"});
+const usd=n=>"$"+(+n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const monthKey=d=>`${d.getFullYear()}-${d.getMonth()}`;
+function moneyStats(){const now=new Date(),it=MO().items,mk=monthKey(now),pm=new Date(now.getFullYear(),now.getMonth()-1,1);
+ const sum=l=>l.reduce((t,x)=>t+(+x.amt||0),0),inMonth=(x,d)=>monthKey(new Date(x.ts))===monthKey(d);
+ const month=it.filter(x=>inMonth(x,now)),today=it.filter(x=>sameDay(x.ts)),wk=it.filter(x=>x.ts>Date.now()-7*864e5);
+ const lastSame=it.filter(x=>inMonth(x,pm)&&new Date(x.ts).getDate()<=now.getDate());
+ const cats={};month.forEach(x=>cats[x.cat]=(cats[x.cat]||0)+(+x.amt||0));
+ const dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate(),left=dim-now.getDate()+1;
+ return{month:sum(month),today:sum(today),week:sum(wk),lastSame:sum(lastSame),cats:Object.entries(cats).sort((a,b)=>b[1]-a[1]),left,dim,count:month.length}}
+let mDraft={amt:"",cat:"Groceries",note:""};
+function renderMoney(){const M=MO(),st=moneyStats();
+ $("moneyadd").innerHTML=`<span class="eyebrow">Log a purchase</span>
+  <div class="amtrow"><span>$</span><input id="m-amt" inputmode="decimal" placeholder="0.00" value="${esc(mDraft.amt)}" aria-label="Amount" autocomplete="off"></div>
+  <div class="chips quickamt">${[5,10,20,50].map(v=>`<button type="button" class="chip" data-q="${v}">$${v}</button>`).join("")}</div>
+  <div class="field"><label>Category</label><div class="chips wrap catpick">${MCATS.map(([c,col])=>`<button type="button" class="chip ${mDraft.cat===c?"on":""}" data-c="${esc(c)}"><i style="background:${col}"></i>${esc(c)}</button>`).join("")}</div></div>
+  <div class="pair"><div class="field"><label for="m-note">What was it?</label><input id="m-note" value="${esc(mDraft.note)}" placeholder="Costco, gas, Netflix…" autocomplete="off"></div><div class="field"><label>Paid with</label>${opts("pay",[["Card","Card"],["Cash","Cash"],["Other","Other"]],M.pay||"Card")}</div></div>
+  <button class="action p big-btn" id="m-add" style="width:100%;margin-top:16px">Log purchase</button>`;
+ const amt=$("m-amt"),upBtn=()=>{const v=parseFloat(amt.value);$("m-add").textContent=v>0?`Log ${usd(v)} · ${mDraft.cat}`:"Log purchase"};
+ amt.oninput=()=>{mDraft.amt=amt.value;upBtn()};$("m-note").oninput=e=>mDraft.note=e.target.value;
+ $("moneyadd").querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{amt.value=b.dataset.q;mDraft.amt=amt.value;upBtn()});
+ $("moneyadd").querySelectorAll(".catpick .chip").forEach(b=>b.onclick=()=>{mDraft.cat=b.dataset.c;$("moneyadd").querySelectorAll(".catpick .chip").forEach(x=>x.classList.toggle("on",x===b));upBtn()});
+ bindOpts($("moneyadd"),(n,v)=>{M.pay=v;save()});upBtn();
+ $("m-add").onclick=e=>{const v=Math.round(parseFloat(amt.value)*100)/100;if(!(v>0)){toast("Enter an amount first");amt.focus();return}
+  M.items.push({id:uid(),ts:Date.now(),amt:v,cat:mDraft.cat,note:mDraft.note.trim(),pay:M.pay||"Card"});mDraft={amt:"",cat:mDraft.cat,note:""};save();renderMoney();toast(`Logged ${usd(v)}`);burst(e.currentTarget,["#86D3B0","#EFBC90"])};
+ const vs=st.lastSame?st.month-st.lastSame:null,b=+M.budget||0,pct=b?Math.min(100,st.month/b*100):0,perDay=b?Math.max(0,(b-st.month)/st.left):0;
+ $("moneysum").innerHTML=`<span class="eyebrow">${new Date().toLocaleDateString([], {month:"long"})} spending</span><div class="big" style="font-size:42px">${usd(st.month)}</div>
+  ${b?`<div class="wbar" style="margin-top:12px"><i style="width:${pct}%;background:${pct>=100?"var(--rose)":pct>85?"#E9C46A":"linear-gradient(90deg,#5FA8E8,#86D3B0)"}"></i><b style="left:${Math.round((st.dim-st.left+1)/st.dim*100)}%"></b></div>
+   <div class="sub" style="margin-top:8px">${usd(Math.max(0,b-st.month))} left of ${usd(b)} · about ${usd(perDay)} a day for ${st.left} days</div>`:`<button class="link" id="m-budget" style="padding-left:0;color:#F1C39D">Set a monthly budget</button>`}
+  <div class="stats" style="margin-top:12px"><div class="stat"><small>Today</small><b>${usd(st.today)}</b></div><div class="stat"><small>Last 7 days</small><b>${usd(st.week)}</b></div>
+  <div class="stat"><small>vs last month</small><b class="${vs>0?"dn":vs<0?"up":""}">${vs===null?"—":(vs>0?"+":"−")+usd(Math.abs(vs)).slice(1).replace(/^/,"$")}</b></div><div class="stat"><small>Purchases</small><b>${st.count}</b></div></div>
+  ${b?`<button class="link" id="m-budget" style="padding-left:0;margin-top:6px">Change budget</button>`:""}`;
+ $("m-budget").onclick=()=>openSheet(`<h2>Monthly budget</h2><p class="desc">The bar shows how much is left and what you can spend per day to stay on track.</p><div class="field"><label for="bud">Budget ($)</label><input id="bud" type="number" inputmode="decimal" value="${b||""}" placeholder="2000"></div><div class="btns"><button class="action p" id="bud-s">Save</button></div>`,r=>{r.querySelector("#bud-s").onclick=()=>{M.budget=Math.max(0,+r.querySelector("#bud").value||0);save();closeSheet();renderMoney();toast("Budget saved")}});
+ const mx=Math.max(1,...st.cats.map(c=>c[1]));
+ $("moneycats").innerHTML=`<span class="ptitle">Where it went</span><div class="sub">This month by category</div>${st.cats.length?`<div class="catbars">${st.cats.map(([c,v])=>`<div class="cb"><div class="row sb"><span><i style="background:${MCOL[c]||"#A9BBB9"}"></i>${esc(c)}</span><b>${usd(v)}</b></div><div class="cbar"><i style="width:${v/mx*100}%;background:${MCOL[c]||"#A9BBB9"}"></i></div></div>`).join("")}</div>`:`<div class="empty"><b>Nothing logged this month</b>Your categories show up here.</div>`}`;
+ const list=[...M.items].sort((a,b)=>b.ts-a.ts).slice(0,60),groups={};list.forEach(x=>(groups[dkey(new Date(x.ts))]=groups[dkey(new Date(x.ts))]||[]).push(x));
+ $("moneylog").innerHTML=`<div class="row sb"><span class="ptitle">Purchases</span><span class="sub">Tap one to edit</span></div>${list.length?Object.entries(groups).map(([k,l])=>`<div class="mday"><span>${sameDay(l[0].ts)?"Today":new Date(k+"T12:00").toLocaleDateString([], {weekday:"long",month:"short",day:"numeric"})}</span><b>${usd(l.reduce((t,x)=>t+x.amt,0))}</b></div>${l.map(x=>`<button class="tr" data-mid="${x.id}"><span class="mdot" style="background:${MCOL[x.cat]||"#A9BBB9"}"></span><span class="ti"><div>${esc(x.note||x.cat)}</div><small>${esc(x.cat)} · ${timeStr(x.ts)} · ${esc(x.pay||"")}</small></span><span class="amt">${usd(x.amt)}</span></button>`).join("")}`).join(""):`<div class="empty"><b>Log your first purchase</b>Type the amount, tap a category, done. It takes about 5 seconds.</div>`}`;
+ $("moneylog").querySelectorAll("[data-mid]").forEach(b=>b.onclick=()=>editMoney(b.dataset.mid))}
+function editMoney(id){const M=MO(),x=M.items.find(i=>i.id===id);if(!x)return;
+ openSheet(`<h2>Edit purchase</h2><div class="pair"><div class="field"><label for="me-a">Amount ($)</label><input id="me-a" type="number" inputmode="decimal" step="0.01" value="${x.amt}"></div><div class="field"><label for="me-t">When</label><input id="me-t" type="datetime-local" value="${toLocalInput(x.ts)}"></div></div>
+ <div class="field"><label>Category</label>${opts("cat",MCATS.map(([c])=>[c,c]),x.cat)}</div><div class="field"><label for="me-n">What was it?</label><input id="me-n" value="${esc(x.note||"")}"></div>
+ <div class="field"><label>Paid with</label>${opts("pay",[["Card","Card"],["Cash","Cash"],["Other","Other"]],x.pay||"Card")}</div>
+ <div class="btns"><button class="action p" id="me-s">Save</button><button class="action danger" id="me-d">Delete</button></div>`,r=>{bindOpts(r);
+  r.querySelector("#me-s").onclick=()=>{Object.assign(x,{amt:Math.round((+r.querySelector("#me-a").value||0)*100)/100,ts:new Date(r.querySelector("#me-t").value).getTime()||x.ts,cat:optVal(r,"cat"),note:r.querySelector("#me-n").value.trim(),pay:optVal(r,"pay")});save();closeSheet();renderMoney();toast("Saved")};
+  const d=r.querySelector("#me-d");d.onclick=()=>{if(!d.dataset.sure){d.dataset.sure=1;d.textContent="Tap again to delete";return}M.items=M.items.filter(i=>i.id!==x.id);save();closeSheet();renderMoney();toast("Deleted")}})}
 
 /* ================= smoke log ================= */
 const MOODS_SMOKE=["Boredom","Stress","Anxiety","Habit","Craving","After eating","With friends","Tired","Bad mood","Work break","Waking up","Celebrating"];
@@ -1127,14 +1177,14 @@ $("won").onclick=e=>quickLog(true,e.currentTarget);$("lost").onclick=e=>quickLog
 $("addtrade").onclick=()=>editTrade(S.ui.acct);
 
 /* ================= routing + dock ================= */
-const NAMES={home:"Home",today:"Today",trades:"Trades",journal:"Journal",food:"Food",smoke:"Smoke log"},PALOF={today:1,trades:0,journal:2,food:3,smoke:4};
+const NAMES={home:"Home",today:"Today",trades:"Trades",journal:"Journal",food:"Food",smoke:"Smoke log",money:"Money"},PALOF={today:1,trades:0,journal:2,food:3,smoke:4,money:0};
 function go(v,o={}){S.view=v;if(o.acct)S.ui.acct=o.acct;if(o.book)S.ui.book=o.book;
  $("v-home").classList.toggle("off",v!=="home");document.querySelectorAll(".page").forEach(p=>p.classList.toggle("on",p.id==="p-"+v));document.body.classList.toggle("page-mode",v!=="home");
  $("dcore").querySelectorAll(".db").forEach(b=>b.classList.toggle("on",b.dataset.v===v));glide();
  const cr=$("crumb");cr.textContent=NAMES[v];cr.classList.remove("swap");void cr.offsetWidth;cr.classList.add("swap");
  if(v==="home"){renderCards();layout()}else setAmbient(PALOF[v]);
  if(v==="trades"){shownBal=null;renderTrades();const l=$("spark").querySelector(".line");if(l){l.style.animation="none";void l.offsetWidth;l.style.animation=""}if(S.ui.acct==="poly"&&S.settings.wallet&&Date.now()-S.sync.last>60000)sync(false)}
- if(v==="journal")renderJournal();if(v==="today")renderToday();if(v==="food")renderFood();if(v==="smoke")renderSmoke();
+ if(v==="journal")renderJournal();if(v==="today")renderToday();if(v==="food")renderFood();if(v==="smoke")renderSmoke();if(v==="money")renderMoney();
  save();scrollTo({top:0,behavior:o.instant?"auto":"smooth"});history.replaceState(null,"","#"+v)}
 function glide(){const b=$("dcore").querySelector(".db.on"),g=$("glide");if(!b){g.style.opacity=0;return}g.style.opacity=1;g.style.left=(b.offsetLeft+12)+"px";g.style.width=(b.offsetWidth-24)+"px"}
 $("dcore").querySelectorAll(".db").forEach(b=>b.onclick=()=>go(b.dataset.v));
@@ -1154,7 +1204,8 @@ $("orbit").querySelectorAll(".olab").forEach(b=>b.onclick=()=>{orbit(false);cons
 function renderAll(){syncRepSelect();renderWeek();renderToday();renderWater();renderTrades();renderJournal();renderFood();renderCards();if(S.view==="home")layout()}
 tick();setInterval(tick,10000);
 rail.classList.add("still");paintCards();renderAll();layout();requestAnimationFrame(()=>requestAnimationFrame(()=>rail.classList.remove("still")));
-const start=(location.hash||"").slice(1);if(start==="dogs"){S.ui.who="dog";go("food",{instant:true})}else if(start==="calm"){go("smoke",{instant:true});setTimeout(openCalm,300)}else go(NAMES[start]?start:"home",{instant:true});
+const start=(location.hash||"").slice(1);if(start==="dogs"){S.ui.who="dog";go("food",{instant:true})}else if(start==="calm"){go("smoke",{instant:true});setTimeout(openCalm,300)}
+else go(NAMES[start]?start:"home",{instant:true});
 addEventListener("resize",()=>{glide();segAll()});
 setInterval(waterTick,60000);setTimeout(waterTick,4000);setInterval(taskTick,30000);setTimeout(taskTick,2000);$("alertsbtn").onclick=()=>NATIVE?nativeAlertsSheet():alertsSheet();if(NATIVE){nativeInit();document.documentElement.classList.add("native")}$("waterbtn").onclick=()=>openWater();
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){tick();waterTick();taskTick();scheduleSoon();if(S.settings.wallet&&Date.now()-S.sync.last>120000)sync(false)}});
