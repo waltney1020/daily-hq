@@ -507,19 +507,62 @@ function editTrade(a,id){const isNew=!id;const t=isNew?{id:uid(),src:"manual",ts
    if(t.src==="sync")t.hidden=true;else S.trades[a]=S.trades[a].filter(x=>x.id!==t.id);save();closeSheet();renderTrades();renderCards();toast("Trade deleted")}})}
 
 /* ================= today ================= */
-function renderToday(just){const k=dkey(),dd=dayData(k),list=tasksFor(k),req=list.filter(t=>!t.optional),left=req.filter(t=>!dd.done[t.id]);
+/* ---- time awareness ---- */
+const nowMin=()=>{const d=new Date();return d.getHours()*60+d.getMinutes()};
+const startDay=()=>dkey(new Date(S.created||Date.now())),startMin=()=>{const d=new Date(S.created||Date.now());return d.getHours()*60+d.getMinutes()};
+const fmtIn=m=>m<60?m+" min":Math.floor(m/60)+" h"+(m%60?" "+m%60+" min":"");
+function timing(k=dkey()){const list=tasksFor(k),dd=S.days[k]||{done:{}},today=k===dkey(),past=k<dkey(),nm=today?nowMin():past?99999:-1;
+ const Ts=list.map(t=>tmin(t.time)).filter(x=>x<9998).sort((a,b)=>a-b);
+ return list.map(t=>{const T=tmin(t.time),timed=T<9998,next=timed?Ts.find(x=>x>T):undefined,dl=timed?Math.min(T+120,Math.max(T+30,next??T+60)):1440;
+  const done=!!dd.done[t.id],at=(dd.doneAt||{})[t.id];let st;
+  if(done)st=(dd.late||{})[t.id]||(at&&timed&&today&&(new Date(at).getHours()*60+new Date(at).getMinutes())>dl)?"late":"done";
+  else if(t.optional)st="optional";
+  else if(k===startDay()&&timed&&T<startMin())st="pre";
+  else if(past)st=k<startDay()?"pre":"missed";
+  else if(!timed)st="anytime";
+  else if(nm<T)st="upcoming";else if(nm<dl)st="now";else st="missed";
+  return{...t,T,dl,st}})}
+function nextInfo(){const k=dkey(),tl=timing(k),dd=S.days[k]||{},later=dd.later||{},nm=nowMin();
+ const now=tl.filter(t=>t.st==="now"&&!later[t.id]).sort((a,b)=>a.T-b.T),up=tl.filter(t=>t.st==="upcoming").sort((a,b)=>a.T-b.T),any=tl.filter(t=>t.st==="anytime"&&!later[t.id]),missed=tl.filter(t=>t.st==="missed"),
+  laterL=tl.filter(t=>later[t.id]&&(t.st==="now"||t.st==="anytime"));
+ if(now[0])return{t:now[0],kind:"now",sub:`Now · started ${nm-now[0].T<1?"just now":fmtIn(nm-now[0].T)+" ago"} (planned ${now[0].time}).`,then:up[0],missed,up,any};
+ if(up[0]&&up[0].T-nm<=10)return{t:up[0],kind:"soon",sub:`Starts at ${up[0].time}, in ${fmtIn(up[0].T-nm)}.`,then:up[1],missed,up,any};
+ if(any[0])return{t:any[0],kind:"any",sub:"Anytime today."+(up[0]?` Next on the clock: ${up[0].t} at ${up[0].time} (in ${fmtIn(up[0].T-nm)}).`:""),then:null,missed,up,any};
+ if(up[0])return{t:up[0],kind:"up",sub:`Up next at ${up[0].time}, in ${fmtIn(up[0].T-nm)}.`,then:up[1],missed,up,any};
+ if(laterL[0])return{t:laterL[0],kind:"any",sub:"You moved this to later.",missed,up,any};
+ if(missed[0])return{t:missed[0],kind:"missed",sub:`Missed at ${missed[0].time||"earlier"}. You can still check it off.`,missed,up,any};
+ return{t:null,missed,up,any}}
+function pastMissed(){const out=[];for(let i=1;i<=2;i++){const d=new Date();d.setDate(d.getDate()-i);const k=dkey(d);if(k<startDay()||(S.days[k]&&S.days[k].ack))continue;
+  for(const t of timing(k))if(t.st==="missed")out.push({...t,k,when:i===1?"Yesterday":d.toLocaleDateString([], {weekday:"long"})})}return out}
+let doNextId=null;
+function renderToday(just){const k=dkey(),dd=dayData(k),tl=timing(k),req=tl.filter(t=>!t.optional),left=req.filter(t=>!dd.done[t.id]),info=nextInfo(),nMiss=info.missed.length;
  $("prog").textContent=(req.length-left.length)+" / "+req.length;const bd=$("dbadge");bd.hidden=!left.length;bd.textContent=left.length;
- $("dnt").textContent=left[0]?left[0].t:list.length?"All clear for today":"Add your first task";$("dncount").textContent=left.length?"1 of "+left.length:"Done";
- $("dnsub").textContent=left[0]?(left[0].rep?(repLabel(left[0])?"Your "+repLabel(left[0]).replace(/s$/,"")+" task.":"From your daily routine."):"Today only.")+(left[0].time?" Planned for "+left[0].time+".":"")+" Finish the list to keep your streak.":list.length?"Everything's done. Your streak is safe.":"Use the box below to build your routine.";
- $("dnxp").textContent=`Level ${level()} · ${S.xp%1000} / 1000 XP`;$("dndone").hidden=$("dnskip").hidden=!left[0];
- let first=true,g="";const html=list.map(t=>{const done=!!dd.done[t.id];const tag=done||t.optional?"":(first?(first=false,'<span class="tag now">NOW</span>'):'');const head=t.g!==g?(g=t.g,`<div class="grp">${esc(g)}</div>`):"";
-  return head+`<div class="it ${done?"done":""} ${t.id===just?"just":""}"><button class="main" data-id="${t.id}"><span class="ck">${done?"✓":""}</span>${tag}<span class="t">${esc(t.t)}</span></button><span class="r">${esc([t.steps&&t.steps.length?stepsDone(k,t)+"/"+stepList(k,t).length+(useAlt(k,t)?" gym":" steps"):"",t.time,t.rep?repLabel(t):"today",t.optional?"optional":"",t.note&&!(t.steps&&t.steps.length)?"note":""].filter(Boolean).join(" · "))}</span><button class="ed" data-ed="${t.id}" aria-label="Edit task">✎</button></div>`}).join("");
- $("tasks").innerHTML=html||`<div class="empty"><b>Build your daily routine</b>Add the things you do every day. They'll come back each morning.</div>`;
- $("tasks").querySelectorAll(".main").forEach(b=>b.onclick=()=>{const t=list.find(x=>x.id===b.dataset.id);if(t&&t.link==="weigh"&&!dd.done[t.id])weighSheet(t.id);else if(t&&t.link==="water")openWater();else if(t&&t.link==="dogs"&&!dd.done[t.id])dogCheckIn();else if(t&&((t.steps&&t.steps.length)||t.note||t.link))openSteps(t.id);else toggleTask(b.dataset.id,b)});$("tasks").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>editTask(b.dataset.ed));
+ doNextId=info.t?info.t.id:null;
+ $("dnt").textContent=info.t?info.t.t:tl.length?"All clear for today":"Add your first task";
+ $("dncount").textContent=info.kind==="now"?"Now":info.kind==="soon"?"Starting soon":info.kind==="missed"?"Catch up":left.length?left.length+" left":"Done";
+ $("dncount").className="chip"+(info.kind==="now"?" nowchip":info.kind==="missed"?" misschip":"");
+ $("dnsub").textContent=info.t?info.sub+(info.then?` Then: ${info.then.t} at ${info.then.time}.`:"")+(nMiss&&info.kind!=="missed"?` ${nMiss} missed today.`:""):tl.length?"Everything's done. Your streak is safe.":"Use the box below to build your routine.";
+ $("dnxp").textContent=`Level ${level()} · ${S.xp%1000} / 1000 XP`;$("dndone").hidden=$("dnskip").hidden=!info.t;
+ const firstUp=tl.filter(t=>t.st==="upcoming").sort((a,b)=>a.T-b.T)[0],nm=nowMin();
+ const pm=pastMissed();
+ const byDay={};pm.forEach(t=>(byDay[t.k]=byDay[t.k]||[]).push(t));
+ const missedHtml=pm.length?`<details class="missedbox" ${S.ui.missOpen?"open":""}><summary>Missed earlier · ${pm.length}</summary><p class="sub" style="margin:6px 0 4px">Check off anything you actually did. Finishing a day's list repairs its streak. Dismiss a day to clear the rest.</p>
+  ${Object.entries(byDay).map(([dk,items])=>`<div class="row sb missday"><b>${esc(items[0].when)} · ${items.length} missed</b><button class="link" data-ack="${dk}">Dismiss</button></div>${items.map(t=>`<div class="it"><button class="main" data-past="${t.k}|${t.id}"><span class="ck"></span><span class="t">${esc(t.t)}</span></button><span class="r">${esc(t.time||"")}</span></div>`).join("")}`).join("")}</details>`:"";
+ let g="";const html=tl.map(t=>{const done=t.st==="done"||t.st==="late";
+  const tag=t.st==="now"?'<span class="tag now">NOW</span>':t.st==="missed"?'<span class="tag missed">MISSED</span>':firstUp&&t.id===firstUp.id?`<span class="tag">NEXT · ${fmtIn(t.T-nm)}</span>`:"";
+  const head=t.g!==g?(g=t.g,`<div class="grp">${esc(g)}</div>`):"";
+  return head+`<div class="it ${done?"done":""} ${t.st==="missed"?"miss":""} ${t.st==="now"?"current":""} ${t.id===just?"just":""}"><button class="main" data-id="${t.id}"><span class="ck">${done?"✓":""}</span>${tag}<span class="t">${esc(t.t)}</span></button><span class="r">${esc([t.st==="late"?"done late":"",t.steps&&t.steps.length?stepsDone(k,t)+"/"+stepList(k,t).length+(useAlt(k,t)?" gym":" steps"):"",t.time,t.rep?repLabel(t):"today",t.optional?"optional":"",t.note&&!(t.steps&&t.steps.length)?"note":""].filter(Boolean).join(" · "))}</span><button class="ed" data-ed="${t.id}" aria-label="Edit task">✎</button></div>`}).join("");
+ $("tasks").innerHTML=missedHtml+(html||`<div class="empty"><b>Build your daily routine</b>Add the things you do every day. They'll come back each morning.</div>`);
+ const mb=$("tasks").querySelector(".missedbox");if(mb)mb.ontoggle=()=>{S.ui.missOpen=mb.open;save()};
+ $("tasks").querySelectorAll("[data-past]").forEach(b=>b.onclick=()=>{const [pk,id]=b.dataset.past.split("|");toggleTask(id,b,pk)});
+ $("tasks").querySelectorAll("[data-ack]").forEach(b=>b.onclick=()=>{const dk=b.dataset.ack;dayData(dk).ack=true;save();renderToday();toast("Cleared. Those stay marked as missed.","Undo",()=>{delete dayData(dk).ack;save();renderToday()})});
+ $("tasks").querySelectorAll(".main[data-id]").forEach(b=>b.onclick=()=>{const t=tl.find(x=>x.id===b.dataset.id);if(t&&t.link==="weigh"&&!dd.done[t.id])weighSheet(t.id);else if(t&&t.link==="water")openWater();else if(t&&t.link==="dogs"&&!dd.done[t.id])dogCheckIn();else if(t&&((t.steps&&t.steps.length)||t.note||t.link))openSteps(t.id);else toggleTask(b.dataset.id,b)});$("tasks").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>editTask(b.dataset.ed));
  $("streaklbl").textContent=streak()+(streak()===1?" day":" days")}
-function toggleTask(id,el){const k=dkey(),dd=dayData(k);dd.done[id]=!dd.done[id];if(!dd.done[id])delete dd.done[id];addXP(dd.done[id]?10:-10,el);
- const rt=S.routine.find(r=>r.id===id);if(rt&&rt.link==="freezer"&&S.dogs){S.dogs.freezer=Math.max(0,(S.dogs.freezer||0)+(dd.done[id]?-1:1))}
- const was=dd.complete;dd.complete=isComplete(k);const s=streak();if(s>S.best)S.best=s;save();renderToday(dd.done[id]?id:null);renderWeek();renderCards();
+function toggleTask(id,el,k=dkey()){const dd=dayData(k);dd.done[id]=!dd.done[id];if(!dd.done[id])delete dd.done[id];addXP(dd.done[id]?10:-10,el);
+ dd.doneAt=dd.doneAt||{};dd.late=dd.late||{};if(dd.done[id]){dd.doneAt[id]=Date.now();if(k!==dkey())dd.late[id]="late"}else{delete dd.doneAt[id];delete dd.late[id]}
+ const rt=S.routine.find(r=>r.id===id);if(rt&&rt.link==="freezer"&&S.dogs&&k===dkey()){S.dogs.freezer=Math.max(0,(S.dogs.freezer||0)+(dd.done[id]?-1:1))}
+ const was=dd.complete;dd.complete=isComplete(k);const s=streak();if(s>S.best)S.best=s;save();renderToday(dd.done[id]&&k===dkey()?id:null);renderWeek();renderCards();
+ if(k!==dkey()){toast(dd.complete&&!was?"That day is complete now. Streak: "+s+" days.":dd.done[id]?"Checked off (done late)":"Unchecked");return}
  if(dd.complete&&!was){toast("Day cleared. "+s+"-day streak.");burst(el)}else if(dd.done[id])toast("+10 XP")}
 function editTask(id){const k=dkey(),r=S.routine.find(x=>x.id===id),ex=dayData(k).extra.find(x=>x.id===id),t=r||ex;if(!t)return;
  const weekly=!!(r&&r.dow&&r.dow.length&&r.dow.length<7),sel=new Set(weekly?r.dow:[dowOf(k)]);
@@ -545,9 +588,9 @@ $("addf").onsubmit=e=>{e.preventDefault();const v=$("nt").value.trim();if(!v)ret
  if(rep==="once")dayData(dkey()).extra.push(t);else{if(rep==="weekly")t.dow=[wd];S.routine.push(t)}
  const dd=dayData(dkey());dd.complete=isComplete(dkey());$("nt").value="";save();renderToday();renderWeek();renderCards();toast(rep==="daily"?"Added to your routine":rep==="weekly"?"Added for every "+DOWL[wd].slice(0,-1):"Added for today")};
 function syncRepSelect(){const o=$("rep").querySelector('[value=weekly]');if(o)o.textContent="Every "+DOWL[dowOf(dkey())].slice(0,-1)}
-$("dndone").onclick=e=>{const k=dkey(),t=tasksFor(k).find(x=>!x.optional&&!dayData(k).done[x.id]);if(!t)return;if(t.link==="weigh")weighSheet(t.id);else if(t.steps&&t.steps.length)openSteps(t.id);else toggleTask(t.id,e.currentTarget)};
-$("dnskip").onclick=()=>{const k=dkey(),dd=dayData(k),list=tasksFor(k).filter(x=>!x.optional&&!dd.done[x.id]);if(list.length<2){toast("It's the last one left");return}
- (dd.later=dd.later||{})[list[0].id]=true;save();renderToday();renderCards();toast("Moved to the end of today")};
+$("dndone").onclick=e=>{const k=dkey(),t=tasksFor(k).find(x=>x.id===doNextId);if(!t)return;if(t.link==="water")return openWater();if(t.link==="dogs")return dogCheckIn();if(t.link==="weigh")weighSheet(t.id);else if(t.steps&&t.steps.length)openSteps(t.id);else toggleTask(t.id,e.currentTarget)};
+$("dnskip").onclick=()=>{const k=dkey(),dd=dayData(k),list=tasksFor(k).filter(x=>!x.optional&&!dd.done[x.id]);if(list.length<2||!doNextId){toast("It's the last one left");return}
+ (dd.later=dd.later||{})[doNextId]=true;save();renderToday();renderCards();toast("Moved to the end of today")};
 
 /* ================= journal ================= */
 const bookName=k=>k==="gratitude"?(S.settings.book5||"Gratitude"):BOOKS.find(b=>b[0]===k)[1];
@@ -656,6 +699,32 @@ function grocerySheet(){const k=dkey(),nextWeek=dowOf(k)===0,ref=new Date(k+"T12
 function linkLabel(link){if(link==="dogweigh")return "Enter weights";if(link==="dogs")return "Check in";if(link==="freezer")return "Freezer count";if(link==="dogbatch")return "Open recipe";if(link==="water")return "Log water";if(link==="weigh")return "Log weight";if(link==="grocery")return "Grocery list";if(link==="menu")return "This week's menu";const r=recipeFor(link);return r?"Open recipe":"Open Food"}
 function followLink(link,id){closeSheet();if(link==="dogweigh")return dogEdit();if(link==="dogs")return dogCheckIn();if(link==="freezer"){S.ui.who="dog";return go("food")}if(link==="dogbatch"){const r=S.food.recipes.find(x=>x.name===HUSKY_RECIPE.name);return r?openRecipe(r.id):(S.ui.who="dog",go("food"))}if(link==="water")return openWater();if(link==="weigh")return weighSheet(id);if(link==="grocery")return grocerySheet();if(link==="menu"){S.ui.who="me";return go("food")}
  const r=recipeFor(link);if(r)openRecipe(r.id);else{S.ui.who="me";go("food")}}
+
+/* ================= task alerts ================= */
+function taskTick(){const k=dkey();if(S.view==="today")renderToday();if(S.view==="home")renderCards();
+ if(!S.settings.taskAlerts||typeof Notification==="undefined"||Notification.permission!=="granted")return;
+ const dd=dayData(k),nm=nowMin();dd.notified=dd.notified||{};
+ for(const t of timing(k)){if(t.T>=9998||dd.notified[t.id]||t.st==="done"||t.st==="late"||t.st==="pre")continue;
+  if(nm>=t.T&&nm<t.T+5){dd.notified[t.id]=1;save();const up=timing(k).filter(x=>x.st==="upcoming").sort((a,b)=>a.T-b.T)[0];
+   navigator.serviceWorker&&navigator.serviceWorker.ready.then(r=>r.showNotification("Now: "+t.t,{body:(t.time?t.time+". ":"")+(up?`Up next: ${up.t} at ${up.time}.`:"Last timed task today."),tag:"task",renotify:true,icon:"icon-192.png",badge:"icon-192.png",data:{url:"./#today"}})).catch(()=>{})}}}
+function alertsSheet(){const on=S.settings.taskAlerts&&typeof Notification!=="undefined"&&Notification.permission==="granted",timed=S.routine.filter(r=>tmin(r.time)<9998).length;
+ openSheet(`<h2>Task reminders</h2><p class="desc">Get pinged when each timed task starts. ${timed} of your routine tasks have a time.</p>
+ <div class="note"><b>Phone calendar (recommended).</b> Adds your timed routine as repeating calendar events with an alert at the start time. They go off even when Daily HQ is closed. Weekly tasks only repeat on their day.</div>
+ <div class="btns" style="margin-top:0"><button class="action p" id="al-cal">Add my routine to my calendar</button></div>
+ <p class="desc" style="margin-top:6px">If you change times later, add it again and delete the old "Daily HQ" events in your calendar.</p>
+ ${typeof Notification!=="undefined"?`<div class="sec"><h3>App notifications</h3><p class="desc">"Now: Gym · Up next: AI Academy at 3:30 PM". These only arrive while Daily HQ is running in the background.</p><div class="btns" style="margin-top:8px"><button class="action" id="al-notif">${on?"On · turn off":"Turn on"}</button></div></div>`:""}`,
+ root=>{root.querySelector("#al-cal").onclick=()=>routineCalendar();const nb=root.querySelector("#al-notif");if(nb)nb.onclick=async()=>{if(on){S.settings.taskAlerts=false;save();closeSheet();toast("Task notifications off");return}
+  const r=await Notification.requestPermission();if(r==="granted"){S.settings.taskAlerts=true;save();closeSheet();toast("Task notifications on")}else toast("Notifications are blocked. Allow them for this app in Android settings.")}})}
+function routineCalendar(){const BY=["SU","MO","TU","WE","TH","FR","SA"],stamp=new Date().toISOString().replace(/[-:]/g,"").slice(0,15)+"Z";
+ const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Daily HQ//Routine//EN","CALSCALE:GREGORIAN"];let n=0;
+ const clean=s=>String(s).replace(/[\\;,]/g,m=>"\\"+m).replace(/\n/g,"\\n");
+ for(const r of S.routine){const m=tmin(r.time);if(m>=9998)continue;const hh=String(Math.floor(m/60)).padStart(2,"0"),mm=String(m%60).padStart(2,"0");
+  const d=new Date();if(r.dow&&r.dow.length&&r.dow.length<7){while(!r.dow.includes(d.getDay()))d.setDate(d.getDate()+1)}const ds=dkey(d).replace(/-/g,"");n++;
+  L.push("BEGIN:VEVENT",`UID:dailyhq-${r.id}@dailyhq`,`DTSTAMP:${stamp}`,`DTSTART:${ds}T${hh}${mm}00`,"DURATION:PT15M",r.dow&&r.dow.length&&r.dow.length<7?`RRULE:FREQ=WEEKLY;BYDAY=${r.dow.map(x=>BY[x]).join(",")}`:"RRULE:FREQ=DAILY",
+   `SUMMARY:${clean(r.t)}`,`DESCRIPTION:${clean("Daily HQ"+(r.optional?" (optional)":"")+(r.steps&&r.steps.length?" · "+r.steps.length+" steps":""))}`,"TRANSP:TRANSPARENT","BEGIN:VALARM","ACTION:DISPLAY",`DESCRIPTION:${clean(r.t)}`,"TRIGGER:PT0M","END:VALARM","END:VEVENT")}
+ L.push("END:VCALENDAR");const file=new File([L.join("\r\n")],"daily-hq-routine.ics",{type:"text/calendar"});
+ const dl=()=>{const u=URL.createObjectURL(file),x=document.createElement("a");x.href=u;x.download=file.name;document.body.appendChild(x);x.click();setTimeout(()=>{URL.revokeObjectURL(u);x.remove()},1500);toast(`${n} routine reminders saved. Open the file to add them to your Calendar.`)};
+ if(navigator.canShare&&navigator.canShare({files:[file]}))navigator.share({files:[file],title:"Daily HQ routine"}).then(()=>toast("Pick your Calendar app to add the reminders")).catch(e=>{if(e&&e.name!=="AbortError")dl()});else dl()}
 
 /* ================= dogs ================= */
 const dogLog=(k,id)=>(S.dogs.log[k]||{})[id];
@@ -820,7 +889,7 @@ const CARDS=[
   i:()=>{const st=stats("poly",S.ui.tf==="All"?"All":S.ui.tf);return st.res.length?`Win rate ${st.wr}% across ${st.res.length} settled trades${S.ui.tf==="All"?"":" on "+S.ui.tf}.`:"Trades sync from your wallet and land here automatically."},
   f:()=>{const st=stats("poly","All");return[["Score",st.w+"–"+st.l],["Streak",st.st],["Synced",S.settings.wallet?ago(S.sync.last):"Not set up"]]},b:()=>!S.settings.wallet&&!stats("poly","All").all.length?"Set up sync":"Open trades"},
  {pal:1,go:["today"],k:()=>"Today",s:()=>new Date().toLocaleDateString([], {weekday:"long",month:"long",day:"numeric"}),
-  h:()=>{const k=dkey(),t=tasksFor(k).find(x=>!x.optional&&!(S.days[k]&&S.days[k].done[x.id]));return t?"Do next: "+t.t:"Day cleared"},
+  h:()=>{const n=nextInfo();return n.t?(n.kind==="now"?"Now: ":n.kind==="missed"?"Catch up: ":"Next: ")+n.t.t+(n.t.time&&n.kind!=="now"?" at "+n.t.time:""):"Day cleared"},
   i:()=>"Your routine comes back every morning. Finish every task to grow your streak.",
   f:()=>{const k=dkey(),l=tasksFor(k).filter(x=>!x.optional),d=l.filter(x=>S.days[k]&&S.days[k].done[x.id]).length;return[["Done",d+" of "+l.length],["XP",S.xp],["Streak",streak()+" days"]]},b:()=>"Open Today"},
  {pal:2,go:["journal",{book:"dreams"}],k:()=>"Journal",s:()=>"Dreams",
@@ -908,7 +977,7 @@ tick();setInterval(tick,10000);
 rail.classList.add("still");paintCards();renderAll();layout();requestAnimationFrame(()=>requestAnimationFrame(()=>rail.classList.remove("still")));
 const start=(location.hash||"").slice(1);if(start==="dogs"){S.ui.who="dog";go("food",{instant:true})}else go(NAMES[start]?start:"home",{instant:true});
 addEventListener("resize",()=>{glide();segAll()});
-setInterval(waterTick,60000);setTimeout(waterTick,4000);$("waterbtn").onclick=()=>openWater();
-document.addEventListener("visibilitychange",()=>{if(!document.hidden){tick();waterTick();if(S.settings.wallet&&Date.now()-S.sync.last>120000)sync(false)}});
+setInterval(waterTick,60000);setTimeout(waterTick,4000);setInterval(taskTick,30000);setTimeout(taskTick,2000);$("alertsbtn").onclick=()=>alertsSheet();$("waterbtn").onclick=()=>openWater();
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){tick();waterTick();taskTick();if(S.settings.wallet&&Date.now()-S.sync.last>120000)sync(false)}});
 if(S.settings.wallet&&Date.now()-S.sync.last>120000)setTimeout(()=>sync(false),800);
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(()=>{});
