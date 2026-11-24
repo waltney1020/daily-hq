@@ -12,10 +12,59 @@ const timeStr=ts=>new Date(ts).toLocaleTimeString([], {hour:"numeric",minute:"2-
 const whenStr=ts=>{const d=new Date(ts),n=new Date(),y=new Date();y.setDate(n.getDate()-1);if(sameDay(ts,n))return "Today · "+timeStr(ts);if(sameDay(ts,y))return "Yesterday · "+timeStr(ts);return d.toLocaleDateString([], {month:"short",day:"numeric"})+" · "+timeStr(ts)};
 const ago=ts=>{if(!ts)return "never";const s=(Date.now()-ts)/1000;if(s<60)return "just now";if(s<3600)return Math.round(s/60)+" min ago";if(s<86400)return Math.round(s/3600)+" h ago";return Math.round(s/86400)+" d ago"};
 const ACCTS={poly:"Polymarket",manual:"Manual",bob:"Bob"};
-const GROUPS=["Morning","Afternoon","Evening","Weekly","Anytime"];
+const GROUPS=["Morning","Afternoon","Evening","Hair care","Weekly","Anytime"];
 const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],DOWL=["Sundays","Mondays","Tuesdays","Wednesdays","Thursdays","Fridays","Saturdays"];
 /* the user's checklist; bump PACK when it changes so installed apps pick it up */
-const PACK=2;
+const PACK=3;
+const BONNET="Wear bonnet at night",SERUM="Apply peptide serum if due (not before sauna/steam)";
+const HAIR_PACK=[
+ [1,"Hair: hydration and reset",["Wash with Innersense shampoo","Apply Double Cream Deep Quencher for 10–15 minutes","Gently detangle with fingers while conditioner is in","Rinse thoroughly","Apply a pea-sized amount of Weightless Air Dry Cream","Apply a small amount of Hydro Style Flexi Jelly","Scrunch curls upward","Air-dry without touching",SERUM,BONNET],"Do the full routine after your last sauna or steam session of the day."],
+ [2,"Hair: maintenance",["Lightly mist hair with water if needed","Reshape curls with fingers","Apply a tiny amount of Air Dry Cream if dry",SERUM,BONNET],"No shampoo or regular conditioner today."],
+ [3,"Hair: gentle refresh",["Rinse hair if sweaty","Use Curl Quenching Conditioning Wash only if scalp needs cleansing","Rinse thoroughly","Apply a small amount of Air Dry Cream if needed","Apply Flexi Jelly if curls need definition",SERUM,BONNET],""],
+ [4,"Hair: recovery",["Light water mist if necessary","Reshape curls with fingers",SERUM,BONNET],"No unnecessary product layering."],
+ [5,"Hair: regular wash",["Wash with Innersense shampoo","Apply Essential Moisture Conditioner for 3–5 minutes","Gently detangle","Rinse thoroughly","Apply Weightless Air Dry Cream","Apply Hydro Style Flexi Jelly","Scrunch and air-dry",SERUM,BONNET],"Do the full routine after your last sauna or steam session of the day."],
+ [6,"Hair: appearance maintenance",["Lightly mist hair if needed","Reshape front curls","Apply a small amount of Flexi Jelly if needed",SERUM,BONNET],""],
+ [0,"Hair: review and recovery",["Take front picture","Take left-side picture","Take right-side picture","Take overhead picture","Take crown/back picture","Score the week: curl definition, softness, frizz, breakage, crown coverage, scalp, shape","Refresh curls with water if needed","Apply Air Dry Cream only if dry",SERUM,"Clean bonnet",BONNET],"Take review pictures with completely dry hair and consistent lighting, before adding products.\n\nTargets: more consistent curls, less roughness, reduced frizz, minimal breakage, stable or improving crown coverage, no persistent scalp irritation or flaking, balanced grow-out, routine adherence 85–100%."]];
+const STEAM_NOTE="Before sauna/steam: no castor oil, no peptide serum, no fresh styling products, no treatment masks.\nAfter: rinse away sweat as needed, shampoo only if scheduled or the scalp needs it, condition on wash days, apply styling products after the final session.\nTwo sessions in one day? Save the full hair routine for afterward. Don't shampoo twice.";
+const HAIR_DATES=[
+ ["2026-11-30",{t:"Hair: Bond Curl Rehab (only if hair feels brittle)",g:"Hair care",optional:true,steps:["Wet hair","Apply Bond Curl Rehab Salve before shampooing","Leave for 15–30 minutes (follow product instructions)","Rinse thoroughly","Shampoo with Innersense","Apply Essential Moisture Conditioner","Rinse","Apply Air Dry Cream","Apply Flexi Jelly","Air-dry and wear bonnet at bedtime"],note:"Week 2 special treatment. If your hair feels damaged, brittle or prone to breakage, do this instead of the regular Monday routine (then tick Monday's routine off too). Skip the deep conditioning mask today unless your hair genuinely needs more moisture."}],
+ ["2026-12-14",{t:"Hair: Double Cream only if dry this week",g:"Hair care",optional:true,note:"Week 4 (Dec 14–20) focus: moisture and shape management. Use the Double Cream Deep Quencher only if your hair feels dry."}],
+ ["2026-12-21",{t:"Hair: monthly progress review",g:"Hair care",steps:["Regular wash","Take the full photo set (front, left, right, overhead, crown/back) with dry hair","Compare with the Nov 23 photos","Write the monthly review in your Notes"],note:"Final review, Dec 21–22: regular wash and photographs for the monthly progress assessment."}]];
+const HAIR_NOTE={title:"Hair plan: Nov 23 – Dec 22",body:`Monthly objectives
+• Restore softness and natural curl definition
+• Reduce frizz, dryness and breakage
+• Preserve length on top
+• Monitor crown density and scalp visibility
+• Maintain a clean, controlled shape
+• Build a sustainable routine around sauna and steam
+
+Products
+• Innersense Hydrating Cream Hairbath: shampoo, 2x weekly
+• Curlsmith Essential Moisture Conditioner: 1–2x weekly
+• Curlsmith Curl Quenching Conditioning Wash: gentle cleansing, as needed
+• Curlsmith Weightless Air Dry Cream: leave-in, wash days and as needed
+• Curlsmith Hydro Style Flexi Jelly: definition, wash days and as needed
+• Curlsmith Double Cream Deep Quencher: 1x weekly if dry
+• Curlsmith Bond Curl Rehab Salve: every 2–4 weeks if needed
+• Hair-growth peptide serum: according to label
+• Sky Organics castor oil: optional
+• Aztec Indian Healing Clay: on standby
+• Coffee: on standby
+• Satin bonnet: every night
+• Microfiber towel: wash days
+
+Special treatment calendar
+• Week 1 (Nov 23–29): Double Cream, hydration reset
+• Week 2 (Nov 30–Dec 6): Bond Curl Rehab on Monday if needed, strength
+• Week 3 (Dec 7–13): Double Cream, softness and definition
+• Week 4 (Dec 14–20): Double Cream if dry, moisture and shape
+• Final review (Dec 21–22): regular wash and photographs
+
+Sauna and steam
+${STEAM_NOTE}
+
+Sunday tracking targets
+Curl definition: more consistent · Softness: less roughness · Frizz: reduced · Breakage: minimal · Crown coverage: stable or improving · Scalp: no persistent irritation or flaking · Shape: balanced grow-out · Routine adherence: 85–100%`};
 const DAILY_PACK=[
  ["6:00 AM","Wake up and review markets","Morning"],["6:15 AM","Starter workout","Morning"],["7:00 AM","Outdoor sunlight","Morning"],["7:15 AM","Water and morning nutrition","Morning"],
  ["7:30 AM","Operator responsibilities","Morning"],["8:00 AM","Face care and grooming","Morning"],["8:30 AM","Morning buffer","Morning"],["9:00 AM","Primary engineering project","Morning"],["11:00 AM","Workout or steam","Morning"],
@@ -24,7 +73,7 @@ const DAILY_PACK=[
  ["5:00 PM","Flexible personal time (until 7)","Evening"],["7:00 PM","Shower and hygiene","Evening"],["7:30 PM","Optional light workout/recovery","Evening"],["8:30 PM","Final market review","Evening"],
  ["9:15 PM","Reset for tomorrow","Evening"],["10:00 PM","End scheduled activities","Evening"]];
 const WEEKLY_PACK=[[1,"","Systems day and plants"],[2,"","Development/recovery"],[3,"","Main training/development"],[4,"","Main training/development"],[5,"","Pet park"],
- [6,"8:00 AM","Weekly finance update"],[6,"","Grandpa responsibilities as applicable"],[0,"","Deep clean and weekly review"],[0,"","Full hair-progress assessment"]];
+ [6,"8:00 AM","Weekly finance update"],[6,"","Grandpa responsibilities as applicable"],[0,"","Deep clean and weekly review"]];
 const OLD_DEFAULTS=["Wake up and drink water","Check BTC levels","Write in journal","Trading session","Workout","Log dreams and emotions"];
 function packRoutine(){return[...DAILY_PACK.map(([time,t,g])=>({id:uid(),t,time,g})),...WEEKLY_PACK.map(([d,time,t])=>({id:uid(),t,time,g:"Weekly",dow:[d]}))]}
 const dowOf=k=>new Date(k+"T12:00:00").getDay();
@@ -37,7 +86,7 @@ const MOODS=["Low","Meh","Okay","Good","Great"];
 function defaults(){return{v:1,created:Date.now(),
  settings:{wallet:"",btcOnly:true,bank:{poly:0,manual:0,bob:0},stake:{poly:10,manual:10,bob:10},label:{poly:"BTC Up/Down",manual:"BTC",bob:"BTC"},book5:"Gratitude"},
  trades:{poly:[],manual:[],bob:[]},sync:{last:0,err:""},
- routine:packRoutine(),pack:PACK,
+ routine:[],pack:0,
  days:{},journal:{dreams:[],ideas:[],notes:[],emotions:[],gratitude:[]},xp:0,best:0,
  ui:{acct:"poly",tf:"5m",book:"dreams",card:0,shown:30}}}
 let S;
@@ -45,8 +94,16 @@ try{S=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){S=null}
 if(!S||S.v!==1)S=defaults();
 (function fill(){const d=defaults(),pack0=S.pack||0;for(const k in d)if(S[k]===undefined)S[k]=d[k];for(const k in d.settings)if(S.settings[k]===undefined)S.settings[k]=d.settings[k];for(const k in d.ui)if(S.ui[k]===undefined)S.ui[k]=d.ui[k];for(const b of BOOKS)if(!S.journal[b[0]])S.journal[b[0]]=[];
  const rg=x=>{if(x.g==="Day")x.g="Afternoon";if(x.g==="Night")x.g="Evening";if(!GROUPS.includes(x.g))x.g="Anytime"};S.routine.forEach(rg);Object.values(S.days).forEach(d=>(d.extra||[]).forEach(rg));
- if(pack0<PACK){const custom=S.routine.filter(r=>!OLD_DEFAULTS.includes(r.t)),have=new Set(custom.map(r=>r.t.toLowerCase()+"|"+(r.dow||[]).join()));
-  S.routine=[...packRoutine().filter(r=>!have.has(r.t.toLowerCase()+"|"+(r.dow||[]).join())),...custom];S.pack=PACK}})();
+ if(pack0<2){const custom=S.routine.filter(r=>!OLD_DEFAULTS.includes(r.t)),have=new Set(custom.map(r=>r.t.toLowerCase()+"|"+(r.dow||[]).join()));
+  S.routine=[...packRoutine().filter(r=>!have.has(r.t.toLowerCase()+"|"+(r.dow||[]).join())),...custom]}
+ if(pack0<3){const has=t=>S.routine.some(r=>r.t===t);
+  S.routine=S.routine.filter(r=>r.t!=="Full hair-progress assessment");
+  for(const [d,t,steps,note] of HAIR_PACK)if(!has(t))S.routine.push({id:uid(),t,time:"",g:"Hair care",dow:[d],steps,note});
+  const ws=S.routine.find(r=>r.t==="Workout or steam");if(ws&&!ws.note)ws.note=STEAM_NOTE;
+  for(const [k,x] of HAIR_DATES){const dd=S.days[k]||(S.days[k]={done:{},extra:[]});if(!dd.extra.some(e=>e.t===x.t))dd.extra.push({id:uid(),time:"",...x})}
+  if(!S.journal.notes.some(e=>e.title===HAIR_NOTE.title))S.journal.notes.push({id:uid(),ts:Date.now(),...HAIR_NOTE});
+  S.hairStart=S.hairStart||dkey()}
+ S.pack=PACK})();
 let saveT;function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Couldn't save. Your phone storage may be full.")}},150)}
 addEventListener("pagehide",()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}});
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
@@ -65,7 +122,23 @@ function dayData(k){return S.days[k]||(S.days[k]={done:{},extra:[]})}
 function tasksFor(k){const d=S.days[k]||{done:{},extra:[]},wd=dowOf(k);const list=[...S.routine.filter(r=>!r.dow||!r.dow.length||r.dow.includes(wd)).map(r=>({...r,rep:true})),...(d.extra||[]).map(x=>({...x,rep:false}))];
  const later=d.later||{};list.sort((a,b)=>(later[a.id]?1:0)-(later[b.id]?1:0)||GROUPS.indexOf(a.g)-GROUPS.indexOf(b.g)||tmin(a.time)-tmin(b.time));return list}
 function tmin(t){if(!t)return 9999;const m=/^(\d{1,2})(?::(\d{2}))?\s*([ap]m)?$/i.exec(t.trim());if(!m)return 9998;let h=+m[1];const mm=+(m[2]||0);if(m[3]){const pm=/p/i.test(m[3]);if(pm&&h<12)h+=12;if(!pm&&h==12)h=0}return h*60+mm}
-function isComplete(k){const t=tasksFor(k);if(!t.length)return false;const d=S.days[k];return !!d&&t.every(x=>d.done[x.id])}
+function isComplete(k){const t=tasksFor(k).filter(x=>!x.optional);if(!t.length)return false;const d=S.days[k];return !!d&&t.every(x=>d.done[x.id])}
+function stepsDone(k,t){const s=(S.days[k]&&S.days[k].steps&&S.days[k].steps[t.id])||{};return (t.steps||[]).filter((_,i)=>s[i]).length}
+function hairAdherence(){let due=0,done=0;const d=new Date();for(let i=0;i<7;i++){const k=dkey(d);if(S.hairStart&&k<S.hairStart)break;const dd=S.days[k];
+  for(const t of tasksFor(k))if(t.g==="Hair care"&&!t.optional){due++;if(dd&&dd.done[t.id])done++}d.setDate(d.getDate()-1)}return{due,done,pct:due?Math.round(done/due*100):null}}
+function openSteps(id){const k=dkey(),t=tasksFor(k).find(x=>x.id===id);if(!t)return;
+ const draw=root=>{const dd=dayData(k),s=(dd.steps||{})[id]||{},n=stepsDone(k,t),total=(t.steps||[]).length,isDone=!!dd.done[id];
+  const adh=t.g==="Hair care"?hairAdherence():null;
+  root.innerHTML=`<div class="grab"></div><h2>${esc(t.t)}</h2><p class="desc">${esc([t.time,t.rep?repLabel(t)||"Every day":"Today only",t.optional?"Optional":""].filter(Boolean).join(" · "))}${total?` · ${n} of ${total} done`:""}</p>
+  ${t.note?`<div class="note">${esc(t.note)}</div>`:""}
+  ${total?`<div class="steps">${t.steps.map((x,i)=>`<button type="button" class="step ${s[i]?"on":""}" data-i="${i}"><span class="ck">${s[i]?"✓":""}</span><span>${esc(x)}</span></button>`).join("")}</div>`:""}
+  ${adh&&adh.pct!==null?`<p class="desc" style="margin-top:14px">Hair routine, last 7 days: ${adh.done} of ${adh.due} done (${adh.pct}%). Target 85–100%.</p>`:""}
+  <div class="btns"><button class="action p" id="st-all">${isDone?"Mark not done":total?"Mark all done":"Mark done"}</button><button class="action" id="st-edit">Edit task</button></div>`;
+  root.querySelectorAll(".step").forEach(b=>b.onclick=()=>{const dd2=dayData(k);dd2.steps=dd2.steps||{};const m=dd2.steps[id]=dd2.steps[id]||{};const i=+b.dataset.i;m[i]=!m[i];if(!m[i])delete m[i];
+   const all=stepsDone(k,t)===total;if(all&&!dd2.done[id])toggleTask(id,b);else if(!all&&dd2.done[id])toggleTask(id,b);else{save();renderToday()}draw(root)});
+  root.querySelector("#st-all").onclick=e=>{const dd2=dayData(k);dd2.steps=dd2.steps||{};if(dd2.done[id]){dd2.steps[id]={};toggleTask(id,e.currentTarget)}else{dd2.steps[id]=Object.fromEntries((t.steps||[]).map((_,i)=>[i,true]));toggleTask(id,e.currentTarget)}draw(root)};
+  root.querySelector("#st-edit").onclick=()=>editTask(id)};
+ $("sheet").innerHTML="";$("sheetwrap").hidden=false;draw($("sheet"))}
 function streak(){let n=0;const d=new Date();if(!isComplete(dkey(d)))d.setDate(d.getDate()-1);while(S.days[dkey(d)]&&S.days[dkey(d)].complete){n++;d.setDate(d.getDate()-1)}return n}
 function renderWeek(){const w=$("week"),d0=new Date();w.innerHTML="";for(let i=0;i<7;i++){const x=new Date(d0);x.setDate(d0.getDate()+i);const k=dkey(x),dd=S.days[k];const b=document.createElement("button");b.setAttribute("aria-pressed",i==0);
   const dot=i==0?(isComplete(k)?'<i class="full"></i>':""):(dd&&dd.extra&&dd.extra.length?"<i></i>":"");
@@ -174,15 +247,15 @@ function editTrade(a,id){const isNew=!id;const t=isNew?{id:uid(),src:"manual",ts
    if(t.src==="sync")t.hidden=true;else S.trades[a]=S.trades[a].filter(x=>x.id!==t.id);save();closeSheet();renderTrades();renderCards();toast("Trade deleted")}})}
 
 /* ================= today ================= */
-function renderToday(just){const k=dkey(),dd=dayData(k),list=tasksFor(k),left=list.filter(t=>!dd.done[t.id]);
- $("prog").textContent=(list.length-left.length)+" / "+list.length;const bd=$("dbadge");bd.hidden=!left.length;bd.textContent=left.length;
+function renderToday(just){const k=dkey(),dd=dayData(k),list=tasksFor(k),req=list.filter(t=>!t.optional),left=req.filter(t=>!dd.done[t.id]);
+ $("prog").textContent=(req.length-left.length)+" / "+req.length;const bd=$("dbadge");bd.hidden=!left.length;bd.textContent=left.length;
  $("dnt").textContent=left[0]?left[0].t:list.length?"All clear for today":"Add your first task";$("dncount").textContent=left.length?"1 of "+left.length:"Done";
  $("dnsub").textContent=left[0]?(left[0].rep?(repLabel(left[0])?"Your "+repLabel(left[0]).replace(/s$/,"")+" task.":"From your daily routine."):"Today only.")+(left[0].time?" Planned for "+left[0].time+".":"")+" Finish the list to keep your streak.":list.length?"Everything's done. Your streak is safe.":"Use the box below to build your routine.";
  $("dnxp").textContent=`Level ${level()} · ${S.xp%1000} / 1000 XP`;$("dndone").hidden=$("dnskip").hidden=!left[0];
- let first=true,g="";const html=list.map(t=>{const done=!!dd.done[t.id];const tag=done?"":(first?(first=false,'<span class="tag now">NOW</span>'):'');const head=t.g!==g?(g=t.g,`<div class="grp">${esc(g)}</div>`):"";
-  return head+`<div class="it ${done?"done":""} ${t.id===just?"just":""}"><button class="main" data-id="${t.id}"><span class="ck">${done?"✓":""}</span>${tag}<span class="t">${esc(t.t)}</span></button><span class="r">${esc([t.time,t.rep?repLabel(t):"today"].filter(Boolean).join(" · "))}</span><button class="ed" data-ed="${t.id}" aria-label="Edit task">✎</button></div>`}).join("");
+ let first=true,g="";const html=list.map(t=>{const done=!!dd.done[t.id];const tag=done||t.optional?"":(first?(first=false,'<span class="tag now">NOW</span>'):'');const head=t.g!==g?(g=t.g,`<div class="grp">${esc(g)}</div>`):"";
+  return head+`<div class="it ${done?"done":""} ${t.id===just?"just":""}"><button class="main" data-id="${t.id}"><span class="ck">${done?"✓":""}</span>${tag}<span class="t">${esc(t.t)}</span></button><span class="r">${esc([t.steps&&t.steps.length?stepsDone(k,t)+"/"+t.steps.length+" steps":"",t.time,t.rep?repLabel(t):"today",t.optional?"optional":"",t.note&&!(t.steps&&t.steps.length)?"note":""].filter(Boolean).join(" · "))}</span><button class="ed" data-ed="${t.id}" aria-label="Edit task">✎</button></div>`}).join("");
  $("tasks").innerHTML=html||`<div class="empty"><b>Build your daily routine</b>Add the things you do every day. They'll come back each morning.</div>`;
- $("tasks").querySelectorAll(".main").forEach(b=>b.onclick=()=>toggleTask(b.dataset.id,b));$("tasks").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>editTask(b.dataset.ed));
+ $("tasks").querySelectorAll(".main").forEach(b=>b.onclick=()=>{const t=list.find(x=>x.id===b.dataset.id);if(t&&((t.steps&&t.steps.length)||t.note))openSteps(t.id);else toggleTask(b.dataset.id,b)});$("tasks").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>editTask(b.dataset.ed));
  $("streaklbl").textContent=streak()+(streak()===1?" day":" days")}
 function toggleTask(id,el){const k=dkey(),dd=dayData(k);dd.done[id]=!dd.done[id];if(!dd.done[id])delete dd.done[id];addXP(dd.done[id]?10:-10,el);
  const was=dd.complete;dd.complete=isComplete(k);const s=streak();if(s>S.best)S.best=s;save();renderToday(dd.done[id]?id:null);renderWeek();renderCards();
@@ -195,10 +268,14 @@ function editTask(id){const k=dkey(),r=S.routine.find(x=>x.id===id),ex=dayData(k
  <div class="field"><label>Repeat</label>${opts("rep",[["daily","Every day"],["weekly","Certain days"],["once","Today only"]],r?(weekly?"weekly":"daily"):"once")}</div>
  <div class="field" id="t-days" ${weekly?"":"hidden"}><label>On these days</label><div class="opts days">${DOW.map((d,i)=>`<button type="button" data-d="${i}" class="${sel.has(i)?"on":""}">${d}</button>`).join("")}</div></div>
  <div class="field"><label>Part of the day</label>${opts("g",GROUPS.map(x=>[x,x]),t.g||"Anytime")}</div>
+ <div class="field"><label for="t-steps">Checklist steps (one per line, optional)</label><textarea id="t-steps" style="min-height:110px" placeholder="Wash with shampoo&#10;Apply conditioner">${esc((t.steps||[]).join("\n"))}</textarea></div>
+ <div class="field"><label for="t-note">Note (optional)</label><textarea id="t-note" style="min-height:70px">${esc(t.note||"")}</textarea></div>
+ <div class="field"><label><input type="checkbox" id="t-opt" ${t.optional?"checked":""} style="width:auto;margin-right:8px">Optional (doesn't count toward your streak)</label></div>
  <div class="btns"><button class="action p" id="t-save">Save</button><button class="action danger" id="t-del">${r?"Remove from routine":"Delete"}</button></div>`,
  root=>{bindOpts(root,(n,v)=>{if(n==="rep")root.querySelector("#t-days").hidden=v!=="weekly"});
   root.querySelectorAll(".days button").forEach(b=>b.onclick=()=>b.classList.toggle("on"));
   root.querySelector("#t-save").onclick=()=>{const nt={id:t.id,t:root.querySelector("#t-t").value.trim()||t.t,time:root.querySelector("#t-time").value.trim(),g:optVal(root,"g")};const rep=optVal(root,"rep");
+   const steps=root.querySelector("#t-steps").value.split("\n").map(x=>x.trim()).filter(Boolean),note=root.querySelector("#t-note").value.trim();if(steps.length)nt.steps=steps;if(note)nt.note=note;if(root.querySelector("#t-opt").checked)nt.optional=true;
    const days=[...root.querySelectorAll(".days button.on")].map(b=>+b.dataset.d);if(rep==="weekly"){if(!days.length){toast("Pick at least one day");return}if(days.length<7)nt.dow=days}
    S.routine=S.routine.filter(x=>x.id!==id);const dd=dayData(k);dd.extra=dd.extra.filter(x=>x.id!==id);if(rep==="once")dd.extra.push(nt);else S.routine.push(nt);save();closeSheet();renderToday();renderWeek();renderCards();toast("Task saved")};
   root.querySelector("#t-del").onclick=()=>{S.routine=S.routine.filter(x=>x.id!==id);const dd=dayData(k);dd.extra=dd.extra.filter(x=>x.id!==id);delete dd.done[id];save();closeSheet();renderToday();renderWeek();renderCards();toast("Task removed")}})}
@@ -206,8 +283,8 @@ $("addf").onsubmit=e=>{e.preventDefault();const v=$("nt").value.trim();if(!v)ret
  if(rep==="once")dayData(dkey()).extra.push(t);else{if(rep==="weekly")t.dow=[wd];S.routine.push(t)}
  const dd=dayData(dkey());dd.complete=isComplete(dkey());$("nt").value="";save();renderToday();renderWeek();renderCards();toast(rep==="daily"?"Added to your routine":rep==="weekly"?"Added for every "+DOWL[wd].slice(0,-1):"Added for today")};
 function syncRepSelect(){const o=$("rep").querySelector('[value=weekly]');if(o)o.textContent="Every "+DOWL[dowOf(dkey())].slice(0,-1)}
-$("dndone").onclick=e=>{const k=dkey(),t=tasksFor(k).find(x=>!dayData(k).done[x.id]);if(t)toggleTask(t.id,e.currentTarget)};
-$("dnskip").onclick=()=>{const k=dkey(),dd=dayData(k),list=tasksFor(k).filter(x=>!dd.done[x.id]);if(list.length<2){toast("It's the last one left");return}
+$("dndone").onclick=e=>{const k=dkey(),t=tasksFor(k).find(x=>!x.optional&&!dayData(k).done[x.id]);if(!t)return;if(t.steps&&t.steps.length)openSteps(t.id);else toggleTask(t.id,e.currentTarget)};
+$("dnskip").onclick=()=>{const k=dkey(),dd=dayData(k),list=tasksFor(k).filter(x=>!x.optional&&!dd.done[x.id]);if(list.length<2){toast("It's the last one left");return}
  (dd.later=dd.later||{})[list[0].id]=true;save();renderToday();renderCards();toast("Moved to the end of today")};
 
 /* ================= journal ================= */
@@ -266,9 +343,9 @@ const CARDS=[
   i:()=>{const st=stats("poly",S.ui.tf==="All"?"All":S.ui.tf);return st.res.length?`Win rate ${st.wr}% across ${st.res.length} settled trades${S.ui.tf==="All"?"":" on "+S.ui.tf}.`:"Trades sync from your wallet and land here automatically."},
   f:()=>{const st=stats("poly","All");return[["Score",st.w+"–"+st.l],["Streak",st.st],["Synced",S.settings.wallet?ago(S.sync.last):"Not set up"]]},b:()=>!S.settings.wallet&&!stats("poly","All").all.length?"Set up sync":"Open trades"},
  {pal:1,go:["today"],k:()=>"Today",s:()=>new Date().toLocaleDateString([], {weekday:"long",month:"long",day:"numeric"}),
-  h:()=>{const k=dkey(),t=tasksFor(k).find(x=>!(S.days[k]&&S.days[k].done[x.id]));return t?"Do next: "+t.t:"Day cleared"},
+  h:()=>{const k=dkey(),t=tasksFor(k).find(x=>!x.optional&&!(S.days[k]&&S.days[k].done[x.id]));return t?"Do next: "+t.t:"Day cleared"},
   i:()=>"Your routine comes back every morning. Finish every task to grow your streak.",
-  f:()=>{const k=dkey(),l=tasksFor(k),d=l.filter(x=>S.days[k]&&S.days[k].done[x.id]).length;return[["Done",d+" of "+l.length],["XP",S.xp],["Streak",streak()+" days"]]},b:()=>"Open Today"},
+  f:()=>{const k=dkey(),l=tasksFor(k).filter(x=>!x.optional),d=l.filter(x=>S.days[k]&&S.days[k].done[x.id]).length;return[["Done",d+" of "+l.length],["XP",S.xp],["Streak",streak()+" days"]]},b:()=>"Open Today"},
  {pal:2,go:["journal",{book:"dreams"}],k:()=>"Journal",s:()=>"Dreams",
   h:()=>{const l=[...S.journal.dreams].sort((a,b)=>b.ts-a.ts)[0];return l?"Last dream: "+l.title:"Write down last night's dream"},
   i:()=>"Dreams, business ideas, notes, emotions and "+bookName("gratitude").toLowerCase()+", all in one place.",
