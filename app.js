@@ -1203,7 +1203,10 @@ function renderCards(){CARDS.forEach(cd=>{const el=cd.el;el.querySelector(".k").
  const lp=$("levelpill");lp.innerHTML=`Level ${level()} <span class="bar"><i style="width:${(S.xp%1000)/10}%"></i></span>`}
 let ambFront="ambA";
 function setAmbient(pal){const cd=CARDS.find(c=>c.pal===pal)||CARDS[0],back=ambFront==="ambA"?"ambB":"ambA";if(!cd.amb)return;$(back).style.backgroundImage=`url(${cd.amb})`;$(back).classList.remove("b");$(ambFront).classList.add("b");ambFront=back;
- const P=PAL[pal%PAL.length];document.documentElement.style.setProperty("--glow",P.glow);document.documentElement.style.setProperty("--glow2",P.glow2);document.querySelector('meta[name=theme-color]').content=P.sky[0]}
+ const P=PAL[pal%PAL.length];
+ // + ring menu follows the scene: 60% the scene's main tones (outer two rings), 30% its lighter tone, 10% its accent (inner ring).
+ const rs=document.documentElement.style;[P.L[1],P.L[2],P.L[3],P.road[0]].forEach((c,i)=>rs.setProperty("--q"+i,c));rs.setProperty("--qink",P.sky[0]);
+ document.documentElement.style.setProperty("--glow",P.glow);document.documentElement.style.setProperty("--glow2",P.glow2);document.querySelector('meta[name=theme-color]').content=P.sky[0]}
 function layout(){const n=CARDS.length;CARDS.forEach((cd,i)=>{let d=i-S.ui.card;if(d>n/2)d-=n;if(d<-n/2)d+=n;cd.el.className="card "+(d===0?"c":Math.abs(d)<=2?"s"+d:"far");cd.el.setAttribute("aria-current",d===0)});setAmbient(CARDS[S.ui.card].pal);renderDots()}
 function renderDots(){let d=$("tdots");if(!d){d=document.createElement("div");d.id="tdots";d.className="tdots";$("theatre").appendChild(d)}d.innerHTML=CARDS.map((_,i)=>`<button aria-label="Card ${i+1}" class="${i===S.ui.card?"on":""}"><i></i></button>`).join("");d.querySelectorAll("button").forEach((b,i)=>b.onclick=()=>{pauseAuto(4000);S.ui.card=i;save();layout()})}
 const step=d=>{S.ui.card=(S.ui.card+d+CARDS.length)%CARDS.length;save();layout()};
