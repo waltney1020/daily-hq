@@ -1,6 +1,6 @@
 ﻿// Offline support: app files come from the network when possible and fall back to the cache.
 // Polymarket requests are never cached.
-const CACHE = "dailyhq-v12";
+const CACHE = "dailyhq-v13";
 // Water reminder taps: the "Log" action logs water in an open window, or opens the app and logs it there.
 self.addEventListener("notificationclick", e => {
   e.notification.close();
