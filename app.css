@@ -1,4 +1,4 @@
-/* Daily HQ — full-bleed theatre, glass strip, tinted dock. Deep teal ground, apricot accent. */
+/* Op-Lock In — full-bleed theatre, glass strip, tinted dock. Deep teal ground, apricot accent. */
 :root{
   --ink:#F3F6F2; --muted:#A9BBB9; --soft:#C4D5D8; --ground:#071A20; --panel:#102B31; --surface:#20393F;
   --line:rgba(226,241,238,.13); --line2:rgba(230,244,245,.24);
@@ -245,6 +245,13 @@ body.page-mode .amb-shade{background:linear-gradient(180deg,rgba(2,11,14,.45),rg
 .mood{display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(239,188,144,.14);color:#F1C39D;font-size:11px;font-weight:600}
 .jbody>*{animation:unfold .4s var(--ease) both}
 
+/* about */
+.about{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:10px 4px 0}
+.about img{border-radius:22px;box-shadow:0 12px 34px rgba(0,0,0,.35)}
+.about h2{margin:6px 0 0;font-size:32px;font-weight:600;letter-spacing:-.03em}
+.about .made{margin:4px 0 0;color:var(--soft);font-size:15px}.about .made b{color:var(--peach)}
+.about blockquote{margin:14px 0 4px;padding:16px 18px;border-radius:16px;background:rgba(239,188,144,.08);border:1px solid rgba(239,188,144,.25);font-size:16px;line-height:1.55;color:#EDE3D8;font-style:italic;max-width:36ch}
+
 /* smoke log */
 .db[data-v=smoke]>svg{background:rgba(160,140,210,.17);color:#CBBDF0}
 .calmbtn{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;padding:26px 20px;border:0;border-radius:22px;cursor:pointer;color:#F4F1FF;text-align:center;
@@ -435,7 +442,8 @@ details.note[open] summary{margin-bottom:6px}
 .vsep{width:1px;height:30px;background:var(--line2);margin:0 4px}
 .glide{position:absolute;bottom:-9px;height:3px;border-radius:2px;background:var(--peach);transition:left .35s var(--ease),width .35s var(--ease)}
 .assist>svg{background:rgba(23,64,72,.9)!important;border-color:rgba(122,184,184,.45)!important;color:#CDEBEA!important}
-@media (max-width:460px){.db{width:50px;min-width:50px;height:52px}.dock{gap:2px;padding:6px}.vsep{margin:0 2px}.dock>[data-k=apps],.dock>.vsep:first-of-type{display:none}}
+@media (max-width:620px){.db{width:50px;min-width:50px;height:52px}.dock{gap:2px;padding:6px}.vsep{margin:0 2px}.dock>[data-k=apps],.dock>.vsep:first-of-type{display:none}}
+@media (max-width:400px){.db{width:44px;min-width:44px}.db>svg{width:34px;height:34px;padding:7px}}
 
 /* orbit */
 .orbit{position:fixed;left:0;bottom:0;width:0;height:0;z-index:60}
