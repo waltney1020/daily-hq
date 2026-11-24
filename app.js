@@ -307,7 +307,7 @@ function defaults(){return{v:1,created:Date.now(),
  settings:{wallet:"",btcOnly:true,bank:{poly:0,manual:0,bob:0},stake:{poly:10,manual:10,bob:10},label:{poly:"BTC Up/Down",manual:"BTC",bob:"BTC"},book5:"Gratitude"},
  trades:{poly:[],manual:[],bob:[]},sync:{last:0,err:""},
  routine:[],pack:0,
- days:{},journal:{dreams:[],ideas:[],notes:[],emotions:[],gratitude:[]},xp:0,best:0,food:{recipes:[],grocery:{}},weights:{},water:{...WATER_DEFAULT,log:{}},dogs:JSON.parse(JSON.stringify(DOGS_DEFAULT)),
+ days:{},journal:{dreams:[],ideas:[],notes:[],emotions:[],gratitude:[]},xp:0,best:0,food:{recipes:[],grocery:{}},weights:{},water:{...WATER_DEFAULT,log:{}},smoke:{sessions:[],urges:[],active:null},dogs:JSON.parse(JSON.stringify(DOGS_DEFAULT)),
  ui:{acct:"poly",tf:"5m",book:"dreams",card:0,shown:30}}}
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){S=null}
@@ -774,6 +774,116 @@ function nativeAlertsSheet(){const N=nset(),nx=S.native&&S.native.next;
   root.querySelector("#nt-test").onclick=async()=>{const perm=await LN.checkPermissions();if(perm.display!=="granted"){const r=await LN.requestPermissions();if(r.display!=="granted"){toast("Notifications are off for Daily HQ in Android settings");return}}
    const nx2=nextInfo();await LN.schedule({notifications:[{id:nid("test"+Date.now()),title:nx2.t?"Now: "+nx2.t.t:"Daily HQ test",body:"This is how your reminders will look.",channelId:"tasks",actionTypeId:"TASK",extra:nx2.t?{k:dkey(),id:nx2.t.id,kind:"task"}:{},smallIcon:"ic_stat_dailyhq",iconColor:"#EFBC90",schedule:{at:new Date(Date.now()+5000),allowWhileIdle:true}}]});toast("Test coming in 5 seconds. You can close the app.")}})}
 
+/* ================= smoke log ================= */
+const MOODS_SMOKE=["Boredom","Stress","Anxiety","Habit","Craving","After eating","With friends","Tired","Bad mood","Work break","Waking up","Celebrating"];
+const SM=()=>S.smoke||(S.smoke={sessions:[],urges:[],active:null});
+const mmss=s=>{s=Math.max(0,Math.floor(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(x).padStart(2,"0")};
+const sinceStr=ms=>{const m=Math.floor(ms/60000);if(m<1)return "just now";if(m<60)return m+" min";const h=Math.floor(m/60);if(h<48)return h+" h "+(m%60)+" min";return Math.floor(h/24)+" days"};
+let smokeTimer=null,smokeLimitT=null;
+const SMOKE_NOTIF_ID=777001;
+function chipPicker(sel,list){return `<div class="chips wrap moodpick">${list.map(m=>`<button type="button" class="chip ${sel.includes(m)?"on":""}" data-m="${esc(m)}">${esc(m)}</button>`).join("")}</div>`}
+function bindChips(root,arr,cb){root.querySelectorAll(".moodpick .chip").forEach(b=>b.onclick=()=>{const m=b.dataset.m,i=arr.indexOf(m);if(i>=0)arr.splice(i,1);else arr.push(m);b.classList.toggle("on");cb&&cb()})}
+function smokeStats(){const X=SM(),now=Date.now(),day=864e5,ss=X.sessions;const last=ss.length?Math.max(...ss.map(s=>s.end||s.start)):null;
+ const inRange=(a,b)=>ss.filter(s=>s.start>=now-a&&s.start<now-b),puffs=l=>l.reduce((t,s)=>t+(s.puffs||0),0);
+ const today=ss.filter(s=>sameDay(s.start)),w=inRange(7*day,0),pw=inRange(14*day,7*day);
+ const reasons={};ss.filter(s=>s.start>now-30*day).forEach(s=>(s.moods||[]).forEach(m=>reasons[m]=(reasons[m]||0)+1));X.urges.filter(u=>u.ts>now-30*day).forEach(u=>(u.moods||[]).forEach(m=>reasons[m]=(reasons[m]||0)+1));
+ const top=Object.entries(reasons).sort((a,b)=>b[1]-a[1]).slice(0,3);
+ const resisted=X.urges.filter(u=>u.outcome==="passed"&&u.ts>now-7*day).length;
+ const days=[...Array(7)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);return[d.toLocaleDateString([], {weekday:"narrow"}),puffs(ss.filter(s=>sameDay(s.start,d)))]});
+ return{last,today:{n:today.length,p:puffs(today)},week:puffs(w),prev:puffs(pw),weekN:w.length,resisted,top,days}}
+function renderSmoke(){const X=SM(),a=X.active,st=smokeStats();clearInterval(smokeTimer);
+ const s=$("smokesession");
+ if(a){s.innerHTML=`<div class="row sb"><div><span class="eyebrow">Session in progress</span><div class="sclock" id="sclock">${mmss((Date.now()-a.start)/1000)}</div><div class="sub" id="slimit">${a.limit?`Timer set for ${a.limit} min`:"No time limit"}</div></div><button class="action danger" id="s-end">End session</button></div>
+  <div class="puffs"><button class="puffbtn minus" id="p-minus" aria-label="Remove a puff">−</button><div><b id="pcount">${a.puffs}</b><small>puff${a.puffs===1?"":"s"}</small></div><button class="puffbtn" id="p-plus" aria-label="Add a puff">+1 puff</button></div>
+  <div class="field"><label>Why now?</label>${chipPicker(a.moods,MOODS_SMOKE)}</div>
+  <div class="field"><label for="s-notes">Notes</label><textarea id="s-notes" style="min-height:70px" placeholder="Where you are, how you feel, what set it off">${esc(a.notes||"")}</textarea></div>`;
+  const upd=()=>{$("pcount").textContent=a.puffs;save()};$("p-plus").onclick=e=>{a.puffs++;upd();e.currentTarget.animate([{transform:"scale(1)"},{transform:"scale(.93)"},{transform:"scale(1)"}],{duration:180});try{navigator.vibrate&&navigator.vibrate(15)}catch(x){}};
+  $("p-minus").onclick=()=>{if(a.puffs>0){a.puffs--;upd()}};bindChips(s,a.moods,save);$("s-notes").oninput=e=>{a.notes=e.target.value;save()};$("s-end").onclick=()=>endSmoke();
+  smokeTimer=setInterval(()=>{const el=$("sclock");if(!el){clearInterval(smokeTimer);return}const secs=(Date.now()-a.start)/1000;el.textContent=mmss(secs);if(a.limit&&secs>=a.limit*60){el.classList.add("over");$("slimit").textContent=`${a.limit} min is up`}},1000)}
+ else{const lim=S.ui.smokeLimit??5;s.innerHTML=`<span class="eyebrow">Log a session</span><div class="h1" style="font-size:28px">Start when you light up</div><p class="sub">The timer runs while you smoke. Tap +1 for each puff, pick why, and end the session when you're done.</p>
+  <div class="field"><label>Timer</label>${opts("lim",[["0","No limit"],["3","3 min"],["5","5 min"],["10","10 min"]],String(lim))}<span class="hint">You'll get a buzz and a notification when the time is up.</span></div>
+  <div class="btns"><button class="action p big-btn" id="s-start" style="flex:2">Start session</button><button class="action big-btn" id="s-past" style="flex:1;font-size:13px">Log one I forgot</button></div>`;
+  bindOpts(s,(n,v)=>{S.ui.smokeLimit=+v;save()});$("s-start").onclick=()=>startSmoke(S.ui.smokeLimit??5);$("s-past").onclick=()=>editSmoke()}
+ const delta=st.week-st.prev;
+ $("smokestats").innerHTML=`<span class="eyebrow">Since your last one</span><div class="big" style="font-size:38px">${st.last?sinceStr(Date.now()-st.last):"—"}</div>
+  <div class="stats" style="margin-top:12px"><div class="stat"><small>Today</small><b>${st.today.p} <span class="unit">puffs</span></b></div><div class="stat"><small>This week</small><b>${st.week} <span class="unit">puffs</span></b></div>
+  <div class="stat"><small>vs last week</small><b class="${delta>0?"dn":delta<0?"up":""}">${st.prev||st.week?(delta>0?"+":"")+delta:"—"}</b></div><div class="stat"><small>Urges beaten</small><b class="up">${st.resisted}</b></div></div>
+  <div class="wweek" style="margin-top:14px;height:70px">${(()=>{const mx=Math.max(1,...st.days.map(d=>d[1]));return st.days.map(([d,p])=>`<div><i style="height:${p/mx*100}%;background:#B7A3E0"></i><small>${d}</small></div>`).join("")})()}</div>
+  <div class="sub" style="margin-top:10px">${st.top.length?"Top reasons this month: "+st.top.map(([m,n])=>`<b style="color:var(--ink)">${esc(m)}</b> (${n})`).join(", "):"Your top reasons show up here after a few logs."}</div>`;
+ const list=[...X.sessions].sort((a,b)=>b.start-a.start).slice(0,40),urges=[...X.urges].sort((a,b)=>b.ts-a.ts).slice(0,10);
+ const rows=[...list.map(s=>({ts:s.start,html:`<button class="tr" data-sid="${s.id}"><span class="res l" style="background:rgba(183,163,224,.16);color:#CBBDF0">${s.puffs} PUFF${s.puffs===1?"":"S"}</span><span class="ti"><div>${esc((s.moods||[]).join(", ")||"No reason picked")}</div><small>${whenStr(s.start)} · ${mmss(((s.end||s.start)-s.start)/1000)}${s.notes?" · "+esc(s.notes.slice(0,60)):""}</small></span><span class="pen" aria-hidden="true">✎</span></button>`})),
+  ...urges.map(u=>({ts:u.ts,html:`<div class="tr"><span class="res ${u.outcome==="passed"?"w":"o"}">${u.outcome==="passed"?"BEAT IT":"URGE"}</span><span class="ti"><div>${u.outcome==="passed"?"Rode out the urge":"Urge, smoked after"}${(u.moods||[]).length?" · "+esc(u.moods.join(", ")):""}</div><small>${whenStr(u.ts)} · calm mode ${mmss(u.secs||0)}</small></span></div>`}))].sort((a,b)=>b.ts-a.ts);
+ $("smokelog").innerHTML=`<div class="row sb"><span class="ptitle">History</span><span class="sub">Tap a session to edit it</span></div>${rows.length?rows.map(r=>r.html).join(""):`<div class="empty"><b>No logs yet</b>Start a session when you smoke, or tap the button above when an urge hits.</div>`}`;
+ $("smokelog").querySelectorAll("[data-sid]").forEach(b=>b.onclick=()=>editSmoke(b.dataset.sid))}
+function startSmoke(limit,moods=[]){const X=SM();if(X.active)return;X.active={start:Date.now(),puffs:0,moods:[...moods],notes:"",limit:+limit||0};save();renderSmoke();toast("Session started");
+ if(X.active.limit){clearTimeout(smokeLimitT);smokeLimitT=setTimeout(()=>{if(SM().active){try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(e){}toast(`${limit} minutes are up`)}},limit*60000);
+  if(LN)LN.schedule({notifications:[{id:SMOKE_NOTIF_ID,title:`⏱ ${limit} minutes are up`,body:"End your session in Daily HQ when you're done.",channelId:"tasks",smallIcon:"ic_stat_dailyhq",iconColor:"#EFBC90",extra:{kind:"smoke"},schedule:{at:new Date(Date.now()+limit*60000),allowWhileIdle:true}}]}).catch(()=>{})}}
+function endSmoke(){const X=SM(),a=X.active;if(!a)return;clearTimeout(smokeLimitT);if(LN)LN.cancel({notifications:[{id:SMOKE_NOTIF_ID}]}).catch(()=>{});
+ X.sessions.push({id:uid(),start:a.start,end:Date.now(),puffs:a.puffs,moods:a.moods,notes:(a.notes||"").trim()});X.active=null;save();renderSmoke();toast(`Logged · ${a.puffs} puff${a.puffs===1?"":"s"}`)}
+function editSmoke(id){const X=SM(),isNew=!id,s=isNew?{id:uid(),start:Date.now()-10*60000,end:Date.now()-5*60000,puffs:3,moods:[],notes:""}:X.sessions.find(x=>x.id===id);if(!s)return;const moods=[...(s.moods||[])];
+ openSheet(`<h2>${isNew?"Log a session":"Edit session"}</h2><div class="pair"><div class="field"><label for="se-t">When</label><input id="se-t" type="datetime-local" value="${toLocalInput(s.start)}"></div><div class="field"><label for="se-p">Puffs</label><input id="se-p" type="number" inputmode="numeric" value="${s.puffs}"></div></div>
+ <div class="field"><label for="se-m">Length (minutes)</label><input id="se-m" type="number" inputmode="decimal" value="${Math.max(0,Math.round(((s.end||s.start)-s.start)/60000))}"></div>
+ <div class="field"><label>Why</label>${chipPicker(moods,MOODS_SMOKE)}</div><div class="field"><label for="se-n">Notes</label><textarea id="se-n" style="min-height:70px">${esc(s.notes||"")}</textarea></div>
+ <div class="btns"><button class="action p" id="se-save">${isNew?"Add":"Save"}</button>${isNew?"":`<button class="action danger" id="se-del">Delete</button>`}</div>`,root=>{bindChips(root,moods);
+  root.querySelector("#se-save").onclick=()=>{const st=new Date(root.querySelector("#se-t").value).getTime()||s.start;Object.assign(s,{start:st,end:st+(+root.querySelector("#se-m").value||0)*60000,puffs:Math.max(0,Math.round(+root.querySelector("#se-p").value||0)),moods,notes:root.querySelector("#se-n").value.trim()});if(isNew)X.sessions.push(s);save();closeSheet();renderSmoke();toast(isNew?"Logged":"Saved")};
+  const d=root.querySelector("#se-del");if(d)d.onclick=()=>{if(!d.dataset.sure){d.dataset.sure=1;d.textContent="Tap again to delete";return}X.sessions=X.sessions.filter(x=>x.id!==s.id);save();closeSheet();renderSmoke();toast("Deleted")}})}
+
+/* ================= calm mode ================= */
+const CALM_TIPS=[
+ ["The wave passes","Cravings rise, peak and fade, usually within a few minutes. You don't have to fight it. Just outlast it."],
+ ["Physiological sigh","Two quick inhales through the nose, then one long, slow exhale through the mouth. It's one of the fastest ways to settle your body."],
+ ["Long exhales calm you","Breathing out for longer than you breathe in slows your heart rate and nudges your nervous system toward calm."],
+ ["Cold water reset","Splash cold water on your face or hold something cold for 30 seconds. It triggers a reflex that slows your heart rate."],
+ ["Delay, don't decide","You don't have to decide forever. Just decide not right now. Set ten minutes and check in with yourself after."],
+ ["5-4-3-2-1","Name 5 things you can see, 4 you can feel, 3 you can hear, 2 you can smell, and 1 you can taste."],
+ ["Check HALT","Are you Hungry, Angry, Lonely or Tired? Fix the real need: eat, vent, text someone, or rest."],
+ ["Move for two minutes","Walk, do 10 push-ups or 20 squats. Movement burns off the restless energy behind an urge."],
+ ["Change the scene","Leave the spot where you usually smoke. Cravings are strongly tied to places and routines."],
+ ["Keep your hands busy","Hold a pen, a stress ball or your phone. Your hands are part of the habit too."],
+ ["Drink a full glass of water","Sip it slowly. It gives your mouth and hands something to do, and it counts toward your 4 L."],
+ ["Urge surfing","Notice where you feel the urge in your body. Describe it like a scientist. Watching it makes it smaller."],
+ ["Boredom is a signal","If boredom is the trigger, swap in something quick: a song, a stretch, a message to a friend."],
+ ["Stress is real, smoke is borrowed calm","The relief is short. Breathing gives you the same calm without the comeback craving."],
+ ["Every urge you beat counts","Each one you ride out makes the next one weaker. That's how the habit loosens."],
+ ["Be kind to yourself","If you smoke anyway, log it and move on. Data, not guilt. Tomorrow is a fresh streak."],
+ ["Want backup?","For nicotine, free coaching is available at 1-800-QUIT-NOW (US). Talking it through helps."]];
+const BREATHS={sigh:{name:"Calming sigh",steps:[["Breathe in",2,1.08],["Sip in more",1,1.25],["Long breath out",6,.62]]},box:{name:"Box 4-4-4-4",steps:[["Breathe in",4,1.25],["Hold",4,1.25],["Breathe out",4,.62],["Hold",4,.62]]},b478:{name:"4-7-8",steps:[["Breathe in",4,1.25],["Hold",7,1.25],["Breathe out slowly",8,.62]]}};
+let calm=null;
+function openCalm(){const el=$("calm");el.hidden=false;document.body.style.overflow="hidden";calm={start:Date.now(),pattern:S.ui.breath||"sigh",tip:Math.floor(Math.random()*CALM_TIPS.length),moods:[],raf:0,timers:[]};
+ try{navigator.wakeLock&&navigator.wakeLock.request("screen").then(l=>calm&&(calm.lock=l)).catch(()=>{})}catch(e){}
+ $("calmin").innerHTML=`<div class="calm-top"><span class="eyebrow" style="color:#DCE7F2">Urge timer</span><div class="calm-clock" id="cclock">0:00</div><button class="calm-x" id="cx" aria-label="Close calm mode">✕</button></div>
+ <div class="breath"><div class="orb" id="orb"><div class="orb-in"><b id="bphase">Get comfortable</b><span id="bcount"></span></div></div>
+  <div class="chips breathpick">${Object.entries(BREATHS).map(([k,b])=>`<button class="chip ${k===calm.pattern?"on":""}" data-b="${k}">${b.name}</button>`).join("")}</div></div>
+ <div class="tipcard" id="tipcard"><div class="row sb"><span class="tiplabel">TIP <span id="tipn"></span></span><div class="row"><button class="tipnav" id="tprev" aria-label="Previous tip">‹</button><button class="tipnav" id="tnext" aria-label="Next tip">›</button></div></div><h3 id="tiph"></h3><p id="tipb"></p></div>
+ <div class="calm-moods"><span>What's driving it?</span>${chipPicker([],MOODS_SMOKE)}</div>
+ <div class="calm-actions"><button class="action p big-btn" id="cpass">The urge passed 💪</button><button class="action" id="csmoked">I smoked anyway</button></div>`;
+ bindChips($("calmin"),calm.moods);
+ $("calmin").querySelectorAll(".breathpick .chip").forEach(b=>b.onclick=()=>{calm.pattern=S.ui.breath=b.dataset.b;save();$("calmin").querySelectorAll(".breathpick .chip").forEach(x=>x.classList.toggle("on",x===b));runBreath()});
+ const showTip=d=>{calm.tip=(calm.tip+d+CALM_TIPS.length)%CALM_TIPS.length;const [h,p]=CALM_TIPS[calm.tip],c=$("tipcard");$("tipn").textContent=`${calm.tip+1}/${CALM_TIPS.length}`;$("tiph").textContent=h;$("tipb").textContent=p;c.classList.remove("swap");void c.offsetWidth;c.classList.add("swap")};
+ showTip(0);$("tprev").onclick=()=>{showTip(-1);resetTipTimer()};$("tnext").onclick=()=>{showTip(1);resetTipTimer()};
+ let tx=0;$("tipcard").addEventListener("touchstart",e=>tx=e.touches[0].clientX,{passive:true});$("tipcard").addEventListener("touchend",e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>40){showTip(d<0?1:-1);resetTipTimer()}});
+ const resetTipTimer=()=>{clearInterval(calm.tipT);calm.tipT=setInterval(()=>showTip(1),14000)};resetTipTimer();
+ calm.clockT=setInterval(()=>{const c=$("cclock");if(c)c.textContent=mmss((Date.now()-calm.start)/1000)},1000);
+ $("cx").onclick=()=>closeCalm(null);$("cpass").onclick=()=>closeCalm("passed");$("csmoked").onclick=()=>closeCalm("smoked");
+ runBreath();drawCalm()}
+function runBreath(){if(!calm)return;calm.timers.forEach(clearTimeout);calm.timers=[];const P=BREATHS[calm.pattern],orb=$("orb");let i=0;
+ const step=()=>{if(!calm)return;const [label,secs,scale]=P.steps[i%P.steps.length];$("bphase").textContent=label;orb.style.transition=`transform ${secs}s ease-in-out`;orb.style.transform=`scale(${scale})`;
+  let n=secs;$("bcount").textContent=n;const tick=()=>{n--;if(n>0&&calm){$("bcount").textContent=n;calm.timers.push(setTimeout(tick,1000))}};calm.timers.push(setTimeout(tick,1000));
+  if(/in/i.test(label)&&!/out/i.test(label))try{navigator.vibrate&&navigator.vibrate(20)}catch(e){}
+  i++;calm.timers.push(setTimeout(step,secs*1000))};
+ calm.timers.push(setTimeout(step,600))}
+function drawCalm(){const cv=$("calmcv"),c=cv.getContext("2d");const fit=()=>{cv.width=innerWidth*Math.min(2,devicePixelRatio||1)/2;cv.height=innerHeight*Math.min(2,devicePixelRatio||1)/2};fit();calm.fit=fit;addEventListener("resize",fit);
+ const blobs=[["#2E6F7A",.2,.25,.55],["#6C5CA8",.8,.3,.5],["#E7A77E",.5,.85,.45],["#3E8C77",.15,.8,.4],["#4A5FA8",.85,.75,.45]];
+ if(RM){cv.style.display="none";return}cv.style.display="";
+ const frame=t=>{if(!calm)return;const W=cv.width,H=cv.height,R=Math.max(W,H);c.fillStyle="#0B1D2A";c.fillRect(0,0,W,H);c.globalCompositeOperation="lighter";
+  blobs.forEach(([col,x,y,r],i)=>{const s=RM?0:t/1000,px=(x+Math.sin(s*.07+i*1.7)*.18)*W,py=(y+Math.cos(s*.05+i*2.3)*.16)*H,rr=R*r*(1+Math.sin(s*.11+i)*.12);const g=c.createRadialGradient(px,py,0,px,py,rr);g.addColorStop(0,col+"70");g.addColorStop(1,col+"00");c.fillStyle=g;c.fillRect(0,0,W,H)});
+  c.globalCompositeOperation="source-over";if(!RM)calm.raf=requestAnimationFrame(frame)};calm.raf=requestAnimationFrame(frame)}
+function closeCalm(outcome){if(!calm)return;const secs=Math.round((Date.now()-calm.start)/1000),moods=calm.moods;cancelAnimationFrame(calm.raf);calm.timers.forEach(clearTimeout);clearInterval(calm.tipT);clearInterval(calm.clockT);removeEventListener("resize",calm.fit);try{calm.lock&&calm.lock.release()}catch(e){}
+ calm=null;$("calm").hidden=true;document.body.style.overflow="";
+ if(outcome){SM().urges.push({ts:Date.now(),outcome,secs,moods});if(outcome==="passed"){addXP(15);save();if(S.view!=="smoke")go("smoke");else renderSmoke();toast(`Urge beaten in ${mmss(secs)} · +15 XP`);burst($("calmbtn"),["#B7A3E0","#86D3B0","#EFBC90","#9FD4F7"])}
+  else{save();go("smoke");startSmoke(S.ui.smokeLimit??5,moods);toast("No judgment. Logging it helps you spot patterns.")}}}
+$("calmbtn").onclick=()=>openCalm();
+
 /* ================= dogs ================= */
 const dogLog=(k,id)=>(S.dogs.log[k]||{})[id];
 function dogStatus(d){const keys=Object.keys(S.dogs.log).filter(k=>dogLog(k,d.id)&&dogLog(k,d.id).stool).sort().reverse();
@@ -996,14 +1106,14 @@ $("won").onclick=e=>quickLog(true,e.currentTarget);$("lost").onclick=e=>quickLog
 $("addtrade").onclick=()=>editTrade(S.ui.acct);
 
 /* ================= routing + dock ================= */
-const NAMES={home:"Home",today:"Today",trades:"Trades",journal:"Journal",food:"Food"},PALOF={today:1,trades:0,journal:2,food:3};
+const NAMES={home:"Home",today:"Today",trades:"Trades",journal:"Journal",food:"Food",smoke:"Smoke log"},PALOF={today:1,trades:0,journal:2,food:3,smoke:4};
 function go(v,o={}){S.view=v;if(o.acct)S.ui.acct=o.acct;if(o.book)S.ui.book=o.book;
  $("v-home").classList.toggle("off",v!=="home");document.querySelectorAll(".page").forEach(p=>p.classList.toggle("on",p.id==="p-"+v));document.body.classList.toggle("page-mode",v!=="home");
  $("dcore").querySelectorAll(".db").forEach(b=>b.classList.toggle("on",b.dataset.v===v));glide();
  const cr=$("crumb");cr.textContent=NAMES[v];cr.classList.remove("swap");void cr.offsetWidth;cr.classList.add("swap");
  if(v==="home"){renderCards();layout()}else setAmbient(PALOF[v]);
  if(v==="trades"){shownBal=null;renderTrades();const l=$("spark").querySelector(".line");if(l){l.style.animation="none";void l.offsetWidth;l.style.animation=""}if(S.ui.acct==="poly"&&S.settings.wallet&&Date.now()-S.sync.last>60000)sync(false)}
- if(v==="journal")renderJournal();if(v==="today")renderToday();if(v==="food")renderFood();
+ if(v==="journal")renderJournal();if(v==="today")renderToday();if(v==="food")renderFood();if(v==="smoke")renderSmoke();
  save();scrollTo({top:0,behavior:o.instant?"auto":"smooth"});history.replaceState(null,"","#"+v)}
 function glide(){const b=$("dcore").querySelector(".db.on"),g=$("glide");if(!b){g.style.opacity=0;return}g.style.opacity=1;g.style.left=(b.offsetLeft+12)+"px";g.style.width=(b.offsetWidth-24)+"px"}
 $("dcore").querySelectorAll(".db").forEach(b=>b.onclick=()=>go(b.dataset.v));
@@ -1023,7 +1133,7 @@ $("orbit").querySelectorAll(".olab").forEach(b=>b.onclick=()=>{orbit(false);cons
 function renderAll(){syncRepSelect();renderWeek();renderToday();renderWater();renderTrades();renderJournal();renderFood();renderCards();if(S.view==="home")layout()}
 tick();setInterval(tick,10000);
 rail.classList.add("still");paintCards();renderAll();layout();requestAnimationFrame(()=>requestAnimationFrame(()=>rail.classList.remove("still")));
-const start=(location.hash||"").slice(1);if(start==="dogs"){S.ui.who="dog";go("food",{instant:true})}else go(NAMES[start]?start:"home",{instant:true});
+const start=(location.hash||"").slice(1);if(start==="dogs"){S.ui.who="dog";go("food",{instant:true})}else if(start==="calm"){go("smoke",{instant:true});setTimeout(openCalm,300)}else go(NAMES[start]?start:"home",{instant:true});
 addEventListener("resize",()=>{glide();segAll()});
 setInterval(waterTick,60000);setTimeout(waterTick,4000);setInterval(taskTick,30000);setTimeout(taskTick,2000);$("alertsbtn").onclick=()=>NATIVE?nativeAlertsSheet():alertsSheet();if(NATIVE){nativeInit();document.documentElement.classList.add("native")}$("waterbtn").onclick=()=>openWater();
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){tick();waterTick();taskTick();scheduleSoon();if(S.settings.wallet&&Date.now()-S.sync.last>120000)sync(false)}});
