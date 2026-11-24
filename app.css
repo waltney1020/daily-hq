@@ -248,6 +248,14 @@ body.page-mode .amb-shade{background:linear-gradient(180deg,rgba(2,11,14,.45),rg
 .flag{margin-top:6px;padding:8px 10px;border-radius:9px;background:rgba(233,196,106,.12);border:1px solid rgba(233,196,106,.35);font-size:13px;color:#F2DFA8}
 .flag.urgent{background:rgba(238,142,134,.14);border-color:rgba(238,142,134,.5);color:#F6C4BE;font-weight:600}
 .freezer{display:flex;flex-direction:column;gap:4px}
+.goal{margin-top:8px;padding:10px 14px;border-radius:12px;background:rgba(239,188,144,.08);border:1px solid rgba(239,188,144,.3)}
+.goal b{display:block;font-size:14px;font-weight:600;color:#F1C39D}
+.goal span{font-size:13px;color:var(--soft);line-height:1.45}
+.portion{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;margin-top:8px;padding:12px 14px;border-radius:12px;background:rgba(134,211,176,.07);border:1px solid rgba(134,211,176,.22)}
+.portion small{display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.portion b{display:block;font-size:15px;font-weight:600}
+.portion b span,.portion>div>span{font-weight:400;color:var(--muted);font-size:13px}
+.portion>div:last-child{text-align:right}
 .redflags{margin-bottom:14px}
 .sub .up{color:var(--mint)}
 
