@@ -806,7 +806,8 @@ function nativeAlertsSheet(){const N=nset(),nx=S.native&&S.native.next;
    const nx2=nextInfo();await LN.schedule({notifications:[{id:nid("test"+Date.now()),title:nx2.t?"Now: "+nx2.t.t:"Op-Lock In test",body:"This is how your reminders will look.",channelId:"tasks",actionTypeId:"TASK",extra:nx2.t?{k:dkey(),id:nx2.t.id,kind:"task"}:{},smallIcon:"ic_stat_dailyhq",iconColor:"#EFBC90",schedule:{at:new Date(Date.now()+5000),allowWhileIdle:true}}]});toast("Test coming in 5 seconds. You can close the app.")}})}
 
 /* ================= money (expenses) ================= */
-const MCATS=[["Groceries","#86D3B0"],["Eating out","#EFBC90"],["Gas & transport","#9ECBD7"],["Bills & utilities","#7AB8B8"],["Subscriptions","#BBB8DA"],["Shopping","#E9A3C0"],["Health & care","#A9D5D0"],["Pets","#E9C46A"],["Smoking","#B7A3E0"],["Fun","#F08C8C"],["Trading fees","#5FA8E8"],["Other","#A9BBB9"]];
+// Category colors match the chart colors; the four smaller categories share "Other" gray.
+const MCATS=[["Groceries","#3987e5"],["Eating out","#d95926"],["Gas & transport","#c98500"],["Bills & utilities","#6F8482"],["Subscriptions","#d55181"],["Shopping","#0ca30c"],["Health & care","#6F8482"],["Pets","#199e70"],["Smoking","#9085e9"],["Fun","#e66767"],["Trading fees","#6F8482"],["Other","#6F8482"]];
 const MCOL=Object.fromEntries(MCATS);
 const MO=()=>S.money||(S.money={items:[],budget:0,pay:"Card"});
 const usd=n=>"$"+(+n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -833,19 +834,94 @@ function renderMoney(){const M=MO(),st=moneyStats();
  bindOpts($("moneyadd"),(n,v)=>{M.pay=v;save()});upBtn();
  $("m-add").onclick=e=>{const v=Math.round(parseFloat(amt.value)*100)/100;if(!(v>0)){toast("Enter an amount first");amt.focus();return}
   M.items.push({id:uid(),ts:Date.now(),amt:v,cat:mDraft.cat,note:mDraft.note.trim(),pay:M.pay||"Card"});mDraft={amt:"",cat:mDraft.cat,note:""};save();renderMoney();toast(`Logged ${usd(v)}`);burst(e.currentTarget,["#86D3B0","#EFBC90"])};
- const vs=st.lastSame?st.month-st.lastSame:null,b=+M.budget||0,pct=b?Math.min(100,st.month/b*100):0,perDay=b?Math.max(0,(b-st.month)/st.left):0;
- $("moneysum").innerHTML=`<span class="eyebrow">${new Date().toLocaleDateString([], {month:"long"})} spending</span><div class="big" style="font-size:42px">${usd(st.month)}</div>
-  ${b?`<div class="wbar" style="margin-top:12px"><i style="width:${pct}%;background:${pct>=100?"var(--rose)":pct>85?"#E9C46A":"linear-gradient(90deg,#5FA8E8,#86D3B0)"}"></i><b style="left:${Math.round((st.dim-st.left+1)/st.dim*100)}%"></b></div>
-   <div class="sub" style="margin-top:8px">${usd(Math.max(0,b-st.month))} left of ${usd(b)} · about ${usd(perDay)} a day for ${st.left} days</div>`:`<button class="link" id="m-budget" style="padding-left:0;color:#F1C39D">Set a monthly budget</button>`}
-  <div class="stats" style="margin-top:12px"><div class="stat"><small>Today</small><b>${usd(st.today)}</b></div><div class="stat"><small>Last 7 days</small><b>${usd(st.week)}</b></div>
-  <div class="stat"><small>vs last month</small><b class="${vs>0?"dn":vs<0?"up":""}">${vs===null?"—":(vs>0?"+":"−")+usd(Math.abs(vs)).slice(1).replace(/^/,"$")}</b></div><div class="stat"><small>Purchases</small><b>${st.count}</b></div></div>
-  ${b?`<button class="link" id="m-budget" style="padding-left:0;margin-top:6px">Change budget</button>`:""}`;
- $("m-budget").onclick=()=>openSheet(`<h2>Monthly budget</h2><p class="desc">The bar shows how much is left and what you can spend per day to stay on track.</p><div class="field"><label for="bud">Budget ($)</label><input id="bud" type="number" inputmode="decimal" value="${b||""}" placeholder="2000"></div><div class="btns"><button class="action p" id="bud-s">Save</button></div>`,r=>{r.querySelector("#bud-s").onclick=()=>{M.budget=Math.max(0,+r.querySelector("#bud").value||0);save();closeSheet();renderMoney();toast("Budget saved")}});
+ const vs=st.lastSame?st.month-st.lastSame:null,b=+M.budget||0,pct=b?Math.min(100,st.month/b*100):0,perDay=b?Math.max(0,(b-st.month)/st.left):0,RC=2*Math.PI*15;
+ const ringCol=pct>=100?"var(--rose)":pct>85?"#E9C46A":"var(--mint)";
+ $("moneysum").innerHTML=`<div class="msrow"><button class="msring" id="m-budget" aria-label="${b?"Change monthly budget":"Set a monthly budget"}"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="4" ${b?"":'stroke-dasharray="3 3"'}/>${b?`<circle cx="18" cy="18" r="15" fill="none" stroke="${ringCol}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(pct/100*RC).toFixed(1)} ${RC.toFixed(1)}" transform="rotate(-90 18 18)"/>`:""}</svg><b>${b?Math.round(st.month/b*100)+"%":"Set<br>budget"}</b></button>
+  <div class="msmain"><span class="eyebrow">${new Date().toLocaleDateString([], {month:"long"})} spending</span><div class="msbig">${usd(st.month)}</div><div class="sub">${b?(st.month>b?`${usd(st.month-b)} over your ${usd(b)} budget`:`${usd(b-st.month)} left of ${usd(b)} · ~${usd(perDay)}/day`):"Tap the ring to set a monthly budget"}</div></div></div>
+  <div class="msminis"><div><small>Today</small><b>${usd(st.today)}</b></div><div><small>7 days</small><b>${usd(st.week)}</b></div><div><small>vs last month</small><b class="${vs>0?"dn":vs<0?"up":""}">${vs===null?"—":(vs>0?"+":"−")+usd(Math.abs(vs))}</b></div></div>`;
+ $("m-budget").onclick=()=>openSheet(`<h2>Monthly budget</h2><p class="desc">The ring fills as you spend. Below it you'll see what's left and what you can spend per day to stay on track.</p><div class="field"><label for="bud">Budget ($)</label><input id="bud" type="number" inputmode="decimal" value="${b||""}" placeholder="2000"></div><div class="btns"><button class="action p" id="bud-s">Save</button></div>`,r=>{r.querySelector("#bud-s").onclick=()=>{M.budget=Math.max(0,+r.querySelector("#bud").value||0);save();closeSheet();renderMoney();toast("Budget saved")}});
  const mx=Math.max(1,...st.cats.map(c=>c[1]));
- $("moneycats").innerHTML=`<span class="ptitle">Where it went</span><div class="sub">This month by category</div>${st.cats.length?`<div class="catbars">${st.cats.map(([c,v])=>`<div class="cb"><div class="row sb"><span><i style="background:${MCOL[c]||"#A9BBB9"}"></i>${esc(c)}</span><b>${usd(v)}</b></div><div class="cbar"><i style="width:${v/mx*100}%;background:${MCOL[c]||"#A9BBB9"}"></i></div></div>`).join("")}</div>`:`<div class="empty"><b>Nothing logged this month</b>Your categories show up here.</div>`}`;
- const list=[...M.items].sort((a,b)=>b.ts-a.ts).slice(0,60),groups={};list.forEach(x=>(groups[dkey(new Date(x.ts))]=groups[dkey(new Date(x.ts))]||[]).push(x));
- $("moneylog").innerHTML=`<div class="row sb"><span class="ptitle">Purchases</span><span class="sub">Tap one to edit</span></div>${list.length?Object.entries(groups).map(([k,l])=>`<div class="mday"><span>${sameDay(l[0].ts)?"Today":new Date(k+"T12:00").toLocaleDateString([], {weekday:"long",month:"short",day:"numeric"})}</span><b>${usd(l.reduce((t,x)=>t+x.amt,0))}</b></div>${l.map(x=>`<button class="tr" data-mid="${x.id}"><span class="mdot" style="background:${MCOL[x.cat]||"#A9BBB9"}"></span><span class="ti"><div>${esc(x.note||x.cat)}</div><small>${esc(x.cat)} · ${timeStr(x.ts)} · ${esc(x.pay||"")}</small></span><span class="amt">${usd(x.amt)}</span></button>`).join("")}`).join(""):`<div class="empty"><b>Log your first purchase</b>Type the amount, tap a category, done. It takes about 5 seconds.</div>`}`;
- $("moneylog").querySelectorAll("[data-mid]").forEach(b=>b.onclick=()=>editMoney(b.dataset.mid));renderWish()}
+ $("moneycats").innerHTML=`<div class="mchead"><b>Top categories</b><span class="eyebrow">This month</span></div>${st.cats.length?st.cats.slice(0,5).map(([c,v])=>`<div class="mcat"><i style="background:${mcol(c)}2E">${MICO[c]||"•"}</i><div class="m">${esc(c)}<small>${Math.round(v/Math.max(1,st.month)*100)}% of the month</small><div class="bar"><b style="width:${v/mx*100}%;background:${mcol(c)}"></b></div></div><b class="num">${usd(v)}</b></div>`).join(""):`<div class="empty"><b>Nothing logged this month</b>Your top categories show up here.</div>`}`;
+ renderHistory();renderWish();mTab(S.ui.mtab||"ov",true)}
+/* ---- Money tabs, charts and history ---- */
+// Chart colors: 8 validated categorical hues (fixed order, checked for colorblind separation on the dark surface). Smaller categories fold into "Other".
+const MSERIES=[["Groceries","#3987e5"],["Eating out","#d95926"],["Pets","#199e70"],["Gas & transport","#c98500"],["Subscriptions","#d55181"],["Shopping","#0ca30c"],["Smoking","#9085e9"],["Fun","#e66767"],["Other","#6F8482"]];
+const MSC=Object.fromEntries(MSERIES),mser=c=>MSC[c]?c:"Other",mcol=c=>MSC[mser(c)];
+const MICO={"Groceries":"🛒","Eating out":"🍔","Gas & transport":"⛽","Bills & utilities":"💡","Subscriptions":"📺","Shopping":"🛍️","Health & care":"💊","Pets":"🐾","Smoking":"🌬️","Fun":"🎉","Trading fees":"📈","Other":"•"};
+const mHidden=new Set();let mHF="All",mUnHL=null;
+function mTab(t,quiet){S.ui.mtab=t;document.querySelectorAll("#mtabs button").forEach(b=>{const on=b.dataset.mt===t;b.classList.toggle("on",on);b.setAttribute("aria-selected",on)});
+ document.querySelectorAll("#p-money .mview").forEach(v=>v.classList.toggle("on",v.id==="mv-"+t));mTabHL();
+ if(t==="ov")requestAnimationFrame(drawMChart);if(!quiet)save()}
+function mTabHL(){const b=document.querySelector("#mtabs button.on"),hl=$("mtabhl");if(b&&hl&&b.offsetWidth){hl.style.left=b.offsetLeft+"px";hl.style.width=b.offsetWidth+"px"}}
+document.querySelectorAll("#mtabs button").forEach(b=>b.onclick=()=>mTab(b.dataset.mt));
+document.querySelectorAll("#mcview button").forEach(b=>b.onclick=()=>{S.ui.mview=b.dataset.v;save();drawMChart()});
+$("mtblbtn").onclick=()=>{const t=$("mtbl");t.hidden=!t.hidden;$("mtblbtn").textContent=t.hidden?"Show as table":"Hide table"};
+$("mcwrap").addEventListener("pointerdown",e=>{if(!e.target.closest("[data-hit]"))mHideTip()});
+addEventListener("resize",()=>{if($("p-money").classList.contains("on")){mTabHL();if(S.ui.mtab==="ov"||!S.ui.mtab)drawMChart()}});
+function mShowTip(x,y,html){const t=$("mtip"),W=$("mcwrap").clientWidth;t.innerHTML=html;t.style.left=Math.max(70,Math.min(W-70,x))+"px";t.style.top=Math.max(34,y)+"px";t.classList.add("on")}
+function mHideTip(){$("mtip").classList.remove("on");if(mUnHL){mUnHL();mUnHL=null}}
+const niceTop=v=>{if(!(v>0))return 50;const m=Math.pow(10,Math.floor(Math.log10(v))),n=v/m;return(n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*m};
+function drawMChart(){const svg=$("mchart"),wrap=$("mcwrap");if(!svg||!wrap||!wrap.clientWidth)return;
+ const W=wrap.clientWidth,view=S.ui.mview||"days",M=MO(),now=new Date(),NS="http://www.w3.org/2000/svg";
+ document.querySelectorAll("#mcview button").forEach(b=>b.classList.toggle("on",b.dataset.v===view));
+ svg.innerHTML="";$("mtip").classList.remove("on");mUnHL=null;
+ const el=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e},txt=(x,y,s,a={})=>{const t=el("text",{x,y,fill:"#7F9593","font-size":10,"font-family":"Work Sans, sans-serif",...a});t.textContent=s;svg.append(t);return t};
+ const hit=(node,show,hl)=>{node.setAttribute("data-hit",1);const on=()=>{if(mUnHL)mUnHL();show();if(hl){hl(true);mUnHL=()=>hl(false)}};
+  node.addEventListener("pointerenter",e=>{if(e.pointerType==="mouse")on()});node.addEventListener("pointerdown",on);node.addEventListener("pointerleave",e=>{if(e.pointerType==="mouse")mHideTip()})};
+ const mk=monthKey(now),month=M.items.filter(x=>monthKey(new Date(x.ts))===mk),cap=$("mccap"),leg=$("mlegend"),tbl=$("mtbl");
+ const totals={};month.forEach(x=>{const c=mser(x.cat);totals[c]=(totals[c]||0)+(+x.amt||0)});
+ const present=MSERIES.map(s=>s[0]).filter(c=>totals[c]>0),sumAll=present.reduce((t,c)=>t+totals[c],0);
+ const legend=pctMode=>{leg.innerHTML=present.length>1?present.map(c=>`<button class="mlg ${mHidden.has(c)?"dim":""}" data-c="${esc(c)}" aria-pressed="${!mHidden.has(c)}"><i style="background:${MSC[c]}"></i><span>${esc(c)}</span><b>${pctMode?Math.round(totals[c]/sumAll*100)+"%":usd(totals[c])}</b></button>`).join(""):"";
+  leg.querySelectorAll(".mlg").forEach(b=>b.onclick=()=>{const c=b.dataset.c;mHidden.has(c)?mHidden.delete(c):mHidden.add(c);if(present.every(x=>mHidden.has(x)))mHidden.delete(c);drawMChart()})};
+ const table=(h,rows)=>{tbl.innerHTML=`<table><tr><th>${h[0]}</th><th>${h[1]}</th></tr>${rows.map(r=>`<tr><td>${esc(r[0])}</td><td>${r[1]}</td></tr>`).join("")}</table>`};
+ if(view==="days"){$("mctitle").textContent="Daily spending";const H=160,pb=18,pt=12,ph=H-pb-pt,dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate(),today=now.getDate();
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.setAttribute("height",H);
+  const vis=MSERIES.map(s=>s[0]).filter(c=>!mHidden.has(c)),days=[...Array(dim)].map(()=>({}));
+  month.forEach(x=>{const d=new Date(x.ts).getDate()-1,c=mser(x.cat);days[d][c]=(days[d][c]||0)+(+x.amt||0)});
+  const tot=days.map(d=>vis.reduce((t,c)=>t+(d[c]||0),0)),top=niceTop(Math.max(...tot));
+  [0,.5,1].forEach(f=>{const y=pt+ph*(1-f);svg.append(el("line",{x1:0,x2:W,y1:y,y2:y,stroke:"rgba(255,255,255,.07)","stroke-width":1}));if(f)txt(W,y-3,"$"+Math.round(top*f),{"text-anchor":"end"})});
+  const bw=(W-4)/dim,w=Math.max(3,bw-3);
+  days.forEach((d,i)=>{const x=2+i*bw;
+   if(i>=today){svg.append(el("rect",{x,y:pt+ph-2,width:w,height:2,rx:1,fill:"rgba(255,255,255,.08)"}));}
+   else{let y0=pt+ph;const g=el("g",{});vis.forEach(c=>{if(!d[c])return;const h=d[c]/top*ph;y0-=h;g.append(el("rect",{x,y:y0+1,width:w,height:Math.max(1,h-1.5),rx:1.5,fill:MSC[c]}))});svg.append(g);
+    const ht=el("rect",{x:x-1.5,y:pt,width:bw,height:ph,fill:"transparent"});svg.append(ht);
+    const lines=vis.filter(c=>d[c]).map(c=>`<span><i style="background:${MSC[c]}"></i>${esc(c)}</span><em>${usd(d[c])}</em>`).join("");
+    hit(ht,()=>mShowTip(x+w/2,pt+ph-tot[i]/top*ph-8,`<b>${now.toLocaleDateString([], {month:"short"})} ${i+1} · ${usd(tot[i])}</b>${lines?`<div class="mtl">${lines}</div>`:"<span>Nothing spent</span>"}`),on=>g.style.opacity=on?.75:1)}
+   if(i===0||(i+1)%5===0)txt(x+w/2,H-4,String(i+1),{"text-anchor":"middle","font-weight":i+1===today?700:400,fill:i+1===today?"#EEF3F0":"#7F9593"})});
+  const spent=tot.slice(0,today).reduce((a,b)=>a+b,0),big=Math.max(...tot);
+  cap.textContent=spent?`Average ${usd(spent/today)} a day so far · biggest day ${now.toLocaleDateString([], {month:"short"})} ${tot.indexOf(big)+1} (${usd(big)})`:"Log purchases and each day fills in here, split by category.";
+  legend(false);table(["Day","Spent"],tot.slice(0,today).map((v,i)=>[`${now.toLocaleDateString([], {month:"short"})} ${i+1}`,usd(v)]).reverse())}
+ if(view==="split"){$("mctitle").textContent="Where it went";const H=180,cx=W/2,cy=H/2,r=70,sw=22;svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.setAttribute("height",H);
+  const vis=present.filter(c=>!mHidden.has(c)),sum=vis.reduce((t,c)=>t+totals[c],0);
+  svg.append(el("circle",{cx,cy,r,fill:"none",stroke:"rgba(255,255,255,.06)","stroke-width":sw}));
+  let a=-Math.PI/2;const P=(ang,rr)=>[cx+Math.cos(ang)*rr,cy+Math.sin(ang)*rr];
+  if(vis.length===1){const c=vis[0],ring=el("circle",{cx,cy,r,fill:"none",stroke:MSC[c],"stroke-width":sw});svg.append(ring);hit(ring,()=>mShowTip(cx,cy-r-10,`<b>${esc(c)} · ${usd(totals[c])}</b><span>All of the shown spending</span>`))}
+  else vis.forEach(c=>{const v=totals[c],da=v/sum*Math.PI*2,gap=Math.min(.04,da*.3),a0=a+gap/2,a1=a+da-gap/2;a+=da;const [x0,y0]=P(a0,r),[x1,y1]=P(a1,r),[tx,ty]=P((a0+a1)/2,r);
+   const p=el("path",{d:`M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 ${a1-a0>Math.PI?1:0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`,fill:"none",stroke:MSC[c],"stroke-width":sw});p.style.transition="stroke-width .15s";svg.append(p);
+   hit(p,()=>mShowTip(tx,ty-16,`<b>${esc(c)} · ${usd(v)}</b><span>${Math.round(v/sum*100)}% of ${mHidden.size?"what's shown":"the month"}</span>`),on=>p.setAttribute("stroke-width",on?sw+6:sw))});
+  txt(cx,cy+1,usd(sum),{"text-anchor":"middle",fill:"#EEF3F0","font-size":19,"font-weight":600});txt(cx,cy+18,mHidden.size?"shown categories":"this month",{"text-anchor":"middle","font-size":11});
+  const tc=vis.slice().sort((x,y)=>totals[y]-totals[x])[0];cap.textContent=tc?`${tc} is your biggest category at ${Math.round(totals[tc]/sum*100)}%.`:"Log purchases to see where your money goes.";
+  legend(true);table(["Category","Spent"],vis.map(c=>[c,usd(totals[c])]))}
+ if(view==="months"){$("mctitle").textContent="Last 6 months";const H=160,pb=18,pt=16,ph=H-pb-pt,b=+M.budget||0;svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.setAttribute("height",H);
+  const ms=[...Array(6)].map((_,i)=>{const d=new Date(now.getFullYear(),now.getMonth()-5+i,1),k=monthKey(d);return{d,label:d.toLocaleDateString([], {month:"short"}),v:M.items.filter(x=>monthKey(new Date(x.ts))===k).reduce((t,x)=>t+(+x.amt||0),0)}});
+  const top=niceTop(Math.max(b*1.15,...ms.map(m=>m.v))),bw=W/6,w=Math.min(36,bw-16);
+  svg.append(el("line",{x1:0,x2:W,y1:pt+ph,y2:pt+ph,stroke:"rgba(255,255,255,.1)"}));
+  if(b){const by=pt+ph*(1-b/top);svg.append(el("line",{x1:0,x2:W,y1:by,y2:by,stroke:"#EFBC90","stroke-width":1.5,"stroke-dasharray":"4 4"}));txt(2,by-5,"Budget "+usd(b).replace(/\.00$/,""),{fill:"#EFBC90","font-weight":600})}
+  ms.forEach((m,i)=>{const cur=i===5,h=m.v/top*ph,x=i*bw+(bw-w)/2,y=pt+ph-h,rr=Math.min(4,h);
+   const bar=el("path",{d:h>0?`M${x} ${pt+ph}V${y+rr}Q${x} ${y} ${x+rr} ${y}H${x+w-rr}Q${x+w} ${y} ${x+w} ${y+rr}V${pt+ph}Z`:"",fill:cur?"#3987e5":"#3A5257"});svg.append(bar);
+   const ht=el("rect",{x:i*bw,y:pt,width:bw,height:ph,fill:"transparent"});svg.append(ht);
+   hit(ht,()=>mShowTip(x+w/2,y-8,`<b>${m.d.toLocaleDateString([], {month:"long"})} · ${usd(m.v)}</b><span>${cur?"So far this month":"Total"}${b?(m.v>b?` · ${usd(m.v-b)} over budget`:` · ${usd(b-m.v)} under budget`):""}</span>`),on=>bar.style.opacity=on?.75:1);
+   txt(x+w/2,H-4,m.label,{"text-anchor":"middle",fill:cur?"#EEF3F0":"#7F9593","font-weight":cur?600:400})});
+  const past=ms.slice(0,5).filter(m=>m.v>0),avg=past.length?past.reduce((t,m)=>t+m.v,0)/past.length:0,over=b?past.filter(m=>m.v>b).length:0;
+  cap.textContent=past.length?`You average ${usd(avg)} a month${b?`. ${over} of the last ${past.length} went over budget.`:"."}`:"Your monthly totals build up here over time.";
+  leg.innerHTML="";table(["Month","Spent"],ms.map(m=>[m.d.toLocaleDateString([], {month:"long"}),usd(m.v)]).reverse())}}
+function renderHistory(){const M=MO(),host=$("moneylog");if(!host)return;
+ const all=[...M.items].sort((a,b)=>b.ts-a.ts),cats=[...new Set(all.map(x=>x.cat))];if(mHF!=="All"&&!cats.includes(mHF))mHF="All";
+ const list=all.filter(x=>mHF==="All"||x.cat===mHF).slice(0,80),groups={};list.forEach(x=>{const k=dkey(new Date(x.ts));(groups[k]=groups[k]||[]).push(x)});
+ host.innerHTML=(cats.length>1?`<div class="chips mhf">${["All",...cats].map(c=>`<button class="chip ${c===mHF?"on":""}" data-hf="${esc(c)}">${c==="All"?"":`<i style="background:${mcol(c)}"></i>`}${esc(c)}</button>`).join("")}</div>`:"")+
+  (list.length?Object.entries(groups).map(([k,l])=>`<div class="mday"><span>${sameDay(l[0].ts)?"Today":new Date(k+"T12:00").toLocaleDateString([], {weekday:"long",month:"short",day:"numeric"})}</span><b>${usd(l.reduce((t,x)=>t+x.amt,0))}</b></div>${l.map(x=>`<button class="mhrow" data-mid="${x.id}"><span class="mic" style="background:${mcol(x.cat)}2E">${MICO[x.cat]||"•"}</span><span class="ti"><span class="tn">${esc(x.note||x.cat)}</span><small>${esc(x.cat)} · ${timeStr(x.ts)} · ${esc(x.pay||"")}</small></span><span class="amt">${usd(x.amt)}</span></button>`).join("")}`).join("")+(all.length>80&&mHF==="All"?`<p class="sub" style="margin-top:10px">Showing your latest 80 purchases.</p>`:""):`<div class="empty"><b>Log your first purchase</b>Type the amount, tap a category, done. It takes about 5 seconds.</div>`);
+ host.querySelectorAll("[data-hf]").forEach(b=>b.onclick=()=>{mHF=b.dataset.hf;renderHistory()});
+ host.querySelectorAll("[data-mid]").forEach(b=>b.onclick=()=>editMoney(b.dataset.mid))}
 // Things to buy: a running list. Tap the circle when you buy it and it's logged as a purchase.
 function renderWish(){const M=MO(),W=M.wish||(M.wish=[]),host=$("moneywish");if(!host)return;
  const list=[...W].sort((a,b)=>(b.need?1:0)-(a.need?1:0)||a.ts-b.ts),total=W.reduce((t,x)=>t+(+x.price||0),0),priced=W.filter(x=>+x.price>0).length;
@@ -862,7 +938,7 @@ function renderWish(){const M=MO(),W=M.wish||(M.wish=[]),host=$("moneywish");if(
    if(+x.price>0){const p={id:uid(),ts:Date.now(),amt:+x.price,cat:x.cat||"Shopping",note:x.t,pay:M.pay||"Card"};M.items.push(p);save();renderMoney();burst(b,["#86D3B0","#EFBC90"]);
     toast(`Bought · logged ${usd(p.amt)}`,"Undo",()=>{M.items=M.items.filter(i=>i.id!==p.id);M.wish.push(x);save();renderMoney()})}
    else{mDraft={amt:"",cat:x.cat||"Shopping",note:x.t};save();renderMoney();toast("Bought · enter what you paid","Undo",()=>{M.wish.push(x);mDraft={amt:"",cat:"Groceries",note:""};save();renderMoney()});
-    $("moneyadd").scrollIntoView({behavior:"smooth",block:"start"});setTimeout(()=>$("m-amt")&&$("m-amt").focus(),450)}},380)})}
+    mTab("log");$("moneyadd").scrollIntoView({behavior:"smooth",block:"start"});setTimeout(()=>$("m-amt")&&$("m-amt").focus(),450)}},380)})}
 function editWish(id){const M=MO(),x=(M.wish||[]).find(i=>i.id===id);if(!x)return;
  openSheet(`<h2>Thing to buy</h2><div class="field"><label for="we-t">What</label><input id="we-t" value="${esc(x.t)}" autocomplete="off"></div>
  <div class="field"><label for="we-p">Price ($, optional)</label><input id="we-p" type="number" inputmode="decimal" step="0.01" value="${+x.price>0?x.price:""}"></div>
@@ -1287,7 +1363,7 @@ function qlog(open){const q=$("qlog"),p=$("plusbtn");if(!q)return;q.classList.to
 $("plusbtn").onclick=e=>{e.stopPropagation();qlog(!qOpen())};
 $("qscrim").onclick=()=>qlog(false);addEventListener("keydown",e=>{if(e.key==="Escape")qlog(false)});
 $("qlog").querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{const q=b.dataset.q;qlog(false);
- if(q==="purchase"){go("money");setTimeout(()=>$("m-amt")&&$("m-amt").focus(),350)}
+ if(q==="purchase"){go("money");mTab("log");setTimeout(()=>$("m-amt")&&$("m-amt").focus(),350)}
  if(q==="water")addWater(W().step,b);
  if(q==="task"){go("today");setTimeout(()=>{$("nt").scrollIntoView({block:"center"});$("nt").focus()},350)}
  if(q==="puff"){const X=SM();if(X.active){X.active.puffs++;save();toast(`Puff logged · ${X.active.puffs} this session`)}else{startSmoke(S.ui.smokeLimit??5);SM().active.puffs=1;save()}go("smoke")}
