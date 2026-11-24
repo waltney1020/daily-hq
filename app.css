@@ -245,6 +245,52 @@ body.page-mode .amb-shade{background:linear-gradient(180deg,rgba(2,11,14,.45),rg
 .mood{display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(239,188,144,.14);color:#F1C39D;font-size:11px;font-weight:600}
 .jbody>*{animation:unfold .4s var(--ease) both}
 
+/* smoke log */
+.db[data-v=smoke]>svg{background:rgba(160,140,210,.17);color:#CBBDF0}
+.calmbtn{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;padding:26px 20px;border:0;border-radius:22px;cursor:pointer;color:#F4F1FF;text-align:center;
+ background:linear-gradient(120deg,#3B5C8F,#6C5CA8 45%,#2E7A78);background-size:200% 200%;animation:calmshift 9s ease-in-out infinite;box-shadow:0 18px 50px rgba(60,50,120,.35),inset 0 0 0 1px rgba(255,255,255,.12);transition:transform .2s var(--pop)}
+.calmbtn:hover{transform:translateY(-2px)}.calmbtn:active{transform:scale(.98)}
+.calmbtn span{font-size:clamp(20px,3.4vw,28px);font-weight:500;letter-spacing:-.02em}
+.calmbtn b{font-size:clamp(24px,4.2vw,36px);font-weight:700;letter-spacing:-.03em}
+.calmbtn i{font-style:normal;font-size:13px;opacity:.8;margin-top:6px}
+@keyframes calmshift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.sclock{font-size:clamp(44px,7vw,64px);font-weight:500;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1.1}
+.sclock.over{color:var(--peach)}
+.puffs{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;margin:16px 0 4px}
+.puffs>div{text-align:center}.puffs b{display:block;font-size:56px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}.puffs small{color:var(--muted)}
+.puffbtn{min-width:120px;min-height:72px;border:0;border-radius:18px;background:#B7A3E0;color:#231A3D;font-size:20px;font-weight:700;cursor:pointer}
+.puffbtn.minus{min-width:56px;background:rgba(255,255,255,.08);color:var(--ink);border:1px solid var(--line2)}
+.chips.wrap{flex-wrap:wrap;overflow:visible}
+.unit{font-size:12px;font-weight:500;color:var(--muted)}
+/* calm mode */
+.calm{position:fixed;inset:0;z-index:120;overflow:auto;color:#F2F6FA;background:radial-gradient(at 20% 25%,#2E6F7A66,transparent 55%),radial-gradient(at 80% 30%,#6C5CA866,transparent 55%),radial-gradient(at 50% 85%,#E7A77E44,transparent 55%),#0B1D2A}
+.calm canvas{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.calm .calm-in{z-index:1}
+.calm-in{text-shadow:0 1px 10px rgba(5,10,30,.35);position:relative;min-height:100%;display:flex;flex-direction:column;align-items:center;gap:22px;padding:calc(18px + env(safe-area-inset-top,0px)) max(18px,env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px));max-width:640px;margin:0 auto;animation:rin .6s var(--ease)}
+.calm-top{position:relative;width:100%;text-align:center}
+.calm-clock{font-size:34px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.calm-x{position:absolute;right:0;top:0;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:16px;cursor:pointer}
+.breath{display:flex;flex-direction:column;align-items:center;gap:18px;margin-top:6px}
+.orb{width:min(66vw,280px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;transform:scale(.62);
+ background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.55),rgba(190,210,255,.18) 45%,rgba(140,120,220,.12) 70%,transparent 72%);box-shadow:0 0 80px rgba(170,190,255,.35),inset 0 0 40px rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3)}
+.orb-in{text-align:center;display:flex;flex-direction:column;gap:2px}
+.orb-in b{font-size:20px;font-weight:600;text-shadow:0 2px 12px rgba(0,0,0,.3)}
+.orb-in span{font-size:28px;font-weight:300;opacity:.85;font-variant-numeric:tabular-nums}
+.breathpick .chip{background:rgba(255,255,255,.1);color:#F2F6FA;border-color:rgba(255,255,255,.18)}
+.breathpick .chip.on{background:rgba(255,255,255,.9);color:#2A2550}
+.tipcard{width:100%;padding:16px 18px;border-radius:18px;background:rgba(8,16,30,.55);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.tipcard.swap{animation:tipin .5s var(--ease)}
+@keyframes tipin{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+.tiplabel{font-size:11px;font-weight:700;letter-spacing:.14em;color:#FFD9B8}
+.tipnav{width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;font-size:18px;cursor:pointer}
+.tipcard h3{margin:8px 0 4px;font-size:19px;font-weight:600}
+.tipcard p{margin:0;font-size:15px;line-height:1.5;color:#DCE6F0}
+.calm-moods{width:100%;display:flex;flex-direction:column;gap:8px;font-size:13px;color:#DCE6F0}
+.calm-moods .chip{background:rgba(255,255,255,.08);color:#F2F6FA;border-color:rgba(255,255,255,.16)}
+.calm-moods .chip.on{background:#FFD9B8;color:#3A2410}
+.calm-actions{width:100%;display:flex;flex-direction:column;gap:10px;margin-top:auto}
+.calm-actions .action:not(.p){background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.2);color:#F2F6FA}
+
 /* dogs */
 .grid.dogs{margin-bottom:14px}
 .dogcard{display:flex;flex-direction:column;gap:6px}
