@@ -186,6 +186,63 @@ body.page-mode .amb-shade{background:linear-gradient(180deg,rgba(2,11,14,.45),rg
 @keyframes noteout{to{opacity:0;transform:translateY(8px) rotate(var(--r,-2deg)) scale(.92)}}
 @media (prefers-reduced-motion:reduce){.wnote.pop,.wnote.out{animation-duration:.01s}}
 .tlwrap{margin-top:14px}
+/* Task room: full-screen page a task grows into */
+.troom{position:fixed;inset:0;z-index:80;display:none;background:var(--tbg,#0A1416);color:var(--ink);overflow:hidden}
+.troom.on{display:block}
+.troom canvas{position:absolute;left:0;top:0;width:100%;height:340px;display:block}
+.trfade{position:absolute;left:0;right:0;top:190px;height:152px;background:linear-gradient(rgba(0,0,0,0),var(--tbg,#0A1416))}
+.trs{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;padding:calc(12px + env(safe-area-inset-top,0px)) 16px calc(124px + env(safe-area-inset-bottom,0px));scrollbar-width:none}
+.trbar{display:flex;align-items:center;justify-content:space-between;max-width:680px;margin:0 auto}
+.trib{width:44px;height:44px;flex:none;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(5,12,14,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#fff;display:grid;place-items:center;cursor:pointer}
+.trib svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.trib:active{transform:scale(.92)}
+.treb{font-size:11px;font-weight:700;letter-spacing:.14em;color:rgba(255,255,255,.8);text-transform:uppercase;text-align:center;padding:0 8px;text-shadow:0 1px 8px rgba(0,0,0,.5)}
+.trin{max-width:680px;margin:0 auto}
+.trhero{margin-top:112px;display:flex;align-items:flex-end;justify-content:space-between;gap:14px}
+.trhero h2{margin:0;font-size:clamp(30px,7.2vw,44px);font-weight:600;letter-spacing:-.035em;line-height:1.02;text-shadow:0 2px 22px rgba(0,0,0,.5);overflow-wrap:anywhere}
+.trsub{font-size:13px;color:rgba(255,255,255,.74);margin-top:8px}
+.trring{position:relative;width:88px;height:88px;flex:none}.trring svg{width:100%;height:100%;display:block}
+.trring b{position:absolute;inset:0;display:grid;place-items:center;font-size:20px;font-weight:700}
+.trring circle.p{transition:stroke-dasharray .55s cubic-bezier(.32,.72,0,1)}
+.trnote{margin-top:14px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.06);font-size:13px;line-height:1.45;color:var(--soft)}
+.trnote b{display:block;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);margin-bottom:2px}
+.trrule{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:10px 12px;border-radius:12px;background:rgba(239,188,144,.1);color:#F1D7BD;font-size:13px;line-height:1.45;cursor:pointer}
+.trrule i{font-style:normal;width:22px;height:22px;border-radius:7px;background:rgba(239,188,144,.2);display:grid;place-items:center;color:var(--peach);font-weight:700;font-size:12px;flex:none}
+.trrule.clamp span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.troom .vseg{margin-top:14px}
+.trgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.trtile{position:relative;min-height:108px;border-radius:18px;padding:14px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.045);color:var(--ink);text-align:left;font:500 14px/1.3 var(--f);display:flex;flex-direction:column;justify-content:space-between;gap:10px;cursor:pointer}
+.trtile .tic{font-size:22px;line-height:1}
+.trtile .tic.num{width:26px;height:26px;border-radius:50%;border:1.5px solid rgba(255,255,255,.25);display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--soft)}
+.trtile .tx{overflow-wrap:anywhere}
+.trtile small{display:block;font-size:11.5px;color:var(--peach);margin-top:4px}
+.trtile.on{background:color-mix(in srgb,var(--acc) 20%,transparent);border-color:color-mix(in srgb,var(--acc) 60%,transparent)}
+.trtile.on::after{content:"✓";position:absolute;right:10px;top:10px;width:24px;height:24px;border-radius:50%;background:var(--acc);color:#0B1A12;display:grid;place-items:center;font-size:13px;font-weight:700;animation:trpop .35s cubic-bezier(.2,.9,.25,1.4)}
+@keyframes trpop{from{transform:scale(.3)}}
+.trtile.wide{grid-column:span 2;min-height:64px;flex-direction:row;align-items:center;justify-content:flex-start;gap:12px}
+.trwk{display:flex;align-items:center;gap:12px;margin-top:18px;font-size:12px;line-height:1.4;color:var(--muted)}
+.trwk span{display:flex;gap:4px;align-items:flex-end;flex:none}
+.trwk span i{width:10px;height:22px;border-radius:3px;background:rgba(255,255,255,.13)}.trwk span i.f{background:var(--acc)}.trwk span i.n{height:8px;background:rgba(255,255,255,.06)}
+.trmin{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+.trfoot{position:absolute;left:0;right:0;bottom:0;padding:18px 16px calc(16px + env(safe-area-inset-bottom,0px));background:linear-gradient(rgba(0,0,0,0),var(--tbg,#0A1416) 38%);display:flex;justify-content:center}
+.trfin{display:flex;gap:8px;width:100%;max-width:680px;flex-wrap:wrap}
+.trfin button{border-radius:16px;padding:15px 16px;font:700 15px var(--f);border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:var(--soft);cursor:pointer}
+.trfin .trp{flex:1 1 180px;background:var(--acc);border-color:var(--acc);color:#0B1A12}
+.trfin .trp.undo{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2);color:var(--ink)}
+.trcele{position:absolute;inset:0;z-index:3;display:grid;place-items:center;pointer-events:none;opacity:0;transition:opacity .3s}
+.troom.cele .trcele{opacity:1}
+.trcele>div{text-align:center;padding:24px 32px;border-radius:22px;background:rgba(5,12,14,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transform:scale(.9);transition:transform .45s cubic-bezier(.2,.9,.25,1.3)}
+.troom.cele .trcele>div{transform:none}
+.trck{width:58px;height:58px;border-radius:50%;margin:0 auto;background:var(--acc);color:#0B1A12;display:grid;place-items:center;font-size:28px;font-weight:700}
+.trcele b{display:block;font-size:22px;margin-top:10px}.trcele span{color:var(--muted);font-size:13px}
+body.roomopen{overflow:hidden}
+/* entrance: content rises in after the row has grown; tiles one after another */
+.troom .trbar,.troom .trhero,.troom .trnote,.troom .trrule,.troom .vseg,.troom .trgrid .trtile,.troom .trwk,.troom .trfoot{opacity:0;transform:translateY(14px)}
+.troom.in .trbar,.troom.in .trhero,.troom.in .trnote,.troom.in .trrule,.troom.in .vseg,.troom.in .trgrid .trtile,.troom.in .trwk,.troom.in .trfoot{opacity:1;transform:none;transition:opacity .4s ease,transform .55s cubic-bezier(.32,.72,0,1),background .25s,border-color .25s}
+.troom.in.entering .trhero{transition-delay:.06s}.troom.in.entering .trnote,.troom.in.entering .trrule,.troom.in.entering .vseg{transition-delay:.1s}
+.troom.in.entering .trtile{transition-delay:calc(.16s + var(--d,0)*.05s)}.troom.in.entering .trwk,.troom.in.entering .trfoot{transition-delay:.3s}
+.troom.in .trtile:active{transform:scale(.97)}
+@media (prefers-reduced-motion:reduce){.troom *{transition:none!important;animation:none!important}.troom .trbar,.troom .trhero,.troom .trnote,.troom .trrule,.troom .vseg,.troom .trgrid .trtile,.troom .trwk,.troom .trfoot{opacity:1;transform:none}}
 /* Light that follows your finger / mouse (background), and the lit card on Home (touch + tilt) */
 .room{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0;background:radial-gradient(480px circle at var(--sx,50%) var(--sy,40%),rgba(255,226,190,.17),rgba(140,200,210,.07) 40%,transparent 70%);mix-blend-mode:screen;will-change:opacity}
 .card.c.lit .glare{opacity:var(--gi,0);transition:none;background:radial-gradient(circle at var(--gx,50%) var(--gy,50%),rgba(255,236,214,.3),rgba(255,236,214,.08) 30%,transparent 56%)}
