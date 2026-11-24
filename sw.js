@@ -1,6 +1,6 @@
 // Offline support: app files come from the network when possible and fall back to the cache.
 // Polymarket requests are never cached.
-const CACHE = "dailyhq-v5";
+const CACHE = "dailyhq-v6";
 const FILES = ["./", "index.html", "app.css", "art.js", "app.js", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", e => {
