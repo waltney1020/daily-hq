@@ -353,7 +353,7 @@ if(!S||S.v!==1)S=defaults();
   if(!S.routine.some(r=>r.link==="dogweigh"))S.routine.push({id:uid(),t:"Weigh the dogs",time:"",g:"Weekly",dow:[0],link:"dogweigh",note:"Weekly weigh-in for the weight-loss plan. Enter the numbers under Names and weights; the app shows whether she's on pace (0.5–1 lb a week)."})}
  if(pack0<10){for(const [k,x] of ONE_OFFS){if(k<dkey())continue;const dd=S.days[k]||(S.days[k]={done:{},extra:[]});if(!dd.extra.some(e=>e.t===x.t))dd.extra.push({id:uid(),...x})}}
  S.pack=PACK})();
-let saveT;function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Couldn't save. Your phone storage may be full.")}},150)}
+let saveT;function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Couldn't save. Your phone storage may be full.")}if(typeof scheduleSoon==="function")scheduleSoon()},150)}
 addEventListener("pagehide",()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}});
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 
@@ -729,6 +729,51 @@ function routineCalendar(){const BY=["SU","MO","TU","WE","TH","FR","SA"],stamp=n
  const dl=()=>{const u=URL.createObjectURL(file),x=document.createElement("a");x.href=u;x.download=file.name;document.body.appendChild(x);x.click();setTimeout(()=>{URL.revokeObjectURL(u);x.remove()},1500);toast(`${n} routine reminders saved. Open the file to add them to your Calendar.`)};
  if(navigator.canShare&&navigator.canShare({files:[file]}))navigator.share({files:[file],title:"Daily HQ routine"}).then(()=>toast("Pick your Calendar app to add the reminders")).catch(e=>{if(e&&e.name!=="AbortError")dl()});else dl()}
 
+/* ================= native Android notifications (Capacitor) ================= */
+const CAP=window.Capacitor,NATIVE=!!(CAP&&CAP.isNativePlatform&&CAP.isNativePlatform()),LN=NATIVE&&CAP.Plugins?CAP.Plugins.LocalNotifications:null;
+const nid=s=>{let h=7;for(const c of String(s))h=(h*31+c.charCodeAt(0))|0;return Math.abs(h)%2000000000+1};
+const atDate=(k,m)=>{const d=new Date(k+"T00:00:00");d.setMinutes(m);return d};
+let schedT=null,nativeReady=false;
+const NOTIF_DAYS=4;
+function nset(){return S.settings.notify||(S.settings.notify={start:true,missed:true,water:true,pre:0})}
+function scheduleSoon(){if(!LN||!nativeReady)return;clearTimeout(schedT);schedT=setTimeout(scheduleNative,1500)}
+function buildNotifs(){const N=nset(),out=[],now=Date.now()+5000;
+ for(let i=0;i<NOTIF_DAYS;i++){const d=new Date();d.setDate(d.getDate()+i);const k=dkey(d),tl=timing(k),timed=tl.filter(t=>t.T<9998).sort((a,b)=>a.T-b.T);
+  for(const t of timed){if(t.st==="done"||t.st==="late")continue;const nx=timed.find(x=>x.T>t.T),steps=t.steps&&t.steps.length?` · ${t.steps.length} steps`:"",extra={k,id:t.id,kind:"task"};
+   const start=atDate(k,t.T);
+   if(N.start&&start>now&&t.st!=="pre")out.push({id:nid(k+t.id+"s"),title:"Now: "+t.t,body:`${t.time}${steps}.${nx?` Up next: ${nx.t} at ${nx.time}.`:" Last timed task today."}`,schedule:{at:start,allowWhileIdle:true},channelId:"tasks",actionTypeId:"TASK",extra});
+   if(N.pre>0){const pre=atDate(k,t.T-N.pre);if(pre>now&&t.st!=="pre")out.push({id:nid(k+t.id+"p"),title:`In ${N.pre} min: ${t.t}`,body:`Starts at ${t.time}${steps}.`,schedule:{at:pre,allowWhileIdle:true},channelId:"tasks",actionTypeId:"TASK",extra})}
+   const dl=atDate(k,t.dl);if(N.missed&&!t.optional&&t.st!=="pre"&&dl>now)out.push({id:nid(k+t.id+"m"),title:"Missed: "+t.t,body:`Planned for ${t.time}. Tap Done if you did it, or check it off late in Today.`,schedule:{at:dl,allowWhileIdle:true},channelId:"missed",actionTypeId:"MISSED",extra})}
+  if(N.water&&!(i===0&&waterToday()>=W().goal)){for(let m=tmin(W().start);m<=tmin(W().end);m+=W().every){const at=atDate(k,m);if(at>now)out.push({id:nid(k+"w"+m),title:"💧 Time for water",body:`Log ${W().step} ml. Goal ${fmtL(W().goal)} today.`,schedule:{at,allowWhileIdle:true},channelId:"water",actionTypeId:"WATER",extra:{k,kind:"water"}})}}}
+ out.sort((a,b)=>a.schedule.at-b.schedule.at);return out.slice(0,400)}
+async function scheduleNative(){if(!LN)return;try{const list=buildNotifs();const p=await LN.getPending();
+  if(p&&p.notifications&&p.notifications.length)await LN.cancel({notifications:p.notifications.map(n=>({id:n.id}))});
+  if(list.length)await LN.schedule({notifications:list.map(n=>({...n,smallIcon:"ic_stat_dailyhq",iconColor:"#EFBC90"}))});
+  S.native={...(S.native||{}),count:list.length,at:Date.now(),next:list[0]?{t:list[0].title,at:+list[0].schedule.at}:null};try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}catch(e){console.warn("schedule failed",e)}}
+async function nativeInit(){if(!LN)return;try{
+ for(const c of [{id:"tasks",name:"Tasks: now and next",importance:4},{id:"missed",name:"Missed tasks",importance:4},{id:"water",name:"Water reminders",importance:3}])await LN.createChannel({...c,visibility:1,vibration:true,lights:true,lightColor:"#EFBC90"}).catch(()=>{});
+ await LN.registerActionTypes({types:[{id:"TASK",actions:[{id:"done",title:"Done"},{id:"snooze",title:"Snooze 10 min"}]},{id:"MISSED",actions:[{id:"done",title:"Done (late)"}]},{id:"WATER",actions:[{id:"log",title:`Log ${W().step} ml`}]}]});
+ const perm=await LN.checkPermissions();if(perm.display!=="granted")await LN.requestPermissions();
+ LN.addListener("localNotificationActionPerformed",ev=>setTimeout(()=>handleNotif(ev),300));
+ nativeReady=true;await scheduleNative()}catch(e){console.warn("native init failed",e)}}
+function handleNotif(ev){const n=ev.notification||{},x=n.extra||{},a=ev.actionId;
+ if(x.kind==="water"){if(a==="log")addWater(W().step);else{go("today");openWater()}return}
+ if(!x.id)return;const dd=dayData(x.k),t=tasksFor(x.k).find(y=>y.id===x.id);
+ if(a==="done"){if(!dd.done[x.id])toggleTask(x.id,null,x.k);go("today");toast("Checked off: "+(t?t.t:"task"));return}
+ if(a==="snooze"&&LN){LN.schedule({notifications:[{id:nid(x.id+Date.now()),title:n.title,body:n.body,channelId:"tasks",actionTypeId:"TASK",extra:x,smallIcon:"ic_stat_dailyhq",iconColor:"#EFBC90",schedule:{at:new Date(Date.now()+600000),allowWhileIdle:true}}]});toast("Snoozed for 10 minutes");return}
+ go("today");if(t&&x.k===dkey()&&((t.steps&&t.steps.length)||t.note||t.link))setTimeout(()=>{if(t.link==="water")openWater();else if(t.link==="dogs")dogCheckIn();else openSteps(t.id)},450)}
+function nativeAlertsSheet(){const N=nset(),nx=S.native&&S.native.next;
+ openSheet(`<h2>Notifications</h2><p class="desc">Scheduled on your phone, so they arrive even when Daily HQ is closed. ${S.native?S.native.count+" coming up over the next "+NOTIF_DAYS+" days.":""}${nx?` Next: “${esc(nx.t)}” at ${new Date(nx.at).toLocaleString([], {weekday:"short",hour:"numeric",minute:"2-digit"})}.`:""}</p>
+ <div class="field"><label><input type="checkbox" id="nt-start" ${N.start?"checked":""} style="width:auto;margin-right:8px">When each task starts, with what's up next</label></div>
+ <div class="field"><label>Heads-up before each task</label>${opts("pre",[["0","Off"],["5","5 min"],["10","10 min"],["15","15 min"]],String(N.pre||0))}</div>
+ <div class="field"><label><input type="checkbox" id="nt-missed" ${N.missed?"checked":""} style="width:auto;margin-right:8px">When I miss a task (skipped if I already checked it off)</label></div>
+ <div class="field"><label><input type="checkbox" id="nt-water" ${N.water?"checked":""} style="width:auto;margin-right:8px">Water reminders (${esc(W().start)}–${esc(W().end)}, every ${W().every} min, stop once I hit ${fmtL(W().goal)})</label></div>
+ <div class="btns"><button class="action p" id="nt-save">Save</button><button class="action" id="nt-test">Send a test in 5 seconds</button></div>
+ <p class="desc" style="margin-top:12px">Notifications have buttons: Done, Snooze 10 min, and Log ${W().step} ml. If they don't arrive, open Android Settings → Apps → Daily HQ → Notifications and make sure they're allowed, and set Battery to Unrestricted.</p>`,
+ root=>{bindOpts(root);root.querySelector("#nt-save").onclick=async()=>{Object.assign(N,{start:root.querySelector("#nt-start").checked,missed:root.querySelector("#nt-missed").checked,water:root.querySelector("#nt-water").checked,pre:+optVal(root,"pre")||0});save();await scheduleNative();closeSheet();toast(`Saved · ${S.native.count} notifications scheduled`)};
+  root.querySelector("#nt-test").onclick=async()=>{const perm=await LN.checkPermissions();if(perm.display!=="granted"){const r=await LN.requestPermissions();if(r.display!=="granted"){toast("Notifications are off for Daily HQ in Android settings");return}}
+   const nx2=nextInfo();await LN.schedule({notifications:[{id:nid("test"+Date.now()),title:nx2.t?"Now: "+nx2.t.t:"Daily HQ test",body:"This is how your reminders will look.",channelId:"tasks",actionTypeId:"TASK",extra:nx2.t?{k:dkey(),id:nx2.t.id,kind:"task"}:{},smallIcon:"ic_stat_dailyhq",iconColor:"#EFBC90",schedule:{at:new Date(Date.now()+5000),allowWhileIdle:true}}]});toast("Test coming in 5 seconds. You can close the app.")}})}
+
 /* ================= dogs ================= */
 const dogLog=(k,id)=>(S.dogs.log[k]||{})[id];
 function dogStatus(d){const keys=Object.keys(S.dogs.log).filter(k=>dogLog(k,d.id)&&dogLog(k,d.id).stool).sort().reverse();
@@ -980,7 +1025,7 @@ tick();setInterval(tick,10000);
 rail.classList.add("still");paintCards();renderAll();layout();requestAnimationFrame(()=>requestAnimationFrame(()=>rail.classList.remove("still")));
 const start=(location.hash||"").slice(1);if(start==="dogs"){S.ui.who="dog";go("food",{instant:true})}else go(NAMES[start]?start:"home",{instant:true});
 addEventListener("resize",()=>{glide();segAll()});
-setInterval(waterTick,60000);setTimeout(waterTick,4000);setInterval(taskTick,30000);setTimeout(taskTick,2000);$("alertsbtn").onclick=()=>alertsSheet();$("waterbtn").onclick=()=>openWater();
-document.addEventListener("visibilitychange",()=>{if(!document.hidden){tick();waterTick();taskTick();if(S.settings.wallet&&Date.now()-S.sync.last>120000)sync(false)}});
+setInterval(waterTick,60000);setTimeout(waterTick,4000);setInterval(taskTick,30000);setTimeout(taskTick,2000);$("alertsbtn").onclick=()=>NATIVE?nativeAlertsSheet():alertsSheet();if(NATIVE){nativeInit();document.documentElement.classList.add("native")}$("waterbtn").onclick=()=>openWater();
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){tick();waterTick();taskTick();scheduleSoon();if(S.settings.wallet&&Date.now()-S.sync.last>120000)sync(false)}});
 if(S.settings.wallet&&Date.now()-S.sync.last>120000)setTimeout(()=>sync(false),800);
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(()=>{});
