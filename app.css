@@ -186,6 +186,12 @@ body.page-mode .amb-shade{background:linear-gradient(180deg,rgba(2,11,14,.45),rg
 @keyframes noteout{to{opacity:0;transform:translateY(8px) rotate(var(--r,-2deg)) scale(.92)}}
 @media (prefers-reduced-motion:reduce){.wnote.pop,.wnote.out{animation-duration:.01s}}
 .tlwrap{margin-top:14px}
+/* Light that follows your finger / mouse (background), and the lit card on Home (touch + tilt) */
+.room{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0;background:radial-gradient(480px circle at var(--sx,50%) var(--sy,40%),rgba(255,226,190,.17),rgba(140,200,210,.07) 40%,transparent 70%);mix-blend-mode:screen;will-change:opacity}
+.card.c.lit .glare{opacity:var(--gi,0);transition:none;background:radial-gradient(circle at var(--gx,50%) var(--gy,50%),rgba(255,236,214,.3),rgba(255,236,214,.08) 30%,transparent 56%)}
+.card.c.lit{box-shadow:16px 30px 80px rgba(1,10,14,.46),0 0 0 1px rgba(239,188,144,calc(.42*var(--gi,0)))}
+.card.c.lit .cover strong{color:color-mix(in srgb,var(--peach) calc(var(--gi,0)*100%),#F4F1EC)}
+.card.c.lit .surf{transition:transform .12s linear}
 /* Money v2: summary, tabs, one chart card with switchable views */
 .msum{padding:4px 2px 0}
 .msrow{display:flex;align-items:center;gap:14px}
