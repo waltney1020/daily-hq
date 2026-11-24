@@ -1347,6 +1347,43 @@ function go(v,o={}){S.view=v;if(v!=="home")layerOpen("page",()=>go("home"));else
  if(v==="journal")renderJournal();if(v==="today")renderToday();if(v==="food")renderFood();if(v==="smoke")renderSmoke();if(v==="money")renderMoney();
  save();scrollTo({top:0,behavior:o.instant?"auto":"smooth"});history.replaceState(null,"","#"+v)}
 function glide(){}
+/* ===== Light: a soft light follows your finger (or the mouse) across the background, and on Home the
+   current card catches it: glow, warm title, slight tilt toward it. When you're not touching, tilting the
+   phone slides the light across the card. Smoothed every frame so it feels physical; stops when idle. ===== */
+(function(){const room=$("room");if(!room||RM)return;
+ const HOVER=matchMedia("(hover:hover)").matches,T={x:.5,y:.4,i:0},C={x:.5,y:.4,i:0},Rm={t:0,c:0};
+ let touching=false,lastTouch=0,mouseOn=false,running=false,tilt={x:.5,y:.4,t:0},base=null,litEl=null;
+ const blocked=t=>t&&t.closest&&t.closest("#sheetwrap,#calm,#qlog,.tabbar,input,textarea,select");
+ const kick=()=>{if(!running&&!document.hidden){running=true;requestAnimationFrame(frame)}};
+ const at=(x,y)=>{T.x=x/innerWidth;T.y=y/innerHeight};
+ function unlit(){if(!litEl)return;litEl.classList.remove("lit");const sf=litEl.querySelector(".surf");if(sf&&!document.body.classList.contains("hover")){sf.style.setProperty("--rx","0deg");sf.style.setProperty("--ry","0deg")}litEl=null}
+ function frame(){const now=Date.now(),tiltLive=!HOVER&&now-tilt.t<1500&&S.view==="home"&&$("sheetwrap").hidden;
+  if(!touching&&!mouseOn&&now-lastTouch>700){if(tiltLive){T.x=tilt.x;T.y=tilt.y;T.i=.5}else T.i=0}
+  Rm.t=touching||mouseOn?T.i:0;
+  const k=touching?.25:.08;C.x+=(T.x-C.x)*k;C.y+=(T.y-C.y)*k;C.i+=(T.i-C.i)*(T.i>C.i?.2:.05);Rm.c+=(Rm.t-Rm.c)*(Rm.t>Rm.c?.2:.05);
+  const px=C.x*innerWidth,py=C.y*innerHeight;room.style.setProperty("--sx",px.toFixed(0)+"px");room.style.setProperty("--sy",py.toFixed(0)+"px");room.style.opacity=Rm.c.toFixed(3);
+  // the card part is for touch and tilt only; desktop hover already has its own card effect
+  const cd=S.view==="home"&&!HOVER&&CARDS[S.ui.card],el=cd&&cd.el;
+  if(litEl&&litEl!==el)unlit();
+  if(el&&C.i>.01){const r=el.getBoundingClientRect(),gx=Math.max(0,Math.min(1,(px-r.left)/r.width)),gy=Math.max(0,Math.min(1,(py-r.top)/r.height)),sf=el.querySelector(".surf");
+   litEl=el;el.classList.add("lit");el.style.setProperty("--gi",C.i.toFixed(3));
+   if(sf){sf.style.setProperty("--gx",(gx*100).toFixed(1)+"%");sf.style.setProperty("--gy",(gy*100).toFixed(1)+"%");const m=drag.moved?0:C.i;sf.style.setProperty("--rx",((.5-gy)*5*m).toFixed(2)+"deg");sf.style.setProperty("--ry",((gx-.5)*7*m).toFixed(2)+"deg")}}
+  else if(litEl&&C.i<=.01)unlit();
+  if(!touching&&!mouseOn&&!tiltLive&&C.i<.004&&Rm.c<.004){running=false;room.style.opacity=0;unlit();return}
+  requestAnimationFrame(frame)}
+ // touch: use touch events so the light keeps following while the page scrolls
+ addEventListener("touchstart",e=>{if(blocked(e.target))return;const t=e.touches[0];touching=true;at(t.clientX,t.clientY);T.i=1;C.x=T.x;C.y=T.y;kick()},{passive:true});
+ addEventListener("touchmove",e=>{if(!touching)return;const t=e.touches[0];at(t.clientX,t.clientY);kick()},{passive:true});
+ const end=e=>{if(e.touches&&e.touches.length)return;touching=false;lastTouch=Date.now();T.i=0;kick()};addEventListener("touchend",end,{passive:true});addEventListener("touchcancel",end,{passive:true});
+ // mouse: the background light follows the cursor
+ if(HOVER){addEventListener("pointermove",e=>{if(e.pointerType!=="mouse")return;if(blocked(e.target)){if(mouseOn){mouseOn=false;T.i=0}return}mouseOn=true;at(e.clientX,e.clientY);T.i=.8;kick()},{passive:true});
+  document.addEventListener("mouseleave",()=>{mouseOn=false;T.i=0})}
+ // tilt (phones): light drifts with how you hold the phone, relative to your usual angle
+ if(!HOVER)addEventListener("deviceorientation",e=>{if(e.gamma==null||e.beta==null)return;if(!base)base={g:e.gamma,b:e.beta};base.g+=(e.gamma-base.g)*.004;base.b+=(e.beta-base.b)*.004;
+  let dx=Math.max(-25,Math.min(25,e.gamma-base.g)),dy=Math.max(-25,Math.min(25,e.beta-base.b));const a=(screen.orientation&&screen.orientation.angle)||0;
+  if(a===90)[dx,dy]=[dy,-dx];else if(a===270)[dx,dy]=[-dy,dx];else if(a===180)[dx,dy]=[-dx,-dy];
+  tilt.x=.5+dx/50*.9;tilt.y=.42+dy/50*.8;tilt.t=Date.now();if(S.view==="home")kick()});
+ document.addEventListener("visibilitychange",()=>{if(!document.hidden)kick()})})();
 /* week morph: open round dates <-> boxed strip (Today). FLIP: measure, switch layout, animate each piece from old spot */
 let weekCompact=null;if(window.gsap&&window.Flip)gsap.registerPlugin(Flip);
 /* Home fits one screen: size the card rail to the space between header and tab bar */
