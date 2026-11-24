@@ -15,7 +15,9 @@ const ACCTS={poly:"Polymarket",manual:"Manual",bob:"Bob"};
 const GROUPS=["Morning","Afternoon","Evening","Hair care","Weekly","Anytime"];
 const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],DOWL=["Sundays","Mondays","Tuesdays","Wednesdays","Thursdays","Fridays","Saturdays"];
 /* the user's checklist; bump PACK when it changes so installed apps pick it up */
-const PACK=6;
+const PACK=7;
+const WATER_DEFAULT={goal:4000,step:500,log:{},start:"7:00 AM",end:"9:00 PM",every:90,notify:false,lastNotify:0,lastNudge:0};
+const WATER_TASK={t:"Drink 4 L of water",time:"",g:"Anytime",link:"water",note:"Log each glass with +500 ml. This ticks itself off when you reach your goal."};
 /* ---- food (pack 6) ---- */
 const FOOD_CATS={me:["Breakfast","Meal prep","Drinks","Lessons","Other"],dog:["Meal","Treat","Topper"]};
 const MEAL_START="2026-11-23";
@@ -48,7 +50,7 @@ const MEAL_RECIPES=[
  MP(4,"lesson","Homemade beef stir-fry",["Flank steak or sirloin","Broccoli","Bell peppers","Onion","Fresh ginger","Fresh garlic","Low-sodium soy sauce","Cornstarch","Neutral oil","Rice","Green onion","Lime"],
   ["Learn: knife skills","Learn: cutting vegetables evenly","Learn: cooking beef quickly without making it chewy","Learn: managing high heat","Learn: building a simple sauce","Freeze beef 20 min, then slice thin against the grain","Cut all vegetables the same size so they cook evenly","Toss beef with 1 tsp cornstarch and 1 tbsp soy sauce","Sauce: 3 tbsp soy, 1 tsp cornstarch, 1/4 cup water, grated ginger and garlic, lime","Get the pan smoking hot, sear beef in batches 60–90 sec, remove","Stir-fry vegetables 3–4 min, keep them crisp","Add sauce and beef back, toss until glossy, 30 sec","Serve over rice with green onion"],"Cook in small batches. A crowded pan steams the beef and makes it chewy.")];
 const MEAL_TARGETS=`<b>Month 1: lean bulk.</b> Starting weight about 148 lb. Gain lean bodyweight while staying visually lean.<br>
-• Protein: 150–165 g minimum<br>• Meals: 3 meals + 1 shake or drink if needed<br>• Weight: +0.25–0.75 lb per week<br>• Morning weigh-in every day<br>• Water: about 3 L, more around training and heat<br><br>
+• Protein: 150–165 g minimum<br>• Meals: 3 meals + 1 shake or drink if needed<br>• Weight: +0.25–0.75 lb per week<br>• Morning weigh-in every day<br>• Water: 4 L a day (log it on the Today page), more around training and heat<br><br>
 <b>Prioritize</b> whole-food proteins, fruit and vegetables, rice, potatoes, oats and pasta, healthy fats, real herbs, citrus and aromatics. Keep ultra-processed food and added sugar minimal. Food doesn't need to be bland.<br><br>
 <b>Adjust</b> · Intake low: add the shake · Appetite low: half the shake between meals, half after training · 7-day average not rising: add about 200–250 calories a day · Gaining too fast and waist growing: ease off slightly.`;
 const GROCERY={Protein:["Salmon","Chicken thighs","Lean beef","Steak","Shrimp","Eggs","Greek yogurt","Cottage cheese"],Carbohydrates:["Jasmine rice","Basmati rice","Pasta","Potatoes","Oats","Whole-grain or sourdough bread","Black beans"],Fruit:["Bananas","Strawberries","Blueberries","Apples","Avocados","Lemons","Limes"],Vegetables:["Broccoli","Spinach","Bell peppers","Tomatoes","Cherry tomatoes","Cucumbers","Onions","Green onions","Corn"],"Flavor":["Fresh garlic","Fresh ginger","Cilantro","Parsley","Basil","Mint","Olive oil","Butter","Parmesan"],"Calorie boosters":["Natural peanut butter","Whole milk","Avocado","Walnuts","Oats"]};
@@ -288,7 +290,7 @@ function defaults(){return{v:1,created:Date.now(),
  settings:{wallet:"",btcOnly:true,bank:{poly:0,manual:0,bob:0},stake:{poly:10,manual:10,bob:10},label:{poly:"BTC Up/Down",manual:"BTC",bob:"BTC"},book5:"Gratitude"},
  trades:{poly:[],manual:[],bob:[]},sync:{last:0,err:""},
  routine:[],pack:0,
- days:{},journal:{dreams:[],ideas:[],notes:[],emotions:[],gratitude:[]},xp:0,best:0,food:{recipes:[],grocery:{}},weights:{},
+ days:{},journal:{dreams:[],ideas:[],notes:[],emotions:[],gratitude:[]},xp:0,best:0,food:{recipes:[],grocery:{}},weights:{},water:{...WATER_DEFAULT,log:{}},
  ui:{acct:"poly",tf:"5m",book:"dreams",card:0,shown:30}}}
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){S=null}
@@ -321,8 +323,10 @@ if(!S||S.v!==1)S=defaults();
  if(pack0<6){S.food=S.food||{recipes:[]};S.food.grocery=S.food.grocery||{};S.weights=S.weights||{};
   for(const r of [...MEAL_RECIPES,...STARTER_RECIPES])if(!S.food.recipes.some(x=>x.name===r.name))S.food.recipes.push({id:uid(),ts:Date.now(),fav:false,starter:true,...r});
   const has=t=>S.routine.some(r=>r.t===t);for(const m of MEAL_TASKS)if(!has(m.t))S.routine.push({id:uid(),...m});
-  const b=S.routine.find(r=>r.t==="Water and morning nutrition");if(b&&!b.link)Object.assign(b,{link:"breakfast",note:"Meal 1: this week's breakfast. Water target about 3 L today."});
+  const b=S.routine.find(r=>r.t==="Water and morning nutrition");if(b&&!b.link)Object.assign(b,{link:"breakfast",note:"Meal 1: this week's breakfast. Water target 4 L today."});
   const m=S.routine.find(r=>r.t==="Main meal");if(m&&!m.link)Object.assign(m,{link:"prepA",note:"Meal 2: Meal Prep A."})}
+ if(pack0<7){S.water={...WATER_DEFAULT,...(S.water||{}),log:(S.water&&S.water.log)||{}};if(!S.routine.some(r=>r.link==="water"))S.routine.push({id:uid(),...WATER_TASK});
+  const b=S.routine.find(r=>r.t==="Water and morning nutrition");if(b&&b.note)b.note=b.note.replace("about 3 L","4 L")}
  S.pack=PACK})();
 let saveT;function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Couldn't save. Your phone storage may be full.")}},150)}
 addEventListener("pagehide",()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}});
@@ -453,10 +457,10 @@ function quickLog(win,el){const a=S.ui.acct,stake=+S.settings.stake[a]||0,tf=a==
  if(win)burst(el,["#86D3B0","#EFBC90","#F6E3CC"]);toast((win?"Win":"Loss")+" logged · "+pnlStr(t.pnl),"Edit",()=>editTrade(a,t.id))}
 
 /* ================= sheet ================= */
-function closeSheet(){$("sheetwrap").hidden=true;$("sheet").innerHTML=""}
+function closeSheet(){$("sheetwrap").hidden=true;$("sheet").innerHTML="";delete $("sheet").dataset.kind}
 $("sheetwrap").addEventListener("click",e=>{if(e.target===$("sheetwrap"))closeSheet()});
 addEventListener("keydown",e=>{if(e.key==="Escape"){closeSheet();orbit(false)}});
-function openSheet(html,bind){$("sheet").innerHTML=`<div class="grab"></div>`+html;$("sheetwrap").hidden=false;bind($("sheet"));const f=$("sheet").querySelector("input:not([type=checkbox]),textarea");if(f&&matchMedia("(hover:hover)").matches)f.focus()}
+function openSheet(html,bind){delete $("sheet").dataset.kind;$("sheet").innerHTML=`<div class="grab"></div>`+html;$("sheetwrap").hidden=false;bind($("sheet"));const f=$("sheet").querySelector("input:not([type=checkbox]),textarea");if(f&&matchMedia("(hover:hover)").matches)f.focus()}
 function opts(name,list,val,cls=""){return `<div class="opts ${cls}" data-name="${name}">${list.map(([v,l])=>`<button type="button" data-v="${esc(v)}" class="${v===val?"on":""}">${esc(l)}</button>`).join("")}</div>`}
 function bindOpts(root,onChange){root.querySelectorAll(".opts").forEach(g=>g.querySelectorAll("button").forEach(b=>b.onclick=()=>{g.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));onChange&&onChange(g.dataset.name,b.dataset.v)}))}
 const optVal=(root,name)=>root.querySelector(`.opts[data-name="${name}"] .on`)?.dataset.v;
@@ -489,7 +493,7 @@ function renderToday(just){const k=dkey(),dd=dayData(k),list=tasksFor(k),req=lis
  let first=true,g="";const html=list.map(t=>{const done=!!dd.done[t.id];const tag=done||t.optional?"":(first?(first=false,'<span class="tag now">NOW</span>'):'');const head=t.g!==g?(g=t.g,`<div class="grp">${esc(g)}</div>`):"";
   return head+`<div class="it ${done?"done":""} ${t.id===just?"just":""}"><button class="main" data-id="${t.id}"><span class="ck">${done?"✓":""}</span>${tag}<span class="t">${esc(t.t)}</span></button><span class="r">${esc([t.steps&&t.steps.length?stepsDone(k,t)+"/"+stepList(k,t).length+(useAlt(k,t)?" gym":" steps"):"",t.time,t.rep?repLabel(t):"today",t.optional?"optional":"",t.note&&!(t.steps&&t.steps.length)?"note":""].filter(Boolean).join(" · "))}</span><button class="ed" data-ed="${t.id}" aria-label="Edit task">✎</button></div>`}).join("");
  $("tasks").innerHTML=html||`<div class="empty"><b>Build your daily routine</b>Add the things you do every day. They'll come back each morning.</div>`;
- $("tasks").querySelectorAll(".main").forEach(b=>b.onclick=()=>{const t=list.find(x=>x.id===b.dataset.id);if(t&&t.link==="weigh"&&!dd.done[t.id])weighSheet(t.id);else if(t&&((t.steps&&t.steps.length)||t.note||t.link))openSteps(t.id);else toggleTask(b.dataset.id,b)});$("tasks").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>editTask(b.dataset.ed));
+ $("tasks").querySelectorAll(".main").forEach(b=>b.onclick=()=>{const t=list.find(x=>x.id===b.dataset.id);if(t&&t.link==="weigh"&&!dd.done[t.id])weighSheet(t.id);else if(t&&t.link==="water")openWater();else if(t&&((t.steps&&t.steps.length)||t.note||t.link))openSteps(t.id);else toggleTask(b.dataset.id,b)});$("tasks").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>editTask(b.dataset.ed));
  $("streaklbl").textContent=streak()+(streak()===1?" day":" days")}
 function toggleTask(id,el){const k=dkey(),dd=dayData(k);dd.done[id]=!dd.done[id];if(!dd.done[id])delete dd.done[id];addXP(dd.done[id]?10:-10,el);
  const was=dd.complete;dd.complete=isComplete(k);const s=streak();if(s>S.best)S.best=s;save();renderToday(dd.done[id]?id:null);renderWeek();renderCards();
@@ -626,9 +630,73 @@ function grocerySheet(){const k=dkey(),nextWeek=dowOf(k)===0,ref=new Date(k+"T12
   root.querySelectorAll(".step").forEach(b=>b.onclick=()=>{const x=b.dataset.x;ticks[x]=!ticks[x];if(!ticks[x])delete ticks[x];save();draw(root)});
   root.querySelector("#g-clear").onclick=()=>{for(const x in ticks)delete ticks[x];save();draw(root)}};
  $("sheet").innerHTML="";$("sheetwrap").hidden=false;draw($("sheet"))}
-function linkLabel(link){if(link==="weigh")return "Log weight";if(link==="grocery")return "Grocery list";if(link==="menu")return "This week's menu";const r=recipeFor(link);return r?"Open recipe":"Open Food"}
-function followLink(link,id){closeSheet();if(link==="weigh")return weighSheet(id);if(link==="grocery")return grocerySheet();if(link==="menu"){S.ui.who="me";return go("food")}
+function linkLabel(link){if(link==="water")return "Log water";if(link==="weigh")return "Log weight";if(link==="grocery")return "Grocery list";if(link==="menu")return "This week's menu";const r=recipeFor(link);return r?"Open recipe":"Open Food"}
+function followLink(link,id){closeSheet();if(link==="water")return openWater();if(link==="weigh")return weighSheet(id);if(link==="grocery")return grocerySheet();if(link==="menu"){S.ui.who="me";return go("food")}
  const r=recipeFor(link);if(r)openRecipe(r.id);else{S.ui.who="me";go("food")}}
+
+/* ================= water ================= */
+const W=()=>S.water;
+const waterLog=(k=dkey())=>W().log[k]||[];
+const waterToday=(k=dkey())=>waterLog(k).reduce((s,e)=>s+e.ml,0);
+const fmtL=ml=>(ml/1000).toFixed(ml%1000===0?0:ml%100===0?1:2)+" L";
+function waterPace(){const now=new Date(),m=now.getHours()*60+now.getMinutes(),a=tmin(W().start),b=tmin(W().end);const f=Math.max(0,Math.min(1,(m-a)/Math.max(1,b-a)));
+ const expected=Math.round(W().goal*f/50)*50,drunk=waterToday();return{expected,drunk,behind:Math.max(0,expected-drunk),f}}
+function waterTask(){return S.routine.find(r=>r.link==="water")}
+function addWater(ml,el){if(!(ml>0))return;const k=dkey();(W().log[k]=W().log[k]||[]).push({ts:Date.now(),ml:Math.round(ml)});afterWater(true,el);
+ toast(`+${ml} ml · ${fmtL(waterToday())} of ${fmtL(W().goal)}`,"Undo",()=>{const l=W().log[k];if(l&&l.length){l.pop();afterWater(false)}})}
+function afterWater(added,el){const k=dkey(),t=waterTask(),dd=dayData(k),hit=waterToday(k)>=W().goal;
+ if(t){if(hit&&!dd.done[t.id]){toggleTask(t.id,el);if(added)setTimeout(()=>{toast("Water goal reached. "+fmtL(W().goal)+" today.");burst(el||$("wbig"),["#7AB8F0","#A9D5F5","#EFBC90"])},250)}else if(!hit&&dd.done[t.id])toggleTask(t.id)}
+ save();renderWater();if(!$("sheetwrap").hidden&&$("sheet").dataset.kind==="water")drawWaterSheet($("sheet"))}
+function renderWater(){const p=waterPace(),g=W().goal,pct=Math.min(100,Math.round(p.drunk/g*100));
+ const lbl=$("waterlbl");if(lbl)lbl.textContent=fmtL(p.drunk)+" / "+fmtL(g);const dot=$("waterdot");if(dot)dot.hidden=!(p.behind>=500&&p.drunk<g);
+ const c=$("watercard");if(!c)return;
+ c.innerHTML=`<div class="row sb"><div><span class="eyebrow">Water</span><div class="wnum" id="wbig">${fmtL(p.drunk)} <span>/ ${fmtL(g)}</span></div></div><div class="row"><button class="action" id="wdetail">Log or remind</button><button class="action wbtn" id="wadd">+${W().step} ml</button></div></div>
+ <div class="wbar"><i style="width:${pct}%"></i><b style="left:${Math.round(p.f*100)}%" title="Where you should be by now"></b></div>
+ <div class="sub" style="margin-top:8px">${p.drunk>=g?"Goal reached. Nice work.":p.behind>=500?`You're ${fmtL(p.behind)} behind pace. Have a glass now.`:`On pace. ${fmtL(Math.max(0,g-p.drunk))} to go.`}</div>`;
+ $("wadd").onclick=e=>addWater(W().step,e.currentTarget);$("wdetail").onclick=()=>openWater()}
+function openWater(){$("sheet").dataset.kind="water";$("sheetwrap").hidden=false;drawWaterSheet($("sheet"))}
+function drawWaterSheet(root){const k=dkey(),p=waterPace(),g=W().goal,log=waterLog(k);
+ const days=[...Array(7)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);const kk=dkey(d);return[d.toLocaleDateString([], {weekday:"narrow"}),waterToday(kk)]});
+ const notifOK=typeof Notification!=="undefined";
+ root.innerHTML=`<div class="grab"></div><h2>Water</h2><p class="desc">${fmtL(p.drunk)} of ${fmtL(g)} today · ${p.drunk>=g?"goal reached":p.behind>=500?fmtL(p.behind)+" behind pace":"on pace"}</p>
+ <div class="wbar big"><i style="width:${Math.min(100,p.drunk/g*100)}%"></i><b style="left:${Math.round(p.f*100)}%"></b></div>
+ <div class="btns"><button class="action wbtn" id="ws-add" style="min-height:58px;font-size:16px">+${W().step} ml</button><button class="action" id="ws-250">+250 ml</button></div>
+ <div class="add"><input id="ws-ml" type="number" inputmode="numeric" placeholder="Custom amount in ml" aria-label="Custom amount in ml"><button class="action p" id="ws-log">Log</button></div>
+ <h3 class="rh">Today</h3>${log.length?`<div class="steps">${log.map((e,i)=>`<div class="step"><span class="ck">💧</span><span>${e.ml} ml · ${timeStr(e.ts)}</span><button class="link" data-del="${i}" aria-label="Remove" style="margin-left:auto">✕</button></div>`).join("")}</div>`:`<p class="sub">Nothing logged yet today.</p>`}
+ <h3 class="rh">Last 7 days</h3><div class="wweek">${days.map(([d,ml])=>`<div><i style="height:${Math.min(100,ml/g*100)}%" class="${ml>=g?"full":""}"></i><small>${d}</small></div>`).join("")}</div>
+ <h3 class="rh">Reminders</h3><p class="desc">Remind me from <b>${esc(W().start)}</b> to <b>${esc(W().end)}</b>, every <b>${W().every} min</b>. That's about ${Math.max(1,Math.floor((tmin(W().end)-tmin(W().start))/W().every)+1)} reminders a day.</p>
+ <div class="pair"><div class="field"><label for="ws-s">From</label><input id="ws-s" value="${esc(W().start)}"></div><div class="field"><label for="ws-e">Until</label><input id="ws-e" value="${esc(W().end)}"></div></div>
+ <div class="field"><label>Every</label>${opts("every",[["60","60 min"],["90","90 min"],["120","2 hours"]],String(W().every))}</div>
+ <div class="pair"><div class="field"><label for="ws-goal">Daily goal (L)</label><input id="ws-goal" type="number" step="0.25" inputmode="decimal" value="${g/1000}"></div><div class="field"><label for="ws-step">Quick button (ml)</label><input id="ws-step" type="number" step="50" inputmode="numeric" value="${W().step}"></div></div>
+ <div class="btns"><button class="action p" id="ws-save">Save settings</button></div>
+ <div class="note" style="margin-top:14px"><b>Phone reminders (recommended).</b> Adds repeating reminders to your phone's calendar. They go off even when Daily HQ is closed.</div>
+ <div class="btns" style="margin-top:0"><button class="action" id="ws-cal">Add reminders to my calendar</button></div>
+ ${notifOK?`<div class="btns"><button class="action" id="ws-notif">${W().notify&&Notification.permission==="granted"?"App notifications: on · turn off":"Turn on app notifications"}</button></div><p class="desc" style="margin-top:6px">App notifications only arrive while Daily HQ is running in the background. They include a Log ${W().step} ml button.</p>`:""}`;
+ bindOpts(root);
+ root.querySelector("#ws-add").onclick=e=>addWater(W().step,e.currentTarget);root.querySelector("#ws-250").onclick=e=>addWater(250,e.currentTarget);
+ root.querySelector("#ws-log").onclick=()=>{const v=+root.querySelector("#ws-ml").value;if(!(v>0&&v<=3000)){toast("Enter an amount between 1 and 3000 ml");return}addWater(v)};
+ root.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{W().log[k].splice(+b.dataset.del,1);afterWater(false)});
+ root.querySelector("#ws-save").onclick=()=>{const s=root.querySelector("#ws-s").value.trim(),e=root.querySelector("#ws-e").value.trim();if(tmin(s)>=9998||tmin(e)>=9998||tmin(e)<=tmin(s)){toast("Use times like 7:00 AM and 9:00 PM");return}
+  const goal=Math.round((+root.querySelector("#ws-goal").value||4)*1000),step=Math.round(+root.querySelector("#ws-step").value||500);Object.assign(W(),{start:s,end:e,every:+optVal(root,"every"),goal:Math.max(500,goal),step:Math.max(50,step)});
+  const t=waterTask();if(t)t.t="Drink "+fmtL(W().goal)+" of water";save();renderToday();afterWater(false);toast("Water settings saved")};
+ root.querySelector("#ws-cal").onclick=()=>calendarReminders();
+ const nb=root.querySelector("#ws-notif");if(nb)nb.onclick=async()=>{if(W().notify&&Notification.permission==="granted"){W().notify=false;save();drawWaterSheet(root);toast("App notifications off");return}
+  const r=await Notification.requestPermission();if(r==="granted"){W().notify=true;W().lastNotify=Date.now();save();toast("App notifications on")}else toast("Notifications are blocked. Allow them for this app in Android settings.");drawWaterSheet(root)}}
+function calendarReminders(){const a=tmin(W().start),b=tmin(W().end),ev=W().every,d=dkey().replace(/-/g,""),stamp=new Date().toISOString().replace(/[-:]/g,"").slice(0,15)+"Z";
+ const lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Daily HQ//Water//EN","CALSCALE:GREGORIAN"];let n=0;
+ for(let m=a;m<=b;m+=ev){const hh=String(Math.floor(m/60)).padStart(2,"0"),mm=String(m%60).padStart(2,"0");n++;
+  lines.push("BEGIN:VEVENT",`UID:dailyhq-water-${hh}${mm}@dailyhq`,`DTSTAMP:${stamp}`,`DTSTART:${d}T${hh}${mm}00`,"DURATION:PT5M","RRULE:FREQ=DAILY",`SUMMARY:💧 Drink water (${W().step} ml)`,`DESCRIPTION:Log it in Daily HQ. Goal ${fmtL(W().goal)} a day.`,"TRANSP:TRANSPARENT","BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:Drink water","TRIGGER:PT0M","END:VALARM","END:VEVENT")}
+ lines.push("END:VCALENDAR");const file=new File([lines.join("\r\n")],"daily-hq-water-reminders.ics",{type:"text/calendar"});
+ const dl=()=>{const u=URL.createObjectURL(file),x=document.createElement("a");x.href=u;x.download=file.name;document.body.appendChild(x);x.click();setTimeout(()=>{URL.revokeObjectURL(u);x.remove()},1500);toast(`${n} daily reminders saved. Open the file and add it to your Calendar.`)};
+ if(navigator.canShare&&navigator.canShare({files:[file]}))navigator.share({files:[file],title:"Water reminders"}).then(()=>toast("Pick your Calendar app to add the reminders")).catch(e=>{if(e&&e.name!=="AbortError")dl()});else dl()}
+function waterTick(){if(!S.water)return;renderWater();const p=waterPace(),now=Date.now(),m=new Date().getHours()*60+new Date().getMinutes(),inWin=m>=tmin(W().start)&&m<=tmin(W().end);
+ if(!inWin||p.drunk>=W().goal)return;const last=(waterLog().slice(-1)[0]||{}).ts||0,gap=W().every*60000;
+ if(W().notify&&typeof Notification!=="undefined"&&Notification.permission==="granted"&&now-W().lastNotify>=gap&&now-last>=gap*.75){W().lastNotify=now;save();
+  const body=`${fmtL(p.drunk)} of ${fmtL(W().goal)} so far${p.behind>=500?`, ${fmtL(p.behind)} behind pace`:""}.`;
+  navigator.serviceWorker&&navigator.serviceWorker.ready.then(r=>r.showNotification("💧 Time for water",{body,tag:"water",renotify:true,icon:"icon-192.png",badge:"icon-192.png",actions:[{action:"log",title:`Log ${W().step} ml`}],data:{step:W().step}})).catch(()=>{})}
+ if(!document.hidden&&p.behind>=500&&now-W().lastNudge>45*60000&&now-last>30*60000&&$("sheetwrap").hidden){W().lastNudge=now;save();toast(`💧 ${fmtL(p.behind)} behind on water`,`+${W().step} ml`,()=>addWater(W().step))}}
+(function waterFromLink(){const q=new URLSearchParams(location.search),v=+q.get("water");if(v>0&&v<=3000){setTimeout(()=>addWater(v),600);history.replaceState(null,"",location.pathname+location.hash)}})();
+navigator.serviceWorker&&navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.water)addWater(+e.data.water)});
 
 /* ================= settings ================= */
 function openSettings(focus){const s=S.settings,hidden=S.trades.poly.filter(t=>t.hidden).length+S.trades.manual.filter(t=>t.hidden).length+S.trades.bob.filter(t=>t.hidden).length;
@@ -747,11 +815,12 @@ $("orbit").querySelectorAll(".olab").forEach(b=>b.onclick=()=>{orbit(false);cons
  if(a==="entry"){go("journal");setTimeout(()=>editEntry(S.ui.book),380)}});
 
 /* ================= boot ================= */
-function renderAll(){syncRepSelect();renderWeek();renderToday();renderTrades();renderJournal();renderFood();renderCards();if(S.view==="home")layout()}
+function renderAll(){syncRepSelect();renderWeek();renderToday();renderWater();renderTrades();renderJournal();renderFood();renderCards();if(S.view==="home")layout()}
 tick();setInterval(tick,10000);
 rail.classList.add("still");paintCards();renderAll();layout();requestAnimationFrame(()=>requestAnimationFrame(()=>rail.classList.remove("still")));
 const start=(location.hash||"").slice(1);go(NAMES[start]?start:"home",{instant:true});
 addEventListener("resize",()=>{glide();segAll()});
-document.addEventListener("visibilitychange",()=>{if(!document.hidden){tick();if(S.settings.wallet&&Date.now()-S.sync.last>120000)sync(false)}});
+setInterval(waterTick,60000);setTimeout(waterTick,4000);$("waterbtn").onclick=()=>openWater();
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){tick();waterTick();if(S.settings.wallet&&Date.now()-S.sync.last>120000)sync(false)}});
 if(S.settings.wallet&&Date.now()-S.sync.last>120000)setTimeout(()=>sync(false),800);
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(()=>{});
