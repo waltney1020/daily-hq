@@ -399,18 +399,22 @@ const roomClip=r=>r?`inset(${Math.max(0,r.top).toFixed(1)}px ${Math.max(0,innerW
 function openSteps(id){const k=dkey(),t=tasksFor(k).find(x=>x.id===id),el=$("troom");if(!t||!el)return;
  const pi=roomTheme(t),P=PAL[pi%PAL.length];el.style.setProperty("--acc",P.road[0]);el.style.setProperty("--tbg",P.sky[0]);
  const d=Math.min(2,devicePixelRatio||1);paintScene($("trcv"),pi,Math.round(Math.min(1800,innerWidth*d)),Math.round(340*d),11+id.length);
- roomGen++;el.getAnimations().forEach(a=>a.cancel());RO={id,k};const r=roomOrigin(id);el.classList.remove("in","cele");el.classList.add("on","entering");drawRoom();$("trs").scrollTop=0;document.body.classList.add("roomopen");
+ roomGen++;el.getAnimations().forEach(a=>a.cancel());RO={id,k};el.classList.remove("water");drawRoom();roomShow(roomOrigin(id))}
+// shared opening: grow out of the origin rect (or a small center box), dim Today behind, then let the content rise in
+function roomShow(r){const el=$("troom");el.classList.remove("in","cele");el.classList.add("on","entering");$("trs").scrollTop=0;document.body.classList.add("roomopen");
  if(!RM){el.animate([{clipPath:roomClip(r)},{clipPath:"inset(0px 0px 0px 0px round 0px)"}],{duration:760,easing:"cubic-bezier(.32,.72,0,1)"});
   document.querySelector(".app").animate([{filter:"none"},{filter:"blur(5px) brightness(.55)"}],{duration:760,fill:"forwards"})}
  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add("in")));setTimeout(()=>el.classList.add("in"),120);setTimeout(()=>el.classList.remove("entering"),1100)}
+function roomFlash(icon,title,sub,thenClose){const el=$("troom"),c=el.querySelector(".trcele>div");c.innerHTML=`<div class="trck">${icon}</div><b>${esc(title)}</b><span>${esc(sub)}</span>`;el.classList.add("cele");
+ try{navigator.vibrate&&navigator.vibrate([10,40,18])}catch(e){}clearTimeout(roomFlash.t);roomFlash.t=setTimeout(()=>thenClose?closeRoom():el.classList.remove("cele"),thenClose?1150:1700)}
 function closeRoom(instant){const el=$("troom");if(!el||!el.classList.contains("on"))return;const id=RO&&RO.id;el.classList.remove("in","entering");document.body.classList.remove("roomopen");
  const app=document.querySelector(".app"),gen=++roomGen;let done=false;const fin=()=>{if(done||gen!==roomGen)return;done=true;el.getAnimations().forEach(a=>a.cancel());el.classList.remove("on","cele");app.getAnimations().forEach(a=>a.cancel());if(RO&&RO.id===id)RO=null};
  if(instant||RM||document.hidden){fin();return}
- app.getAnimations().forEach(a=>a.reverse());const r=id&&roomOrigin(id);
+ app.getAnimations().forEach(a=>a.reverse());const r=RO&&RO.origin?RO.origin():id&&roomOrigin(id);
  el.animate([{clipPath:"inset(0px 0px 0px 0px round 0px)"},{clipPath:roomClip(r)}],{duration:560,easing:"cubic-bezier(.32,.72,0,1)",fill:"forwards"}).onfinish=fin;
  setTimeout(fin,700)} // backup: never leave the room stuck on screen if the animation is paused
-function roomCelebrate(){const el=$("troom");el.classList.add("cele");try{navigator.vibrate&&navigator.vibrate([10,40,18])}catch(e){}setTimeout(()=>closeRoom(),1150)}
-function drawRoom(){if(!RO)return;const {id,k}=RO,t=tasksFor(k).find(x=>x.id===id);if(!t){closeRoom(true);return}
+function roomCelebrate(){roomFlash("✓","Done","+10 XP",true)}
+function drawRoom(){if(!RO)return;if(RO.kind==="water")return drawWaterRoom();const {id,k}=RO,t=tasksFor(k).find(x=>x.id===id);if(!t){closeRoom(true);return}
  const dd=dayData(k),steps=stepList(k,t),sk=stepKey(k,t),s=(dd.steps||{})[sk]||{},n=stepsDone(k,t),total=steps.length,isDone=!!dd.done[id],pct=isDone?100:total?Math.round(n/total*100):0,RC=94.25;
  const adh=t.g==="Hair care"?{...adherence(x=>x.g==="Hair care",S.hairStart),label:"Hair routine",target:" Target 85–100%."}:isSkin(t)?{...adherence(isSkin,S.skinStart),label:"Skin routines",target:""}:t.main?{...adherence(x=>!!x.main,S.fitStart),label:"Main workouts",target:" Target: 5 a week."}:null;
  const lr=t.link&&ROLE_LABEL[t.link]?recipeFor(t.link,k):null,phase=phaseFor(t,k)||(lr?[0,0,"Week "+mealWeek(k)+" · "+MENU_THEMES[mealWeek(k)-1]+": "+lr.name]:null),minDone=dd.minDone&&dd.minDone[id];
@@ -632,7 +636,7 @@ function renderToday(just){const k=dkey(),dd=dayData(k),tl=timing(k),req=tl.filt
  const mb=$("tasks").querySelector(".missedbox");if(mb)mb.ontoggle=()=>{S.ui.missOpen=mb.open;save()};
  $("tasks").querySelectorAll("[data-past]").forEach(b=>b.onclick=()=>{const [pk,id]=b.dataset.past.split("|");toggleTask(id,b,pk)});
  $("tasks").querySelectorAll("[data-ack]").forEach(b=>b.onclick=()=>{const dk=b.dataset.ack;dayData(dk).ack=true;save();renderToday();toast("Cleared. Those stay marked as missed.","Undo",()=>{delete dayData(dk).ack;save();renderToday()})});
- $("tasks").querySelectorAll(".main[data-id]").forEach(b=>b.onclick=()=>{const t=tl.find(x=>x.id===b.dataset.id);if(t&&t.link==="weigh"&&!dd.done[t.id])weighSheet(t.id);else if(t&&t.link==="water")openWater();else if(t&&t.link==="dogs"&&!dd.done[t.id])dogCheckIn();else if(t&&((t.steps&&t.steps.length)||t.note||t.link))openSteps(t.id);else toggleTask(b.dataset.id,b)});$("tasks").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>editTask(b.dataset.ed));
+ $("tasks").querySelectorAll(".main[data-id]").forEach(b=>b.onclick=()=>{const t=tl.find(x=>x.id===b.dataset.id);if(t&&t.link==="weigh"&&!dd.done[t.id])weighSheet(t.id);else if(t&&t.link==="water")openWater(b.closest(".tlr")||b);else if(t&&t.link==="dogs"&&!dd.done[t.id])dogCheckIn();else if(t&&((t.steps&&t.steps.length)||t.note||t.link))openSteps(t.id);else toggleTask(b.dataset.id,b)});$("tasks").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>editTask(b.dataset.ed));
  $("streaklbl").textContent=streak()+(streak()===1?" day":" days")}
 function toggleTask(id,el,k=dkey()){const dd=dayData(k);dd.done[id]=!dd.done[id];if(!dd.done[id])delete dd.done[id];addXP(dd.done[id]?10:-10,el);
  dd.doneAt=dd.doneAt||{};dd.late=dd.late||{};if(dd.done[id]){dd.doneAt[id]=Date.now();if(k!==dkey())dd.late[id]="late"}else{delete dd.doneAt[id];delete dd.late[id]}
@@ -664,7 +668,7 @@ $("addf").onsubmit=e=>{e.preventDefault();const v=$("nt").value.trim();if(!v)ret
  if(rep==="once")dayData(dkey()).extra.push(t);else{if(rep==="weekly")t.dow=[wd];S.routine.push(t)}
  const dd=dayData(dkey());dd.complete=isComplete(dkey());$("nt").value="";save();renderToday();renderWeek();renderCards();toast(rep==="daily"?"Added to your routine":rep==="weekly"?"Added for every "+DOWL[wd].slice(0,-1):"Added for today")};
 function syncRepSelect(){const o=$("rep").querySelector('[value=weekly]');if(o)o.textContent="Every "+DOWL[dowOf(dkey())].slice(0,-1)}
-function dnDo(el){const k=dkey(),t=tasksFor(k).find(x=>x.id===doNextId);if(!t)return;if(t.link==="water")return openWater();if(t.link==="dogs")return dogCheckIn();if(t.link==="weigh")weighSheet(t.id);else if(t.steps&&t.steps.length)openSteps(t.id);else toggleTask(t.id,el)}
+function dnDo(el){const k=dkey(),t=tasksFor(k).find(x=>x.id===doNextId);if(!t)return;if(t.link==="water")return openWater($("donext"));if(t.link==="dogs")return dogCheckIn();if(t.link==="weigh")weighSheet(t.id);else if(t.steps&&t.steps.length)openSteps(t.id);else toggleTask(t.id,el)}
 // Slide to mark done: drag the knob past ~80% of the track. Keyboard users press the knob.
 (function(){const tr=$("dndone"),kn=$("dnknob");if(!tr||!kn)return;let sx=0,dx=0,max=0,drag=false;
  const set=(x,anim)=>{tr.classList.toggle("anim",!!anim);tr.style.setProperty("--x",x+"px");tr.style.setProperty("--p",max?(x/max).toFixed(3):0)};
@@ -1209,7 +1213,7 @@ function addWater(ml,el){if(!(ml>0))return;const k=dkey();waterAt=Date.now();if(
  toast(`+${ml} ml · ${fmtL(waterToday())} of ${fmtL(W().goal)}`,"Undo",()=>{const l=W().log[k];if(l&&l.length){l.pop();afterWater(false)}})}
 function afterWater(added,el){const k=dkey(),t=waterTask(),dd=dayData(k),hit=waterToday(k)>=W().goal;
  if(t){if(hit&&!dd.done[t.id]){toggleTask(t.id,el);if(added)setTimeout(()=>{toast("Water goal reached. "+fmtL(W().goal)+" today.");burst(el||$("wbig"),["#7AB8F0","#A9D5F5","#EFBC90"])},250)}else if(!hit&&dd.done[t.id])toggleTask(t.id)}
- save();renderWater();if(!$("sheetwrap").hidden&&$("sheet").dataset.kind==="water")drawWaterSheet($("sheet"))}
+ save();renderWater();if(RO&&RO.kind==="water"){drawRoom();if(added&&hit&&waterToday(k)-((W().log[k]||[]).slice(-1)[0]||{ml:0}).ml<W().goal)roomFlash("💧","Goal reached",fmtL(W().goal)+" today · nice work")}}
 function renderWater(){const p=waterPace(),g=W().goal,pct=Math.min(100,Math.round(p.drunk/g*100));
  const lbl=$("waterlbl");if(lbl)lbl.textContent=fmtL(p.drunk)+" / "+fmtL(g);const dot=$("waterdot");if(dot)dot.hidden=!(p.behind>=500&&p.drunk<g);
  const c=$("watercard");if(!c)return;
@@ -1217,7 +1221,7 @@ function renderWater(){const p=waterPace(),g=W().goal,pct=Math.min(100,Math.roun
  const n=Math.max(1,Math.min(12,Math.round(g/W().step))),per=g/n,full=p.drunk/per,exp=p.expected/per,justI=Date.now()-waterAt<900?Math.ceil(full)-1:-1;
  c.innerHTML=`<div class="gl">${[...Array(n)].map((_,i)=>{const f=Math.max(0,Math.min(1,full-i));return`<button class="gls ${f>=1?"f":""} ${i===justI?"just":""} ${full<exp&&i===Math.ceil(exp)-1?"pace":""}" data-i="${i}" aria-label="${f>=1?"Full glass, open water log":"Log "+W().step+" ml"}"><i style="height:${Math.round(f*82)}%"></i></button>`}).join("")}</div>
  <div class="glinfo"><span id="wbig"><b>${fmtL(p.drunk)}</b> of ${fmtL(g)}</span><span class="${p.behind>=500&&p.drunk<g?"behind":""}">${p.drunk>=g?"Goal reached. Nice work.":p.behind>=500?`${fmtL(p.behind)} behind pace`:`On pace · ${fmtL(Math.max(0,g-p.drunk))} to go`}</span><button class="link" id="wdetail">Log or remind</button></div>`;
- c.querySelectorAll(".gls").forEach(b=>b.onclick=()=>{if(+b.dataset.i>=Math.floor(full+1e-9))addWater(W().step,b);else openWater()});$("wdetail").onclick=()=>openWater()}
+ c.querySelectorAll(".gls").forEach(b=>b.onclick=()=>{if(+b.dataset.i>=Math.floor(full+1e-9))addWater(W().step,b);else openWater($("watercard"))});$("wdetail").onclick=()=>openWater($("watercard"))}
 var waterAt=0;
 // Hydration tips on a sticky note that pops up now and then on the Today page. Tap it for another, × to close.
 const WATER_TIPS=["Squeeze in some lemon or lime. A little flavor makes it easier to keep sipping.","Add a tiny pinch of salt after a workout or a sweaty day. It helps your body hold on to the water.","Drink a full glass right when you wake up. You've gone all night without any.","Keep a bottle where you can see it. Out of sight really is out of mind.","Cold water goes down easier. Throw some ice in.","Drop in cucumber, mint or a few berries for flavor without the sugar.","Have a glass before every meal. Easy 1.5 L right there.","Sip during training. Roughly 500 ml for every hour you work out.","Pale yellow means you're doing well. Dark yellow means drink up.","Feeling snacky? You might just be thirsty. Try a glass first.","Coffee counts a little, but match each cup with a glass of water.","Hot day or heavy sweat? Add electrolytes, not just water.","Use a straw. Most people drink more without noticing.","Tie it to a habit: a glass after every trade review or every bathroom break.","Eat your water too: watermelon, oranges and cucumber are mostly water.","Front-load it. Aim for half your goal by early afternoon so you're not chugging at night.","Big gulps feel like a chore. Small, steady sips add up faster than you think.","A warm mug of water with lemon counts. Not everything has to be ice cold."];
@@ -1231,34 +1235,69 @@ function waterNote(force){const n=$("wnote");if(!n||!$("p-today").classList.cont
  n.onclick=e=>{if(e.target.closest(".wnx"))return hideNote();waterNote(true)};
  clearTimeout(wnoteT);wnoteT=setTimeout(hideNote,25000)}
 function hideNote(){const n=$("wnote");if(!n||n.hidden)return;clearTimeout(wnoteT);n.classList.add("out");setTimeout(()=>{n.hidden=true;n.classList.remove("out")},260)}
-function openWater(){$("sheet").dataset.kind="water";$("sheetwrap").hidden=false;drawWaterSheet($("sheet"))}
-function drawWaterSheet(root){const k=dkey(),p=waterPace(),g=W().goal,log=waterLog(k);
- const days=[...Array(7)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);const kk=dkey(d);return[d.toLocaleDateString([], {weekday:"narrow"}),waterToday(kk)]});
- const notifOK=typeof Notification!=="undefined";
- root.innerHTML=`<div class="grab"></div><h2>Water</h2><p class="desc">${fmtL(p.drunk)} of ${fmtL(g)} today · ${p.drunk>=g?"goal reached":p.behind>=500?fmtL(p.behind)+" behind pace":"on pace"}</p>
- <div class="wbar big"><i style="width:${Math.min(100,p.drunk/g*100)}%"></i><b style="left:${Math.round(p.f*100)}%"></b></div>
- <div class="btns"><button class="action wbtn" id="ws-add" style="min-height:58px;font-size:16px">+${W().step} ml</button><button class="action" id="ws-250">+250 ml</button></div>
- <div class="add"><input id="ws-ml" type="number" inputmode="numeric" placeholder="Custom amount in ml" aria-label="Custom amount in ml"><button class="action p" id="ws-log">Log</button></div>
- <h3 class="rh">Today</h3>${log.length?`<div class="steps">${log.map((e,i)=>`<div class="step"><span class="ck">💧</span><span>${e.ml} ml · ${timeStr(e.ts)}</span><button class="link" data-del="${i}" aria-label="Remove" style="margin-left:auto">✕</button></div>`).join("")}</div>`:`<p class="sub">Nothing logged yet today.</p>`}
- <h3 class="rh">Last 7 days</h3><div class="wweek">${days.map(([d,ml])=>`<div><i style="height:${Math.min(100,ml/g*100)}%" class="${ml>=g?"full":""}"></i><small>${d}</small></div>`).join("")}</div>
- <h3 class="rh">Reminders</h3><p class="desc">Remind me from <b>${esc(W().start)}</b> to <b>${esc(W().end)}</b>, every <b>${W().every} min</b>. That's about ${Math.max(1,Math.floor((tmin(W().end)-tmin(W().start))/W().every)+1)} reminders a day.</p>
- <div class="pair"><div class="field"><label for="ws-s">From</label><input id="ws-s" value="${esc(W().start)}"></div><div class="field"><label for="ws-e">Until</label><input id="ws-e" value="${esc(W().end)}"></div></div>
- <div class="field"><label>Every</label>${opts("every",[["60","60 min"],["90","90 min"],["120","2 hours"]],String(W().every))}</div>
- <div class="pair"><div class="field"><label for="ws-goal">Daily goal (L)</label><input id="ws-goal" type="number" step="0.25" inputmode="decimal" value="${g/1000}"></div><div class="field"><label for="ws-step">Quick button (ml)</label><input id="ws-step" type="number" step="50" inputmode="numeric" value="${W().step}"></div></div>
- <div class="btns"><button class="action p" id="ws-save">Save settings</button></div>
- <div class="note" style="margin-top:14px"><b>Phone reminders (recommended).</b> Adds repeating reminders to your phone's calendar. They go off even when Op-Lock In is closed.</div>
- <div class="btns" style="margin-top:0"><button class="action" id="ws-cal">Add reminders to my calendar</button></div>
- ${notifOK?`<div class="btns"><button class="action" id="ws-notif">${W().notify&&Notification.permission==="granted"?"App notifications: on · turn off":"Turn on app notifications"}</button></div><p class="desc" style="margin-top:6px">App notifications only arrive while Op-Lock In is running in the background. They include a Log ${W().step} ml button.</p>`:""}`;
- bindOpts(root);
- root.querySelector("#ws-add").onclick=e=>addWater(W().step,e.currentTarget);root.querySelector("#ws-250").onclick=e=>addWater(250,e.currentTarget);
- root.querySelector("#ws-log").onclick=()=>{const v=+root.querySelector("#ws-ml").value;if(!(v>0&&v<=3000)){toast("Enter an amount between 1 and 3000 ml");return}addWater(v)};
- root.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{W().log[k].splice(+b.dataset.del,1);afterWater(false)});
- root.querySelector("#ws-save").onclick=()=>{const s=root.querySelector("#ws-s").value.trim(),e=root.querySelector("#ws-e").value.trim();if(tmin(s)>=9998||tmin(e)>=9998||tmin(e)<=tmin(s)){toast("Use times like 7:00 AM and 9:00 PM");return}
-  const goal=Math.round((+root.querySelector("#ws-goal").value||4)*1000),step=Math.round(+root.querySelector("#ws-step").value||500);Object.assign(W(),{start:s,end:e,every:+optVal(root,"every"),goal:Math.max(500,goal),step:Math.max(50,step)});
+/* ===== Water room: the water chip / glasses grow into a full-screen page whose top is a tank that fills
+   as you drink (waves, bubbles, a peach pace mark). Quick add, today's drinks, a 7-day chart and the reminder
+   settings folded at the bottom. Same data and actions as the old water sheet. ===== */
+function openWater(from){const el=$("troom");if(!el)return;roomGen++;el.getAnimations().forEach(a=>a.cancel());
+ const src=from&&from.getBoundingClientRect?from:null;RO={kind:"water",rem:false,origin:()=>{const r=src&&src.isConnected&&src.getBoundingClientRect();return r&&r.width&&r.bottom>0&&r.top<innerHeight?r:null}};
+ el.style.setProperty("--acc","#7AB8F0");el.style.setProperty("--tbg","#04101A");el.classList.add("water");
+ const r=RO.origin();drawRoom();roomShow(r);waterTank()}
+let WT=null;
+function waterTank(){const cv=$("trcv"),H=340,st={lvl:null,amp:5,bub:[...Array(22)].map(()=>({x:Math.random(),y:1+Math.random(),r:1+Math.random()*2.6,s:.0018+Math.random()*.004})),stars:[...Array(55)].map(()=>[Math.random(),Math.random()*.42,Math.random()*.9+.3,Math.random()*.5+.25])};WT=st;
+ const frame=t=>{if(WT!==st||!RO||RO.kind!=="water"||!$("troom").classList.contains("on"))return;
+  const d=Math.min(2,devicePixelRatio||1),cw=cv.clientWidth||innerWidth;if(cv.width!==Math.round(cw*d)||cv.height!==Math.round(H*d)){cv.width=Math.round(cw*d);cv.height=Math.round(H*d)}
+  const c=cv.getContext("2d");c.setTransform(d,0,0,d,0,0);const p=waterPace(),g=W().goal,ts=t/1000;
+  let gr=c.createLinearGradient(0,0,0,H);gr.addColorStop(0,"#030A12");gr.addColorStop(1,"#0A2236");c.fillStyle=gr;c.fillRect(0,0,cw,H);
+  st.stars.forEach(s=>{c.fillStyle=`rgba(255,255,255,${s[3]})`;c.beginPath();c.arc(s[0]*cw,s[1]*H,s[2],0,7);c.fill()});
+  const target=H-58-(H-140)*Math.min(1,p.drunk/g);st.lvl=(RM||document.hidden)?target:st.lvl===null?H:st.lvl+(target-st.lvl)*.05;st.amp+=((RM?0:4)-st.amp)*.03;
+  const wave=(x,ph,a,f)=>st.lvl+Math.sin(x/cw*Math.PI*2*f+ts*1.3+ph)*a+Math.sin(x/cw*Math.PI*2*f*2.3-ts*1.9+ph)*a*.35;
+  c.beginPath();c.moveTo(0,H);for(let x=0;x<=cw+6;x+=6)c.lineTo(x,wave(x,2,st.amp*.8,1.2)-6);c.lineTo(cw,H);c.fillStyle="rgba(90,160,225,.28)";c.fill();
+  c.beginPath();c.moveTo(0,H);for(let x=0;x<=cw+6;x+=6)c.lineTo(x,wave(x,0,st.amp,1.5));c.lineTo(cw,H);gr=c.createLinearGradient(0,st.lvl-10,0,H);gr.addColorStop(0,"rgba(122,184,240,.9)");gr.addColorStop(.4,"#2D6FAE");gr.addColorStop(1,"#0B2B4A");c.fillStyle=gr;c.fill();
+  c.strokeStyle="rgba(220,240,255,.55)";c.lineWidth=1.5;c.beginPath();for(let x=0;x<=cw+6;x+=6){const y=wave(x,0,st.amp,1.5);x?c.lineTo(x,y):c.moveTo(x,y)}c.stroke();
+  if(!RM)st.bub.forEach(b=>{b.y-=b.s;const y=b.y*H;if(y<st.lvl+8){b.y=1+Math.random()*.3;b.x=Math.random()}c.strokeStyle="rgba(220,240,255,.45)";c.lineWidth=1;c.beginPath();c.arc(b.x*cw,Math.max(y,st.lvl+8),b.r,0,7);c.stroke()});
+  if(p.drunk<g){const py=H-58-(H-140)*Math.min(1,p.expected/g);c.setLineDash([5,5]);c.strokeStyle="rgba(239,188,144,.85)";c.lineWidth=1.5;c.beginPath();c.moveTo(cw-96,py);c.lineTo(cw-14,py);c.stroke();c.setLineDash([]);
+   c.fillStyle="#EFBC90";c.font="600 10px 'Work Sans',sans-serif";c.textAlign="right";c.fillText("PACE",cw-14,py-6)}
+  if(!RM&&!document.hidden)requestAnimationFrame(frame)};
+ requestAnimationFrame(frame)}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&RO&&RO.kind==="water")waterTank()});
+function drawWaterRoom(){const k=dkey(),p=waterPace(),g=W().goal,log=waterLog(k),frac=Math.min(1,p.drunk/g),R=$("troom");
+ const days=[...Array(7)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);return[d.toLocaleDateString([], {weekday:"narrow"}),waterToday(dkey(d)),i===6]});
+ const top=Math.max(g*1.15,...days.map(x=>x[1])),past=days.slice(0,6).filter(x=>x[1]>0),avg=past.length?past.reduce((t,x)=>t+x[1],0)/past.length:0;
+ const every=+W().every===120?"2 hours":W().every+" min",nRem=Math.max(1,Math.floor((tmin(W().end)-tmin(W().start))/W().every)+1),notifOK=typeof Notification!=="undefined";
+ $("trs").innerHTML=`<div class="trbar"><button class="trib" id="tr-back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><span class="treb">Water · goal ${esc(fmtL(g))}</span><button class="trib" id="wr-gear" aria-label="Reminder settings"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button></div>
+ <div class="trin">
+  <div class="trhero wrhero"><div><div class="wrbig">${fmtL(p.drunk).replace(" L","")}<span>L</span></div><div class="trsub">${p.drunk>=g?"Goal reached today":`of ${esc(fmtL(g))} · ${p.behind>=250?`<b class="wrbehind">${fmtL(p.behind)} behind pace</b>`:"on pace"}`}</div></div><div class="wrpct">${Math.round(frac*100)}%</div></div>
+  <div class="wrq"><button class="wrqb main" id="ws-add">+${W().step} ml<small>a glass</small></button><button class="wrqb" id="ws-250">+250 ml<small>half</small></button><button class="wrqb" id="ws-cust">Custom<small>any amount</small></button></div>
+  <div class="add wrcust" id="ws-custrow" hidden><input id="ws-ml" type="number" inputmode="numeric" placeholder="Amount in ml" aria-label="Custom amount in ml"><button class="action p" id="ws-log">Log</button></div>
+  <div class="wrsec"><h4><span>Today</span><span>${log.length?log.length+(log.length===1?" drink":" drinks"):""}</span></h4>${log.length?`<div class="wrlog">${log.map((e,i)=>`<span class="wrl">💧 ${e.ml} ml <small>${timeStr(e.ts)}</small><button data-del="${i}" aria-label="Remove ${e.ml} ml">✕</button></span>`).join("")}</div>`:`<p class="trmin">Nothing yet today. Tap +${W().step} ml after each glass.</p>`}</div>
+  <div class="wrsec"><h4><span>Last 7 days</span><span>${avg?"avg "+fmtL(Math.round(avg/50)*50):""}</span></h4>
+   <div class="wrchart">${days.map(([,ml,t])=>`<div class="wrc ${ml>=g?"full":""} ${t?"today":""}"><em>${ml?(ml/1000).toFixed(1):""}</em><i style="height:${Math.max(2,ml/top*84).toFixed(1)}%"></i></div>`).join("")}<div class="wrgoal" style="bottom:${(g/top*84).toFixed(1)}%"><span>${esc(fmtL(g))} goal</span></div></div>
+   <div class="wrlabels">${days.map(([l,,t])=>`<span class="${t?"t":""}">${l}</span>`).join("")}</div></div>
+  <details class="wrrem" id="wr-rem" ${RO.rem?"open":""}><summary><span>Reminders<small>Every ${esc(every)} · ${esc(W().start)} to ${esc(W().end)} · about ${nRem} a day</small></span><b>›</b></summary>
+   <div class="pair"><div class="field"><label for="ws-s">From</label><input id="ws-s" value="${esc(W().start)}"></div><div class="field"><label for="ws-e">Until</label><input id="ws-e" value="${esc(W().end)}"></div></div>
+   <div class="field"><label>Every</label>${opts("every",[["60","60 min"],["90","90 min"],["120","2 hours"]],String(W().every))}</div>
+   <div class="pair"><div class="field"><label for="ws-goal">Daily goal (L)</label><input id="ws-goal" type="number" step="0.25" inputmode="decimal" value="${g/1000}"></div><div class="field"><label for="ws-step">Quick button (ml)</label><input id="ws-step" type="number" step="50" inputmode="numeric" value="${W().step}"></div></div>
+   <button class="action p" id="ws-save" style="width:100%;margin-top:14px">Save settings</button>
+   <p class="trmin" style="margin-top:14px"><b style="color:var(--soft)">Phone reminders (recommended).</b> Adds repeating reminders to your phone's calendar. They go off even when Op-Lock In is closed.</p>
+   <button class="action" id="ws-cal" style="width:100%;margin-top:8px">Add reminders to my calendar</button>
+   ${notifOK?`<button class="action" id="ws-notif" style="width:100%;margin-top:8px">${W().notify&&Notification.permission==="granted"?"App notifications: on · turn off":"Turn on app notifications"}</button><p class="trmin">App notifications only arrive while Op-Lock In is running in the background. They include a Log ${W().step} ml button.</p>`:""}
+  </details>
+ </div>`;
+ $("trfoot").innerHTML="";
+ const q=s=>R.querySelector(s);bindOpts(R);
+ q("#tr-back").onclick=()=>closeRoom();
+ const rem=q("#wr-rem");rem.ontoggle=()=>{if(RO)RO.rem=rem.open};q("#wr-gear").onclick=()=>{rem.open=true;RO.rem=true;setTimeout(()=>rem.scrollIntoView({behavior:RM?"auto":"smooth",block:"start"}),50)};
+ const splash=()=>{if(WT)WT.amp=18};
+ q("#ws-add").onclick=e=>{splash();addWater(W().step,e.currentTarget)};q("#ws-250").onclick=e=>{splash();addWater(250,e.currentTarget)};
+ q("#ws-cust").onclick=()=>{const row=q("#ws-custrow");row.hidden=!row.hidden;if(!row.hidden)q("#ws-ml").focus()};
+ q("#ws-log").onclick=()=>{const v=+q("#ws-ml").value;if(!(v>0&&v<=3000)){toast("Enter an amount between 1 and 3000 ml");return}splash();addWater(v)};
+ R.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{W().log[k].splice(+b.dataset.del,1);afterWater(false)});
+ q("#ws-save").onclick=()=>{const s=q("#ws-s").value.trim(),e=q("#ws-e").value.trim();if(tmin(s)>=9998||tmin(e)>=9998||tmin(e)<=tmin(s)){toast("Use times like 7:00 AM and 9:00 PM");return}
+  const goal=Math.round((+q("#ws-goal").value||4)*1000),step=Math.round(+q("#ws-step").value||500);Object.assign(W(),{start:s,end:e,every:+optVal(R,"every"),goal:Math.max(500,goal),step:Math.max(50,step)});
   const t=waterTask();if(t)t.t="Drink "+fmtL(W().goal)+" of water";save();renderToday();afterWater(false);toast("Water settings saved")};
- root.querySelector("#ws-cal").onclick=()=>calendarReminders();
- const nb=root.querySelector("#ws-notif");if(nb)nb.onclick=async()=>{if(W().notify&&Notification.permission==="granted"){W().notify=false;save();drawWaterSheet(root);toast("App notifications off");return}
-  const r=await Notification.requestPermission();if(r==="granted"){W().notify=true;W().lastNotify=Date.now();save();toast("App notifications on")}else toast("Notifications are blocked. Allow them for this app in Android settings.");drawWaterSheet(root)}}
+ q("#ws-cal").onclick=()=>calendarReminders();
+ const nb=q("#ws-notif");if(nb)nb.onclick=async()=>{if(W().notify&&Notification.permission==="granted"){W().notify=false;save();drawRoom();toast("App notifications off");return}
+  const r=await Notification.requestPermission();if(r==="granted"){W().notify=true;W().lastNotify=Date.now();save();toast("App notifications on")}else toast("Notifications are blocked. Allow them for this app in Android settings.");drawRoom()};if(RM||document.hidden)waterTank()}
 function calendarReminders(){const a=tmin(W().start),b=tmin(W().end),ev=W().every,d=dkey().replace(/-/g,""),stamp=new Date().toISOString().replace(/[-:]/g,"").slice(0,15)+"Z";
  const lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Op-Lock In//Water//EN","CALSCALE:GREGORIAN"];let n=0;
  for(let m=a;m<=b;m+=ev){const hh=String(Math.floor(m/60)).padStart(2,"0"),mm=String(m%60).padStart(2,"0");n++;
@@ -1501,7 +1540,7 @@ rail.classList.add("still");paintCards();renderAll();layout();requestAnimationFr
 const start=(location.hash||"").slice(1);if(start==="dogs"){S.ui.who="dog";go("food",{instant:true})}else if(start==="calm"){go("smoke",{instant:true});setTimeout(openCalm,300)}
 else go(NAMES[start]?start:"home",{instant:true});
 addEventListener("resize",()=>{glide();segAll()});
-setInterval(waterTick,60000);setTimeout(waterTick,4000);setInterval(taskTick,30000);setTimeout(taskTick,2000);$("alertsbtn").onclick=()=>NATIVE?nativeAlertsSheet():alertsSheet();if(NATIVE){nativeInit();document.documentElement.classList.add("native")}$("waterbtn").onclick=()=>openWater();
+setInterval(waterTick,60000);setTimeout(waterTick,4000);setInterval(taskTick,30000);setTimeout(taskTick,2000);$("alertsbtn").onclick=()=>NATIVE?nativeAlertsSheet():alertsSheet();if(NATIVE){nativeInit();document.documentElement.classList.add("native")}$("waterbtn").onclick=e=>openWater(e.currentTarget);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){tick();waterTick();taskTick();scheduleSoon();if(S.settings.wallet&&Date.now()-S.sync.last>120000)sync(false)}});
 if(S.settings.wallet&&Date.now()-S.sync.last>120000)setTimeout(()=>sync(false),800);
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(()=>{});
