@@ -483,9 +483,35 @@ function quickLog(win,el){const a=S.ui.acct,stake=+S.settings.stake[a]||0,tf=a==
  if(win)burst(el,["#86D3B0","#EFBC90","#F6E3CC"]);toast((win?"Win":"Loss")+" logged · "+pnlStr(t.pnl),"Edit",()=>editTrade(a,t.id))}
 
 /* ================= sheet ================= */
-function closeSheet(){$("sheetwrap").hidden=true;$("sheet").innerHTML="";delete $("sheet").dataset.kind}
-$("sheetwrap").addEventListener("click",e=>{if(e.target===$("sheetwrap"))closeSheet()});
-addEventListener("keydown",e=>{if(e.key==="Escape"){closeSheet();orbit(false)}});
+function closeSheet(){const w=$("sheetwrap");if(w.hidden)return;w.hidden=true;$("sheet").innerHTML="";$("sheet").style.transform="";delete $("sheet").dataset.kind}
+/* ===== Getting out of things: one stack of open layers (page, sheet, + menu, calm mode).
+   Each open layer adds a browser history entry, so Android's back gesture, the browser back button
+   and Esc all close the top layer first, then return to Home. Layers are detected by watching the DOM,
+   so every way of opening a sheet is covered. ===== */
+const LAYERS=[];let popSkip=0;
+function layerOpen(name,close){if(LAYERS.some(l=>l.name===name))return;LAYERS.push({name,close});try{history.pushState({layer:name},"")}catch(e){}}
+function layerClosed(name){const i=LAYERS.map(l=>l.name).lastIndexOf(name);if(i<0)return;LAYERS.splice(i,1);popSkip++;try{history.back()}catch(e){popSkip--}}
+function closeTopLayer(){if(LAYERS.length)history.back()}
+addEventListener("popstate",()=>{if(popSkip>0){popSkip--;return}const l=LAYERS.pop();if(l)l.close()});
+const watchLayer=(node,name,isOpen,close)=>{if(!node)return;let was=isOpen();new MutationObserver(()=>{const now=isOpen();if(now===was)return;was=now;now?layerOpen(name,close):layerClosed(name)}).observe(node,{attributes:true,attributeFilter:["hidden","class"]})};
+watchLayer($("sheetwrap"),"sheet",()=>!$("sheetwrap").hidden,closeSheet);
+watchLayer($("calm"),"calm",()=>!$("calm").hidden,()=>closeCalm(null));
+watchLayer($("qlog"),"qlog",()=>$("qlog").classList.contains("open"),()=>qlog(false));
+// Native back gesture on the Fold (needs @capacitor/app in the APK): close the top layer, else go Home, else leave the app.
+(function(){const A=window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()&&window.Capacitor.Plugins&&window.Capacitor.Plugins.App;if(!A||!A.addListener)return;
+ A.addListener("backButton",()=>{if(LAYERS.length)closeTopLayer();else if(S.view!=="home")go("home");else A.minimizeApp?A.minimizeApp():A.exitApp()})})();
+// Tap the dark area around a sheet to close it (only if the press started there too, so drags and text selection don't close it by accident).
+let sheetDown=null;$("sheetwrap").addEventListener("pointerdown",e=>{sheetDown=e.target===$("sheetwrap")});
+$("sheetwrap").addEventListener("click",e=>{if(e.target===$("sheetwrap")&&sheetDown!==false)closeSheet();sheetDown=null});
+addEventListener("keydown",e=>{if(e.key!=="Escape")return;if(!$("calm").hidden)return closeCalm(null);if(!$("sheetwrap").hidden)return closeSheet();qlog(false);orbit(false);if(typeof hideNote==="function")hideNote();if(typeof mHideTip==="function")mHideTip()});
+// Every sheet gets an × in the corner, however it was opened.
+new MutationObserver(()=>{const s=$("sheet");if(!s.firstElementChild||s.querySelector(":scope>.sheetx"))return;const b=document.createElement("button");b.className="sheetx";b.type="button";b.setAttribute("aria-label","Close");b.innerHTML='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';b.onclick=closeSheet;s.prepend(b)}).observe($("sheet"),{childList:true});
+// Swipe a sheet down by its top edge to close it.
+(function(){const s=$("sheet");let y0=null,dy=0;
+ s.addEventListener("pointerdown",e=>{if(e.target.closest("input,textarea,select,button,a,[contenteditable]"))return;const r=s.getBoundingClientRect();if(e.clientY-r.top>56||s.scrollTop>0)return;y0=e.clientY;dy=0;s.style.transition="none";try{s.setPointerCapture(e.pointerId)}catch(_){}});
+ s.addEventListener("pointermove",e=>{if(y0===null)return;dy=Math.max(0,e.clientY-y0);s.style.transform=`translateY(${dy}px)`});
+ const end=()=>{if(y0===null)return;y0=null;s.style.transition="transform .3s cubic-bezier(.32,.72,0,1)";if(dy>90){s.style.transform="translateY(110%)";setTimeout(closeSheet,220)}else s.style.transform="";dy=0};
+ s.addEventListener("pointerup",end);s.addEventListener("pointercancel",end)})();
 function openSheet(html,bind){delete $("sheet").dataset.kind;$("sheet").innerHTML=`<div class="grab"></div>`+html;$("sheetwrap").hidden=false;bind($("sheet"));const f=$("sheet").querySelector("input:not([type=checkbox]),textarea");if(f&&matchMedia("(hover:hover)").matches)f.focus()}
 function opts(name,list,val,cls=""){return `<div class="opts ${cls}" data-name="${name}">${list.map(([v,l])=>`<button type="button" data-v="${esc(v)}" class="${v===val?"on":""}">${esc(l)}</button>`).join("")}</div>`}
 function bindOpts(root,onChange){root.querySelectorAll(".opts").forEach(g=>g.querySelectorAll("button").forEach(b=>b.onclick=()=>{g.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));onChange&&onChange(g.dataset.name,b.dataset.v)}))}
@@ -856,7 +882,7 @@ function mTabHL(){const b=document.querySelector("#mtabs button.on"),hl=$("mtabh
 document.querySelectorAll("#mtabs button").forEach(b=>b.onclick=()=>mTab(b.dataset.mt));
 document.querySelectorAll("#mcview button").forEach(b=>b.onclick=()=>{S.ui.mview=b.dataset.v;save();drawMChart()});
 $("mtblbtn").onclick=()=>{const t=$("mtbl");t.hidden=!t.hidden;$("mtblbtn").textContent=t.hidden?"Show as table":"Hide table"};
-$("mcwrap").addEventListener("pointerdown",e=>{if(!e.target.closest("[data-hit]"))mHideTip()});
+document.addEventListener("pointerdown",e=>{if(!e.target.closest("#mcwrap [data-hit]"))mHideTip()},true);
 addEventListener("resize",()=>{if($("p-money").classList.contains("on")){mTabHL();if(S.ui.mtab==="ov"||!S.ui.mtab)drawMChart()}});
 function mShowTip(x,y,html){const t=$("mtip"),W=$("mcwrap").clientWidth;t.innerHTML=html;t.style.left=Math.max(70,Math.min(W-70,x))+"px";t.style.top=Math.max(34,y)+"px";t.classList.add("on")}
 function mHideTip(){$("mtip").classList.remove("on");if(mUnHL){mUnHL();mUnHL=null}}
@@ -1058,7 +1084,7 @@ function drawCalm(){const cv=$("calmcv"),c=cv.getContext("2d");const fit=()=>{cv
  const frame=t=>{if(!calm)return;const W=cv.width,H=cv.height,R=Math.max(W,H);c.fillStyle="#0B1D2A";c.fillRect(0,0,W,H);c.globalCompositeOperation="lighter";
   blobs.forEach(([col,x,y,r],i)=>{const s=RM?0:t/1000,px=(x+Math.sin(s*.07+i*1.7)*.18)*W,py=(y+Math.cos(s*.05+i*2.3)*.16)*H,rr=R*r*(1+Math.sin(s*.11+i)*.12);const g=c.createRadialGradient(px,py,0,px,py,rr);g.addColorStop(0,col+"70");g.addColorStop(1,col+"00");c.fillStyle=g;c.fillRect(0,0,W,H)});
   c.globalCompositeOperation="source-over";if(!RM)calm.raf=requestAnimationFrame(frame)};calm.raf=requestAnimationFrame(frame)}
-function closeCalm(outcome){if(!calm)return;const secs=Math.round((Date.now()-calm.start)/1000),moods=calm.moods;cancelAnimationFrame(calm.raf);calm.timers.forEach(clearTimeout);clearInterval(calm.tipT);clearInterval(calm.clockT);removeEventListener("resize",calm.fit);try{calm.lock&&calm.lock.release()}catch(e){}
+function closeCalm(outcome){if(!calm){$("calm").hidden=true;document.body.style.overflow="";return}const secs=Math.round((Date.now()-calm.start)/1000),moods=calm.moods;cancelAnimationFrame(calm.raf);calm.timers.forEach(clearTimeout);clearInterval(calm.tipT);clearInterval(calm.clockT);removeEventListener("resize",calm.fit);try{calm.lock&&calm.lock.release()}catch(e){}
  calm=null;$("calm").hidden=true;document.body.style.overflow="";
  if(outcome){SM().urges.push({ts:Date.now(),outcome,secs,moods});if(outcome==="passed"){addXP(15);save();if(S.view!=="smoke")go("smoke");else renderSmoke();toast(`Urge beaten in ${mmss(secs)} · +15 XP`);burst($("calmbtn"),["#B7A3E0","#86D3B0","#EFBC90","#9FD4F7"])}
   else{save();go("smoke");startSmoke(S.ui.smokeLimit??5,moods);toast("No judgment. Logging it helps you spot patterns.")}}}
@@ -1310,7 +1336,7 @@ $("addtrade").onclick=()=>editTrade(S.ui.acct);
 
 /* ================= routing + dock ================= */
 const NAMES={home:"Home",today:"Today",trades:"Trades",journal:"Journal",food:"Food",smoke:"Smoke log",money:"Money"},PALOF={today:1,trades:0,journal:2,food:3,smoke:4,money:0};
-function go(v,o={}){S.view=v;if(o.acct)S.ui.acct=o.acct;if(o.book)S.ui.book=o.book;
+function go(v,o={}){S.view=v;if(v!=="home")layerOpen("page",()=>go("home"));else layerClosed("page");if(o.acct)S.ui.acct=o.acct;if(o.book)S.ui.book=o.book;
  $("v-home").classList.toggle("off",v!=="home");document.querySelectorAll(".page").forEach(p=>p.classList.toggle("on",p.id==="p-"+v));document.body.classList.toggle("page-mode",v!=="home");
  document.querySelectorAll("#dock .tb").forEach(b=>b.classList.toggle("on",b.dataset.v===v||(b.dataset.k==="more"&&!["home","today","money"].includes(v))));qlog(false);
  $("crumb").textContent=NAMES[v];setGreet();morphWeek(v==="today",!!o.instant&&weekCompact===null);
