@@ -15,7 +15,10 @@ const ACCTS={poly:"Polymarket",manual:"Manual",bob:"Bob"};
 const GROUPS=["Morning","Afternoon","Evening","Hair care","Weekly","Anytime"];
 const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],DOWL=["Sundays","Mondays","Tuesdays","Wednesdays","Thursdays","Fridays","Saturdays"];
 /* the user's checklist; bump PACK when it changes so installed apps pick it up */
-const PACK=8;
+const PACK=9;
+/* portions: RER = 70 × kg^0.75, daily = RER × activity factor. Fresh mix ≈ 1.3 kcal/g, ≈ 230 kcal/cup; one batch ≈ 2,650 kcal (no eggs). */
+const FRESH_KCAL_G=1.3,FRESH_KCAL_CUP=230,BATCH_KCAL=2650,BATCH_G=2050;
+const ACTIVITY=[["1.2","Very inactive / weight loss"],["1.4","Senior or calm"],["1.6","Normal adult"],["1.8","Very active"]];
 /* ---- dogs (pack 8) ---- */
 const DOGS_DEFAULT={list:[{id:"boy",name:"Boy",weight:"",sensitive:true},{id:"girl",name:"Girl",weight:"",sensitive:false}],log:{},freezer:0};
 const HUSKY_RECIPE={who:"dog",cat:"Meal",fav:true,name:"Senior husky meal prep (turkey and rice)",time:"About 1 hour",serves:"One batch of toppers",
@@ -342,6 +345,10 @@ if(!S||S.v!==1)S=defaults();
  if(pack0<8){if(!S.dogs||!S.dogs.list)S.dogs=JSON.parse(JSON.stringify(DOGS_DEFAULT));
   if(!S.food.recipes.some(r=>r.name===HUSKY_RECIPE.name))S.food.recipes.push({id:uid(),ts:Date.now(),...HUSKY_RECIPE});
   for(const t of DOG_TASKS)if(!S.routine.some(r=>r.link===t.link))S.routine.push({id:uid(),...t})}
+ if(pack0<9&&S.dogs){S.dogs.kibbleKcal=S.dogs.kibbleKcal||350;const wt={boy:"45",girl:"55"};
+  for(const d of S.dogs.list){if(!d.weight&&wt[d.id])d.weight=wt[d.id];d.factor=d.factor||1.4;d.wlog=d.wlog||{};if(!Object.keys(d.wlog).length&&parseFloat(d.weight))d.wlog[dkey()]=parseFloat(d.weight)}
+  const g=S.dogs.list.find(d=>d.id==="girl");if(g&&!g.goal){g.goal="lose";g.target=Math.round(parseFloat(g.weight||55)*0.9*2)/2}
+  if(!S.routine.some(r=>r.link==="dogweigh"))S.routine.push({id:uid(),t:"Weigh the dogs",time:"",g:"Weekly",dow:[0],link:"dogweigh",note:"Weekly weigh-in for the weight-loss plan. Enter the numbers under Names and weights; the app shows whether she's on pace (0.5–1 lb a week)."})}
  S.pack=PACK})();
 let saveT;function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Couldn't save. Your phone storage may be full.")}},150)}
 addEventListener("pagehide",()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}});
@@ -646,8 +653,8 @@ function grocerySheet(){const k=dkey(),nextWeek=dowOf(k)===0,ref=new Date(k+"T12
   root.querySelectorAll(".step").forEach(b=>b.onclick=()=>{const x=b.dataset.x;ticks[x]=!ticks[x];if(!ticks[x])delete ticks[x];save();draw(root)});
   root.querySelector("#g-clear").onclick=()=>{for(const x in ticks)delete ticks[x];save();draw(root)}};
  $("sheet").innerHTML="";$("sheetwrap").hidden=false;draw($("sheet"))}
-function linkLabel(link){if(link==="dogs")return "Check in";if(link==="freezer")return "Freezer count";if(link==="dogbatch")return "Open recipe";if(link==="water")return "Log water";if(link==="weigh")return "Log weight";if(link==="grocery")return "Grocery list";if(link==="menu")return "This week's menu";const r=recipeFor(link);return r?"Open recipe":"Open Food"}
-function followLink(link,id){closeSheet();if(link==="dogs")return dogCheckIn();if(link==="freezer"){S.ui.who="dog";return go("food")}if(link==="dogbatch"){const r=S.food.recipes.find(x=>x.name===HUSKY_RECIPE.name);return r?openRecipe(r.id):(S.ui.who="dog",go("food"))}if(link==="water")return openWater();if(link==="weigh")return weighSheet(id);if(link==="grocery")return grocerySheet();if(link==="menu"){S.ui.who="me";return go("food")}
+function linkLabel(link){if(link==="dogweigh")return "Enter weights";if(link==="dogs")return "Check in";if(link==="freezer")return "Freezer count";if(link==="dogbatch")return "Open recipe";if(link==="water")return "Log water";if(link==="weigh")return "Log weight";if(link==="grocery")return "Grocery list";if(link==="menu")return "This week's menu";const r=recipeFor(link);return r?"Open recipe":"Open Food"}
+function followLink(link,id){closeSheet();if(link==="dogweigh")return dogEdit();if(link==="dogs")return dogCheckIn();if(link==="freezer"){S.ui.who="dog";return go("food")}if(link==="dogbatch"){const r=S.food.recipes.find(x=>x.name===HUSKY_RECIPE.name);return r?openRecipe(r.id):(S.ui.who="dog",go("food"))}if(link==="water")return openWater();if(link==="weigh")return weighSheet(id);if(link==="grocery")return grocerySheet();if(link==="menu"){S.ui.who="me";return go("food")}
  const r=recipeFor(link);if(r)openRecipe(r.id);else{S.ui.who="me";go("food")}}
 
 /* ================= dogs ================= */
@@ -659,14 +666,25 @@ function dogStatus(d){const keys=Object.keys(S.dogs.log).filter(k=>dogLog(k,d.id
  if(t){if(t.food===0)urgent.push("Ate nothing today");if(t.water==="low")watch.push("Drinking less than usual");if(t.urine==="dark")watch.push("Dark urine: keep fresh water out. Orange, red or brown urine is a vet call");if(t.energy===1)urgent.push("Very low energy");
   if(t.stool===5&&yy&&yy.stool===5)urgent.push("Watery diarrhea two days running");else if(t.stool===5)watch.push("Watery stool today: fresh food drops back to the starting amount until stool is normal again")}
  return{streak,fresh,eggs,urgent,watch,today:t,logged:!!t,history:[...Array(7)].map((_,i)=>{const x=new Date();x.setDate(x.getDate()-6+i);const l=dogLog(dkey(x),d.id);return l&&l.stool||0})}}
+function dogCurrentWeight(d){const e=Object.entries(d.wlog||{}).sort((a,b)=>a[0]<b[0]?-1:1);return e.length?e[e.length-1][1]:parseFloat(d.weight)}
+function dogPortions(d,fresh){const lb=dogCurrentWeight(d);if(!(lb>0))return null;const lose=d.goal==="lose"&&+d.target>0&&+d.target<lb;
+ const kg=(lose?+d.target:lb)/2.2046,mer=70*Math.pow(kg,.75)*(lose?1.0:(+d.factor||1.4)),fk=mer*fresh/100,kk=mer-fk,kc=+S.dogs.kibbleKcal||350;
+ return{mer,lose,freshKcal:fk,freshG:fk/FRESH_KCAL_G,freshCup:fk/FRESH_KCAL_CUP,kibCup:kk/kc}}
+function dogWeightLine(d){if(d.goal!=="lose"||!(+d.target>0))return"";const e=Object.entries(d.wlog||{}).sort((a,b)=>a[0]<b[0]?-1:1),start=e.length?e[0][1]:parseFloat(d.weight),cur=dogCurrentWeight(d),lost=start-cur,toGo=cur-+d.target;
+ let pace="";if(e.length>=2){const days=Math.max(1,daysBetween(e[0][0],e[e.length-1][0])),wk=lost/days*7;pace=wk<0.4?" Slower than planned: trim treats and keep fresh food to green-bean-heavy portions.":wk>1.2?" Faster than planned: add a little food back.":" Right on pace."}
+ return `<div class="goal"><b>Weight-loss goal: ${esc(String(d.target))} lb</b><span>${cur.toFixed(1)} lb now · ${lost>0?lost.toFixed(1)+" lb lost · ":""}${toGo>0?toGo.toFixed(1)+" lb to go":"Goal reached"}. Aim for 0.5–1 lb a week.${pace}</span></div>`}
+const r5=x=>Math.round(x/5)*5,cupStr=c=>{const q=Math.round(c*8)/8,w=Math.floor(q),f=q-w,fr={0:"",0.125:"⅛",0.25:"¼",0.375:"⅜",0.5:"½",0.625:"⅝",0.75:"¾",0.875:"⅞"}[f];return (w?w+(fr?" ":""):"")+(fr||(w?"":"0"))+" cup"+(q>1?"s":"")};
+function batchDays(){const tot=S.dogs.list.reduce((s,d)=>{const p=dogPortions(d,dogStatus(d).fresh);return s+(p?p.freshKcal:0)},0);return tot?BATCH_KCAL/tot:null}
 function dogDashboard(){const D=S.dogs;return `<div class="grid dogs">${D.list.map(d=>{const s=dogStatus(d);return `<div class="panel dogcard ${s.urgent.length?"alert":""}">
-  <div class="row sb"><div><span class="eyebrow">${esc(d.weight?d.weight+" lb":"Weight not set")}${d.sensitive?" · settling stomach":""}</span><div class="h1" style="font-size:26px;margin:4px 0">${esc(d.name)}</div></div><span class="chip ${s.logged?"up":""}">${s.logged?"✓ Checked in":"Not checked in"}</span></div>
+  <div class="row sb"><div><span class="eyebrow">${dogCurrentWeight(d)>0?dogCurrentWeight(d)+" lb":"Weight not set"}${d.sensitive?" · settling stomach":""}${d.goal==="lose"?" · losing weight":""}</span><div class="h1" style="font-size:26px;margin:4px 0">${esc(d.name)}</div></div><span class="chip ${s.logged?"up":""}">${s.logged?"✓ Checked in":"Not checked in"}</span></div>
   <div class="ratio"><i style="width:${100-s.fresh}%"></i><b style="width:${s.fresh}%"></b></div>
   <div class="sub"><b style="color:var(--ink)">Today: ${100-s.fresh}% kibble + ${s.fresh}% fresh.</b> ${s.streak?`${s.streak} normal-stool day${s.streak>1?"s":""} in a row.`:"Step up once stool stays normal."}${s.fresh<25?" Next step after "+(d.sensitive?(s.streak<2?2:4):2)+" normal days.":" Holding at the 25% maximum."}</div>
+  ${(()=>{const p=dogPortions(d,s.fresh);return (p?dogWeightLine(d):"")+(p?`<div class="portion"><div><small>${p.lose?"Weight-loss portions · per meal":"Per meal (AM and PM)"}</small><b>${cupStr(p.kibCup/2)} kibble</b><b>+ ${r5(p.freshG/2)} g fresh <span>(≈ ${cupStr(p.freshCup/2)})</span></b></div><div><small>Per day</small><b>${Math.round(p.mer)} kcal</b><span>${r5(p.freshG)} g fresh</span></div></div>`:`<div class="sub" style="margin-top:6px">Add ${esc(d.name)}'s weight to see portions.</div>`)})()}
   <div class="sub" style="margin-top:6px">Eggs: ${s.eggs?"<span class='up'>OK to add (2–4 per dog per week)</span>":"not yet (wait for 48 hours of normal stool)"}</div>
   <div class="stools" title="Stool, last 7 days">${s.history.map(v=>`<i class="s${v}"></i>`).join("")}<small>stool, last 7 days</small></div>
   ${s.urgent.map(x=>`<div class="flag urgent">⚠ ${esc(x)}. Call your vet.</div>`).join("")}${s.watch.map(x=>`<div class="flag">${esc(x)}</div>`).join("")}</div>`}).join("")}
   <div class="panel freezer"><span class="eyebrow">Freezer bags</span><div class="big" style="font-size:44px">${D.freezer||0}</div><div class="sub">${D.freezer?"bags left":"Cook a batch on meal-prep day"}</div>
+  ${(()=>{const bd=batchDays();if(!bd)return"";const perDay=D.list.reduce((s,d)=>{const p=dogPortions(d,dogStatus(d).fresh);return s+(p?p.freshG:0)},0);return `<div class="sub" style="margin-top:6px">One batch (~${(BATCH_G/1000).toFixed(1)} kg) lasts about <b style="color:var(--ink)">${Math.floor(bd)} days</b> at today's ratios. One bag a day for both dogs ≈ ${r5(perDay)} g.</div>`})()}
   <div class="row" style="margin-top:12px"><button class="action" id="fz-minus" aria-label="Use one bag">−1</button><button class="action" id="fz-plus" aria-label="Add one bag">+1</button><button class="action" id="fz-batch">+ Add batch</button></div></div></div>
  <div class="row" style="margin:2px 0 14px"><button class="action p" id="dogcheck">Daily check-in</button><button class="action" id="dogrecipe">Meal-prep recipe</button><button class="action" id="dogedit">Names and weights</button></div>
  <details class="panel safe redflags"><summary>Red flags</summary><div style="margin-top:10px">${esc(DOG_FLAGS)}</div></details>`}
@@ -692,8 +710,17 @@ function dogCheckIn(){const k=dkey(),D=S.dogs;
    const urgent=D.list.flatMap(d=>dogStatus(d).urgent.map(x=>d.name+": "+x));if(urgent.length)setTimeout(()=>toast("⚠ "+urgent[0]+". Call your vet."),900)}})}
 function dogEdit(){const D=S.dogs;openSheet(`<h2>Names and weights</h2><p class="desc">Weights let us work out exact grams per meal later.</p>
  ${D.list.map(d=>`<div class="pair"><div class="field"><label for="dn-${d.id}">Name</label><input id="dn-${d.id}" value="${esc(d.name)}"></div><div class="field"><label for="dw-${d.id}">Weight (lb)</label><input id="dw-${d.id}" type="number" inputmode="decimal" value="${esc(d.weight)}" placeholder="55"></div></div>
+ <div class="field"><label>${esc(d.name)}'s goal</label>${opts("goal-"+d.id,[["maintain","Stay at this weight"],["lose","Lose weight"]],d.goal||"maintain")}</div>
+ <div class="pair"><div class="field"><label for="dt-${d.id}">Goal weight (lb)</label><input id="dt-${d.id}" type="number" inputmode="decimal" value="${esc(d.target||"")}" placeholder="${Math.round((parseFloat(d.weight)||50)*0.9*2)/2}"></div><div class="field"><label for="dl-${d.id}">Weigh-in today (lb)</label><input id="dl-${d.id}" type="number" inputmode="decimal" step="0.1" value="${esc((d.wlog||{})[dkey()]||"")}" placeholder="optional"></div></div>
+ <div class="field"><label>${esc(d.name)}'s activity</label>${opts("act-"+d.id,ACTIVITY,String(d.factor||1.4))}</div>
  <div class="field"><label><input type="checkbox" id="ds-${d.id}" ${d.sensitive?"checked":""} style="width:auto;margin-right:8px">${esc(d.name)} has a sensitive stomach right now (start at 10% fresh)</label></div>`).join("")}
- <div class="btns"><button class="action p" id="de-save">Save</button></div>`,root=>{root.querySelector("#de-save").onclick=()=>{for(const d of D.list){d.name=root.querySelector("#dn-"+d.id).value.trim()||d.name;d.weight=root.querySelector("#dw-"+d.id).value.trim();d.sensitive=root.querySelector("#ds-"+d.id).checked}save();closeSheet();renderFood();toast("Saved")}})}
+ <div class="field"><label for="kk">Kibble calories per cup</label><input id="kk" type="number" inputmode="numeric" value="${esc(D.kibbleKcal||350)}"><span class="hint">Printed on the Diamond Naturals bag as "kcal/cup". Most formulas are 330–390.</span></div>
+ <p class="desc" style="margin-top:12px">Portions are estimates from body weight. Weigh the dogs every few weeks and adjust if they gain or lose. Your vet has the final say.</p>
+ <div class="btns"><button class="action p" id="de-save">Save</button></div>`,root=>{bindOpts(root);root.querySelector("#de-save").onclick=()=>{for(const d of D.list){d.name=root.querySelector("#dn-"+d.id).value.trim()||d.name;d.weight=root.querySelector("#dw-"+d.id).value.trim();d.sensitive=root.querySelector("#ds-"+d.id).checked;d.factor=+optVal(root,"act-"+d.id)||1.4;
+   d.goal=optVal(root,"goal-"+d.id)||"maintain";const tg=+root.querySelector("#dt-"+d.id).value;d.target=tg>0?tg:(d.goal==="lose"?Math.round((parseFloat(d.weight)||0)*0.9*2)/2:"");
+   const wi=+root.querySelector("#dl-"+d.id).value;if(wi>5&&wi<250){d.wlog=d.wlog||{};d.wlog[dkey()]=Math.round(wi*10)/10}}
+  const wt=S.routine.find(r=>r.link==="dogweigh");if(wt&&D.list.some(d=>(d.wlog||{})[dkey()])&&!dayData(dkey()).done[wt.id])toggleTask(wt.id);
+  const kk=+root.querySelector("#kk").value;if(kk>150&&kk<700)D.kibbleKcal=kk;save();closeSheet();renderFood();toast("Saved")}})}
 
 /* ================= water ================= */
 const W=()=>S.water;
