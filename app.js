@@ -1181,12 +1181,24 @@ const NAMES={home:"Home",today:"Today",trades:"Trades",journal:"Journal",food:"F
 function go(v,o={}){S.view=v;if(o.acct)S.ui.acct=o.acct;if(o.book)S.ui.book=o.book;
  $("v-home").classList.toggle("off",v!=="home");document.querySelectorAll(".page").forEach(p=>p.classList.toggle("on",p.id==="p-"+v));document.body.classList.toggle("page-mode",v!=="home");
  document.querySelectorAll("#dock .tb").forEach(b=>b.classList.toggle("on",b.dataset.v===v||(b.dataset.k==="more"&&!["home","today","money"].includes(v))));qlog(false);
- $("crumb").textContent=NAMES[v];setGreet();
+ $("crumb").textContent=NAMES[v];setGreet();morphWeek(v==="today",!!o.instant&&weekCompact===null);
  if(v==="home"){renderCards();layout()}else setAmbient(PALOF[v]);
  if(v==="trades"){shownBal=null;renderTrades();const l=$("spark").querySelector(".line");if(l){l.style.animation="none";void l.offsetWidth;l.style.animation=""}if(S.ui.acct==="poly"&&S.settings.wallet&&Date.now()-S.sync.last>60000)sync(false)}
  if(v==="journal")renderJournal();if(v==="today")renderToday();if(v==="food")renderFood();if(v==="smoke")renderSmoke();if(v==="money")renderMoney();
  save();scrollTo({top:0,behavior:o.instant?"auto":"smooth"});history.replaceState(null,"","#"+v)}
 function glide(){}
+/* week morph: open round dates <-> boxed strip (Today). FLIP: measure, switch layout, animate each piece from old spot */
+let weekCompact=null;
+function morphWeek(on,instant){const hd=document.querySelector(".hd");if(!hd)return;const wide=innerWidth>760;hd.classList.toggle("wide",wide);
+ if(weekCompact===on&&!instant)return;const animate=!instant&&weekCompact!==null&&!RM;weekCompact=on;
+ const chips=[...document.querySelectorAll(".hchip")],els=[...document.querySelectorAll("#week button strong,#week button span,#week button i"),...chips];
+ const first=animate?els.map(e=>e.getBoundingClientRect()):null;
+ const target=on&&wide?$("stripchips"):document.querySelector(".hchips");chips.forEach(c=>target.appendChild(c));
+ hd.classList.toggle("compact",on);if(!animate)return;
+ els.forEach((e,i)=>{const a=first[i],b=e.getBoundingClientRect();if(!b.width||!a.width)return;const dx=a.left-b.left,dy=a.top-b.top,sx=a.width/b.width,sy=a.height/b.height;
+  if(Math.abs(dx)<1&&Math.abs(dy)<1&&Math.abs(sx-1)<.02)return;
+  e.animate([{transformOrigin:"top left",transform:`translate(${dx}px,${dy}px) scale(${sx},${sy})`},{transformOrigin:"top left",transform:"none"}],{duration:560,easing:"cubic-bezier(.2,.8,.2,1)",delay:i<21?i%7*18:0})})}
+addEventListener("resize",()=>{if(weekCompact!==null)morphWeek(weekCompact,true)});
 function greeting(){const h=new Date().getHours();return (h<5?"Good night":h<12?"Good morning":h<17?"Good afternoon":"Good evening")+", "+(typeof APP_OWNER!=="undefined"?APP_OWNER:"James")}
 function setGreet(){const g=$("greet");if(g)g.textContent=["home","today"].includes(S.view)?greeting():NAMES[S.view]||greeting()}
 document.querySelectorAll("#dock .tb[data-v]").forEach(b=>b.onclick=()=>go(b.dataset.v));
