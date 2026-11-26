@@ -531,19 +531,21 @@ function txRow(x,showAcct){const k=TKIND[x._a],sd=(x.side||"").toLowerCase();let
  if(["long","short","buy","sell"].includes(sd)){tag=x.side.toUpperCase();tc=sd==="long"||sd==="buy"?"l":"s"}else{tag=x.res==="win"?"WON":x.res==="loss"?"LOST":"OPEN";tc=x.res==="win"?"l":x.res==="loss"?"s":"o"}
  const det=k==="ls"?[x.entry?`${fmtP(x.entry)} → ${x.exit?fmtP(x.exit):"open"}`:"",x.size?"size "+fmtP(x.size):"",x.lev?x.lev+"x":"",x.venue||""]
   :k==="bs"?[x.qty?`${fmtP(x.qty)} @ ${fmtP(x.price||0)}`:""]:[x.side||"",x.tf||"",x.cost?"$"+(+x.cost).toFixed(2)+" in":""];
- const right=x.res==="open"?(k==="bs"?money(+x.cost||0):"open"):pnlStr(+x.pnl||0),rc=x.res==="open"?"":x.pnl>0?"up":x.pnl<0?"dn":"";
- return`<button class="txrow" data-a="${x._a}" data-id="${x.id}"><span class="txtag ${tc}">${tag}</span><span class="m"><span class="t">${esc(x.title||ACCTS[x._a])}</span><small>${esc([showAcct?ACCTS[x._a]:"",...det,whenStr(x.ts),x.src==="sync"?"synced":"",x.edited?"edited":""].filter(Boolean).join(" · "))}</small></span><b class="num ${rc}">${right}</b></button>`}
+ const ou=x.res==="open"&&x.upnl!=null,right=x.res==="open"?(k==="bs"?money(+x.cost||0):ou?pnlStr(x.upnl):"open"):pnlStr(+x.pnl||0),rc=x.res==="open"?(ou?(x.upnl>0?"up":x.upnl<0?"dn":""):""):x.pnl>0?"up":x.pnl<0?"dn":"";
+ return`<button class="txrow" data-a="${x._a}" data-id="${x.id}"><span class="txtag ${tc}">${tag}</span><span class="m"><span class="t">${esc(x.title||ACCTS[x._a])}</span><small>${esc([showAcct?ACCTS[x._a]:"",...det,x.res==="open"&&x.src==="sync"?"open now":whenStr(x.ts),x.src==="sync"?"synced":"",x.estimate?"P&L estimate":"",x.edited?"edited":""].filter(Boolean).join(" · "))}</small></span><b class="num ${rc}">${right}</b></button>`}
 function syncHtml(sec,accs){if(sec.k==="poly"||sec.k==="all"){const w=S.settings.wallet;
   if(!w)return`<span class="pdot off"></span><button class="link" id="connect" style="color:#F1C39D;padding:0">Connect your Polymarket wallet to auto-sync</button>`;
   return`<span class="pdot ${S.sync.err?"err":""}"></span><span>${esc(S.sync.err||"Polymarket synced "+ago(S.sync.last))}</span><button class="txpill" id="syncnow">Sync now</button>`}
- if(accs[0]==="cb"||accs[0]==="bob")return`<span class="pdot off"></span><span>Auto-sync from ${accs[0]==="cb"?"Coinbase":"Pionex.US"} is coming next. Log by hand for now.</span>`;
+ if(accs[0]==="cb"){const k=cbKey(),c=S.cbsync||{};if(!k)return`<span class="pdot off"></span><span>Coinbase not connected</span><button class="txpill" id="cbconnect">Connect Coinbase</button>`;
+  return`<span class="pdot ${c.err?"err":""}"></span><span>${esc(c.err||(NATIVE?"Coinbase synced "+ago(c.last):"Coinbase syncs in the Fold app"))}${c.upnl!=null&&!c.err?` · unrealized ${pnlStr(c.upnl)}`:""}</span><button class="txpill" id="cbsyncnow">${NATIVE?"Sync now":"Details"}</button>`}
+ if(accs[0]==="bob")return`<span class="pdot off"></span><span>Logged by hand. Pionex.US auto-sync isn't available yet.</span>`;
  return`<span class="pdot off"></span><span>Logged by hand</span>`}
 function renderSyncLine(msg){const el=$("syncline");if(!el)return;const sec=txSec();el.innerHTML=msg?`<span class="pdot"></span><span>${esc(msg)}</span>`:syncHtml(sec,sec.accs());$("syncdot").hidden=!!S.settings.wallet;
- const c=$("connect");if(c)c.onclick=()=>openSettings("wallet");const sn=$("syncnow");if(sn)sn.onclick=()=>sync(true)}
+ const c=$("connect");if(c)c.onclick=()=>openSettings("wallet");const sn=$("syncnow");if(sn)sn.onclick=()=>sync(true);const cc=$("cbconnect");if(cc)cc.onclick=()=>cbConnectSheet();const cs=$("cbsyncnow");if(cs)cs.onclick=()=>NATIVE?cbSync(true):cbConnectSheet()}
 let shownBal=null;
 function renderTrades(){if(!$("txcards"))return;const sec=txSec(),accs=sec.accs(),kind=sec.k==="all"?"all":TKIND[accs[0]],range=S.ui.trange||"Week",view=S.ui.tview||"curve",tf=sec.k==="poly"?S.ui.tf:undefined;
  const allSt=tstats(Object.keys(ACCTS),"All"),tt=$("txtoday");tt.textContent=pnlStr(allSt.today);tt.className="num "+(allSt.today>0?"up":allSt.today<0?"dn":"");
- $("txcards").innerHTML=TSEC.map(s=>{const st=tstats(s.accs(),"All"),spot=s.k==="spot",bal=spot?holdings().reduce((t,h)=>t+h.cost,0):st.bal,auto=(s.k==="poly"||s.k==="all")&&!!S.settings.wallet;
+ $("txcards").innerHTML=TSEC.map(s=>{const st=tstats(s.accs(),"All"),spot=s.k==="spot",bal=spot?holdings().reduce((t,h)=>t+h.cost,0):st.bal,auto=((s.k==="poly"||s.k==="all")&&!!S.settings.wallet)||(s.k==="deriv"&&S.ui.dsub!=="fut"&&!!cbKey());
   return`<button class="txc ${s.k===sec.k?"on":""}" data-s="${s.k}" style="--bgc:${s.bg}"><span class="h"><span class="ic">${s.ic}</span><span class="lab">${s.k==="deriv"?"Derivatives · "+ACCTS[S.ui.dsub==="fut"?"fut":"cb"]:s.n}${auto?"<i>AUTO</i>":""}</span></span><span class="bal num">${money(bal)}</span><span class="pl num" style="color:${!spot&&st.today<0?"#FFC2BC":"#C8F2DE"}">${spot?"invested · "+holdings().length+" holdings":pnlStr(st.today)+" today"}</span><svg viewBox="0 0 200 52" preserveAspectRatio="none" aria-hidden="true"><path d="${txSpark(s.accs())}" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="2" vector-effect="non-scaling-stroke"/></svg></button>`}).join("");
  $("txdots").innerHTML=TSEC.map(s=>`<i class="${s.k===sec.k?"on":""}"></i>`).join("");$("txdots").classList.toggle("held",txHeld>Date.now()||RM);
  const st=tstats(accs,range,tf),hold=kind==="bs"?holdings():null;
@@ -600,6 +602,85 @@ function txStep(){if(S.view!=="trades")return;
 function quickLog(win,el,a=txSec().accs()[0]){const stake=+S.settings.stake[a]||0,tf=a==="poly"?(S.ui.tf==="All"?"5m":S.ui.tf):"";
  const t={id:uid(),src:"manual",ts:Date.now(),title:S.settings.label[a]||ACCTS[a],tf,side:"",cost:stake,pnl:win?stake:-stake,res:win?"win":"loss",note:""};S.trades[a].push(t);addXP(5,el);save();renderTrades();renderCards();
  if(win)burst(el,["#86D3B0","#EFBC90","#F6E3CC"]);toast((win?"Win":"Loss")+" logged · "+pnlStr(t.pnl),"Edit",()=>editTrade(a,t.id))}
+
+/* ================= Coinbase futures sync (read-only) =================
+   Uses the user's own View-only CDP API key (key name + EC private key). The key is kept in its own
+   localStorage slot on this phone only: it is never part of S, so it is not in backups or exports.
+   Requests are signed with an ES256 JWT (per Coinbase's Advanced Trade docs) and sent through the native
+   HTTP layer in the Fold app (a regular browser is blocked from calling Coinbase directly).
+   Futures fills are paired first-in-first-out into closed trades; open positions come from the CFM endpoints. */
+const CBK="oplock.cbkey";
+const cbKey=()=>{try{const k=JSON.parse(localStorage.getItem(CBK)||"null");return k&&k.name&&k.pem?k:null}catch(e){return null}};
+const b64u=b=>{let s="";for(const x of b)s+=String.fromCharCode(x);return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")};
+function pemBytes(pem){const body=pem.replace(/\\n/g,"\n").replace(/-----[^-]+-----/g,"").replace(/\s+/g,"");const bin=atob(body);return Uint8Array.from(bin,c=>c.charCodeAt(0))}
+function derItems(buf,start=0,end=buf.length){const out=[];let i=start;while(i<end){const tag=buf[i++];let len=buf[i++];if(len&0x80){const n=len&0x7f;len=0;for(let j=0;j<n;j++)len=len*256+buf[i++]}out.push({tag,start:i,len,bytes:buf.subarray(i,i+len)});i+=len}return out}
+async function cbImportKey(pem){const der=pemBytes(pem),alg={name:"ECDSA",namedCurve:"P-256"};
+ if(/BEGIN PRIVATE KEY/.test(pem))return crypto.subtle.importKey("pkcs8",der,alg,false,["sign"]);
+ // SEC1 "EC PRIVATE KEY": SEQUENCE { version, OCTET STRING d, [0] curve, [1] BIT STRING public point }
+ const seq=derItems(der)[0],items=derItems(der,seq.start,seq.start+seq.len),dI=items.find(x=>x.tag===0x04),pubT=items.find(x=>x.tag===0xa1);
+ if(!dI||!pubT)throw new Error("That private key isn't in the expected format");
+ let d=dI.bytes;if(d.length<32){const p=new Uint8Array(32);p.set(d,32-d.length);d=p}
+ const pub=derItems(der,pubT.start,pubT.start+pubT.len)[0].bytes.subarray(1);if(pub[0]!==4||pub.length!==65)throw new Error("That private key isn't a P-256 (ES256) key");
+ return crypto.subtle.importKey("jwk",{kty:"EC",crv:"P-256",d:b64u(d),x:b64u(pub.subarray(1,33)),y:b64u(pub.subarray(33,65)),ext:false},alg,false,["sign"])}
+async function cbJWT(method,path,k){const key=await cbImportKey(k.pem),now=Math.floor(Date.now()/1000),te=new TextEncoder(),enc=o=>b64u(te.encode(JSON.stringify(o)));
+ const nonce=[...crypto.getRandomValues(new Uint8Array(16))].map(b=>b.toString(16).padStart(2,"0")).join("");
+ const data=enc({alg:"ES256",kid:k.name,nonce,typ:"JWT"})+"."+enc({sub:k.name,iss:"cdp",nbf:now,exp:now+120,uri:`${method} api.coinbase.com${path}`});
+ return data+"."+b64u(new Uint8Array(await crypto.subtle.sign({name:"ECDSA",hash:"SHA-256"},key,te.encode(data))))}
+async function cbGet(path,query="",k=cbKey()){if(!k)throw new Error("Coinbase isn't connected");const jwt=await cbJWT("GET",path,k);
+ const r=await fetch("https://api.coinbase.com"+path+(query?"?"+query:""),{headers:{Authorization:"Bearer "+jwt,Accept:"application/json"},cache:"no-store"});
+ if(!r.ok){let m="";try{const j=await r.json();m=j.message||j.error||""}catch(e){}throw new Error(r.status===401?"Coinbase didn't accept the key (401). Check the key name and private key.":`Coinbase answered ${r.status}${m?": "+m:""}`)}return r.json()}
+const cbNum=x=>+(x&&typeof x==="object"&&"value" in x?x.value:x)||0;
+function fifoTrips(fills,cs){const by={};[...fills].sort((a,b)=>Date.parse(a.trade_time)-Date.parse(b.trade_time)).forEach(f=>(by[f.product_id]=by[f.product_id]||[]).push(f));const trips=[];
+ for(const [p,list] of Object.entries(by)){const mult=cs[p]||1,q=[];
+  for(const f of list){const full=+f.size||0;if(!full)continue;let size=full;const price=+f.price||0,fee=+(f.commission||0),side=f.side;
+   while(size>1e-12&&q.length&&q[0].side!==side){const lot=q[0],m=Math.min(size,lot.size),dir=lot.side==="BUY"?1:-1;
+    const fees=lot.fee*(m/lot.size0)+fee*(m/full);
+    trips.push({id:"cb:"+lot.id+":"+(f.entry_id||f.trade_id),product:p,side:lot.side==="BUY"?"Long":"Short",entry:lot.price,exit:price,size:m,pnl:(price-lot.price)*m*mult*dir-fees,ts:Date.parse(f.trade_time),known:!!cs[p]});
+    lot.size-=m;size-=m;if(lot.size<=1e-12)q.shift()}
+   if(size>1e-12)q.push({side,size,size0:size,price,fee:fee*(size/full),id:f.entry_id||f.trade_id})}}
+ return trips}
+let cbSyncing=false;
+async function cbSync(manual){const k=cbKey();if(!k){if(manual)cbConnectSheet();return}
+ if(!NATIVE){if(manual)toast("Coinbase sync runs in the Op-Lock In app on your Fold");return}if(cbSyncing)return;cbSyncing=true;renderSyncLine("Syncing Coinbase…");
+ try{let fills=[],cursor="",pages=0;
+  do{const q=new URLSearchParams({product_types:"FUTURE",limit:"250"});if(cursor)q.set("cursor",cursor);const j=await cbGet("/api/v3/brokerage/orders/historical/fills",q.toString());fills.push(...(j.fills||[]));cursor=j.cursor||"";pages++}while(cursor&&pages<8);
+  fills=fills.filter(f=>!f.trade_type||f.trade_type==="FILL");
+  const cs={};for(const p of [...new Set(fills.map(f=>f.product_id))]){try{const j=await cbGet("/api/v3/brokerage/products/"+p);cs[p]=+(j.future_product_details&&j.future_product_details.contract_size)||0}catch(e){cs[p]=0}}
+  const trips=fifoTrips(fills,cs);let pos=[],bal=null;
+  try{pos=(await cbGet("/api/v3/brokerage/cfm/positions")).positions||[]}catch(e){}
+  try{bal=(await cbGet("/api/v3/brokerage/cfm/balance_summary")).balance_summary||null}catch(e){}
+  const L=S.trades.cb;let added=0;
+  const up=t=>{const ex=L.find(x=>x.id===t.id);if(!ex){L.push(t);added++}else if(!ex.edited)Object.assign(ex,t,{note:ex.note,hidden:ex.hidden})};
+  for(const tr of trips)up({id:tr.id,src:"sync",ts:tr.ts,title:tr.product,side:tr.side,entry:+tr.entry.toFixed(6),exit:+tr.exit.toFixed(6),size:+tr.size.toFixed(6),venue:"Coinbase",pnl:Math.round(tr.pnl*100)/100,res:tr.pnl>=0?"win":"loss",estimate:!tr.known});
+  const live=new Set();for(const p of pos){const n=cbNum(p.number_of_contracts);if(!n)continue;const id="cb:pos:"+p.product_id;live.add(id);
+   up({id,src:"sync",ts:Date.now(),title:p.product_id,side:p.side==="SHORT"?"Short":"Long",entry:cbNum(p.avg_entry_price),exit:null,size:n,venue:"Coinbase",pnl:0,res:"open",upnl:Math.round(cbNum(p.unrealized_pnl)*100)/100})}
+  S.trades.cb=L.filter(t=>!(String(t.id).startsWith("cb:pos:")&&!live.has(t.id)));
+  S.cbsync={last:Date.now(),err:"",bal:bal?cbNum(bal.cfm_usd_balance||bal.total_usd_balance):null,upnl:bal?cbNum(bal.unrealized_pnl):null,today:bal?cbNum(bal.daily_realized_pnl):null};save();renderTrades();renderCards();
+  if(manual||added)toast(added?`Coinbase · ${added} new trade${added>1?"s":""}`:"Coinbase synced · nothing new")}
+ catch(e){S.cbsync={...(S.cbsync||{}),err:e.message||"Couldn't reach Coinbase"};save();if(manual)toast(S.cbsync.err)}
+ finally{cbSyncing=false;renderSyncLine()}}
+function cbConnectSheet(){const k=cbKey();
+ openSheet(`<h2>${k?"Coinbase is connected":"Connect Coinbase"}</h2><p class="desc">Read-only. Op-Lock In can see your futures trades and positions, but it can never place a trade or move money. The key stays on this phone only and isn't included in backups.</p>
+ ${NATIVE?"":`<div class="note">Open Op-Lock In on your Fold to connect. A regular browser isn't allowed to talk to Coinbase directly.</div>`}
+ ${k?`<p class="desc">Key: <b>${esc(k.name.replace(/^organizations\/[^/]+\/apiKeys\//,"…/"))}</b>${S.cbsync&&S.cbsync.last?` · last synced ${ago(S.cbsync.last)}`:""}</p>
+  <div class="btns"><button class="action p" id="cb-sync">Sync now</button><button class="action danger" id="cb-off">Disconnect</button></div>`
+ :`<div class="note phase"><b>How to get a View-only key</b>1. In a browser, go to portal.cdp.coinbase.com and open API Keys.\n2. Create an API key. Give it a name and choose View only (leave Trade and Transfer off).\n3. Copy the API key name (it starts with organizations/…) and the private key (it starts with -----BEGIN EC PRIVATE KEY-----).\n4. Paste both here. Don't paste them anywhere else, and don't share them in a chat.</div>
+  <div class="field"><label for="cb-name">API key name</label><input id="cb-name" placeholder="organizations/…/apiKeys/…" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+  <div class="field"><label for="cb-pem">Private key</label><textarea id="cb-pem" style="min-height:120px;font-family:ui-monospace,monospace;font-size:12px" placeholder="-----BEGIN EC PRIVATE KEY-----" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea></div>
+  <div class="btns"><button class="action p" id="cb-save" ${NATIVE?"":"disabled"}>Check and connect</button></div><div id="cb-msg"></div>`}`,
+ root=>{const q=s=>root.querySelector(s),msg=t=>{const m=q("#cb-msg");if(m)m.innerHTML=`<div class="confirm">${esc(t)}</div>`};
+  const sv=q("#cb-save");if(sv)sv.onclick=async()=>{const k2={name:q("#cb-name").value.trim(),pem:q("#cb-pem").value.trim()};
+   if(!/^organizations\/.+\/apiKeys\/.+/.test(k2.name)){msg("The key name should look like organizations/…/apiKeys/…");return}
+   if(!/BEGIN (EC )?PRIVATE KEY/.test(k2.pem)){msg("Paste the whole private key, including the BEGIN and END lines.");return}
+   sv.disabled=true;sv.textContent="Checking…";
+   try{await cbImportKey(k2.pem);const p=await cbGet("/api/v3/brokerage/key_permissions","",k2);
+    if(p.can_trade||p.can_transfer){msg("This key can "+(p.can_transfer?"move money":"place trades")+". For safety, make a View-only key and paste that one instead. Nothing was saved.");return}
+    if(p.can_view===false){msg("This key can't view your account. Make sure View is turned on.");return}
+    localStorage.setItem(CBK,JSON.stringify(k2));closeSheet();toast("Coinbase connected · syncing");S.ui.tsec="deriv";S.ui.dsub="cb";save();renderTrades();cbSync(true)}
+   catch(e){msg(e.message||"Couldn't check the key")}finally{sv.disabled=false;sv.textContent="Check and connect"}};
+  const sy=q("#cb-sync");if(sy)sy.onclick=()=>{closeSheet();cbSync(true)};
+  const off=q("#cb-off");if(off)off.onclick=()=>{if(!off.dataset.sure){off.dataset.sure=1;off.textContent="Tap again to disconnect";return}
+   localStorage.removeItem(CBK);closeSheet();renderTrades();toast("Coinbase disconnected. Synced trades stay; delete the key on Coinbase too if you like.")}})}
 
 /* ================= sheet ================= */
 function closeSheet(){const w=$("sheetwrap");if(w.hidden)return;w.hidden=true;$("sheet").innerHTML="";$("sheet").style.transform="";delete $("sheet").dataset.kind}
@@ -1527,7 +1608,7 @@ function go(v,o={}){S.view=v;if(v!=="home")layerOpen("page",()=>go("home"));else
  if(v==="home"){renderCards();layout();requestAnimationFrame(fitHome)}else{setAmbient(PALOF[v]);fitHome()}
  if(v==="today")setTimeout(()=>waterNote(),1200);else hideNote();
  if(v==="today")setTimeout(()=>{const d=$("donext");if(!d||!$("p-today").classList.contains("on"))return;const r=d.getBoundingClientRect();if(r.bottom>innerHeight-90)d.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"})},450);
- if(v==="trades"){renderTrades();requestAnimationFrame(()=>txCenter(false));txSchedule();if(S.settings.wallet&&Date.now()-S.sync.last>60000)sync(false)}
+ if(v==="trades"){renderTrades();requestAnimationFrame(()=>txCenter(false));txSchedule();if(S.settings.wallet&&Date.now()-S.sync.last>60000)sync(false);if(NATIVE&&cbKey()&&Date.now()-((S.cbsync&&S.cbsync.last)||0)>120000)cbSync(false)}
  if(v==="journal")renderJournal();if(v==="today")renderToday();if(v==="food")renderFood();if(v==="smoke")renderSmoke();if(v==="money")renderMoney();
  save();scrollTo({top:0,behavior:o.instant?"auto":"smooth"});history.replaceState(null,"","#"+v)}
 function glide(){}
