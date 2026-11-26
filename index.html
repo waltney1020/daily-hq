@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="app.css?v=39">
+<link rel="stylesheet" href="app.css?v=40">
 </head>
 <body>
 <div class="amb" id="ambA" aria-hidden="true"></div><div class="amb b" id="ambB" aria-hidden="true"></div><div class="amb-shade" aria-hidden="true"></div><div class="room" id="room" aria-hidden="true"></div>
@@ -63,25 +63,10 @@
   </section>
 
   <section class="page" id="p-trades">
-    <div class="row sb">
-      <div class="seg" id="acct"><span class="hl"></span><button data-a="poly">Polymarket</button><button data-a="manual">Manual</button><button data-a="bob">Bob</button></div>
-      <div class="row syncline" id="syncline"></div>
-    </div>
-    <div class="grid">
-      <div class="panel col2 balpanel">
-        <div class="row sb"><span class="eyebrow">Balance</span><div class="seg" id="tf"><span class="hl"></span><button data-t="5m">5m</button><button data-t="15m">15m</button><button data-t="1h">1h</button><button data-t="All">All</button></div></div>
-        <div class="big" id="bal">$0.00</div>
-        <div class="row"><span class="chip" id="todaypnl"></span><span class="chip" id="allpnl"></span><span class="chip" id="openchip" hidden></span></div>
-        <svg class="spark" id="spark" viewBox="0 0 600 120" preserveAspectRatio="none" aria-hidden="true"></svg>
-      </div>
-      <div class="panel quick">
-        <span class="eyebrow" id="quicklabel">Quick log</span>
-        <button class="action w big-btn" id="won">+ Won</button>
-        <button class="action l big-btn" id="lost">+ Lost</button>
-        <div class="stats"><div class="stat"><small>Win rate</small><b id="wr">–</b></div><div class="stat"><small>Score</small><b id="rec">0–0</b></div><div class="stat"><small>Streak</small><b id="tstreak">–</b></div><div class="stat"><small>Trades</small><b id="tcount">0</b></div></div>
-      </div>
-    </div>
-    <div class="panel"><div class="row sb"><span class="ptitle">Trades</span><button class="link" id="addtrade">+ Add with details</button></div><div id="log"></div></div>
+    <div class="txtop"><div><span class="eyebrow">All sections</span><div class="txh1">Today <span id="txtoday" class="num"></span></div></div></div>
+    <div class="txcards" id="txcards" role="tablist" aria-label="Trading sections"></div>
+    <div class="txdots" id="txdots" aria-hidden="true"></div>
+    <div id="txbody"></div>
   </section>
 
   <section class="page" id="p-food">
@@ -164,7 +149,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Flip.min.js"></script>
-<script src="art.js?v=39"></script>
-<script src="app.js?v=39"></script>
+<script src="art.js?v=40"></script>
+<script src="app.js?v=40"></script>
 </body>
 </html>
