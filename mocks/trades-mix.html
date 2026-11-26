@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Trades · combined</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{--ink:#EEF3F0;--soft:#C4D5D8;--muted:#8FA3A1;--line:#1C2E33;--line2:#2A4248;--peach:#EFBC90;--up:#86D3B0;--dn:#EE8E86}
+*{box-sizing:border-box}body{margin:0;background:#05090B;font-family:"Work Sans",system-ui,sans-serif;color:var(--ink);padding:24px 14px;display:flex;gap:28px;justify-content:center;flex-wrap:wrap}
+button{font-family:inherit;cursor:pointer;color:inherit}
+.note{width:300px;color:var(--muted);font-size:13px;line-height:1.5}.note h2{color:var(--ink);font-size:18px;margin:0 0 8px;font-weight:600}.note li{margin-bottom:6px}
+.phone{position:relative;width:390px;height:820px;border-radius:38px;overflow:hidden;background:#0A1416;border:8px solid #1A1F22}
+.scr{position:absolute;inset:0;overflow-y:auto;padding:18px 14px 30px;scrollbar-width:none}
+.eb{font-size:10.5px;font-weight:700;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+.num{font-variant-numeric:tabular-nums}.up{color:var(--up)}.dn{color:var(--dn)}.mute{color:var(--muted)}
+.top{display:flex;justify-content:space-between;align-items:flex-end}.top h1{margin:0;font-size:28px;font-weight:600;letter-spacing:-.03em}
+.cards{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:12px -14px 0;padding:4px 14px 8px;scrollbar-width:none}
+.card{flex:0 0 74%;scroll-snap-align:center;border-radius:20px;padding:14px;position:relative;overflow:hidden;border:2px solid transparent;text-align:left;background:var(--bgc);transition:transform .25s,opacity .25s,border-color .25s}
+.card.on{border-color:rgba(255,255,255,.4)}.card:not(.on){transform:scale(.94);opacity:.7}
+.card .h{display:flex;justify-content:space-between;align-items:center}.card .ic{width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.15);display:grid;place-items:center;font-size:13px;font-weight:700}
+.card .lab{font-size:10.5px;font-weight:700;letter-spacing:.1em;color:rgba(255,255,255,.8);text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.card .lab i{font-style:normal;font-size:9px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18)}
+.card .bal{font-size:27px;font-weight:600;letter-spacing:-.03em;margin-top:12px}.card .pl{font-size:12.5px;font-weight:600;margin-top:1px}
+.card svg{position:absolute;left:0;right:0;bottom:0;width:100%;height:52px;opacity:.55}
+.dots{display:flex;gap:5px;justify-content:center;margin-top:2px}.dots i{width:6px;height:6px;border-radius:50%;background:var(--line2)}.dots i.on{background:var(--peach);width:16px;border-radius:3px}
+.subrow{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:var(--muted);gap:8px}
+.sync{border:1px solid var(--line2);background:none;border-radius:999px;padding:6px 11px;font-size:11.5px;font-weight:600;color:var(--soft);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.sync i{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 0 3px rgba(134,211,176,.2)}
+.seg{display:flex;gap:2px;padding:3px;border-radius:10px;background:rgba(0,0,0,.3)}.seg button{border:0;background:none;color:var(--muted);font-size:11.5px;font-weight:600;padding:6px 9px;border-radius:8px}.seg button.on{background:rgba(255,255,255,.12);color:var(--ink)}
+.dsub{margin-top:10px;width:max-content}
+.perf{margin-top:12px;border-radius:18px;background:rgba(255,255,255,.035);padding:14px}
+.perf .ph{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.pnl{font-size:32px;font-weight:600;letter-spacing:-.04em;line-height:1.05;margin-top:10px}.pnl small{font-size:12px;font-weight:600;letter-spacing:0;color:var(--muted);margin-left:6px}
+.tf{margin-top:10px}
+.chart{margin-top:8px}.chart svg{width:100%;height:140px;display:block}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:10px}
+.cal span{aspect-ratio:1;border-radius:7px;display:grid;place-items:center;font-size:10.5px;font-weight:600;color:rgba(255,255,255,.78);background:rgba(255,255,255,.04);cursor:pointer}
+.cal span.h{color:var(--muted);background:none;aspect-ratio:auto;font-size:10px;cursor:default}.cal span.sel{outline:2px solid var(--peach)}
+.legend{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:8px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border-radius:14px;overflow:hidden;margin-top:12px}.grid div{background:#0C1719;padding:10px}.grid small{display:block;font-size:9.5px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}.grid b{font-size:15px}
+.wr{display:flex;align-items:center;gap:8px}.wr svg{width:30px;height:30px}
+.qa{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.qa button{border:0;border-radius:14px;padding:14px;font-weight:700;font-size:14px}.qa .w{background:rgba(134,211,176,.15);color:var(--up)}.qa .x{background:rgba(238,142,134,.15);color:var(--dn)}
+h4{margin:18px 0 2px;font-size:10.5px;letter-spacing:.12em;color:var(--muted);display:flex;justify-content:space-between;font-weight:700}
+.row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);font-size:13.5px}.row .m{flex:1;min-width:0}.row .m small{display:block;color:var(--muted);font-size:11px;margin-top:2px}.row b{font-weight:600}
+.tag{font-size:10.5px;font-weight:700;padding:3px 7px;border-radius:6px;letter-spacing:.04em;min-width:42px;text-align:center}.tag.l{background:rgba(134,211,176,.15);color:var(--up)}.tag.s{background:rgba(238,142,134,.15);color:var(--dn)}.tag.y{background:rgba(122,184,240,.15);color:#9CCBF5}.tag.n{background:rgba(239,188,144,.15);color:var(--peach)}
+.src{font-size:10px;color:var(--muted);margin-left:6px}
+</style></head><body>
+<div class="note"><h2>Trades · combined mock</h2>
+<ul>
+<li><b>Cards on top (from A):</b> swipe or tap. "All" first, then Polymarket, Prediction, Derivatives, Spot, Bob. Each shows balance, today and a mini chart.</li>
+<li><b>Auto-sync badges:</b> Polymarket, Coinbase and Bob (Pionex.US) show "Synced · 2 min ago" with a Sync now button.</li>
+<li><b>Derivatives</b> has a Coinbase / Futures switch.</li>
+<li><b>Performance card:</b> switch between <b>Curve</b> (equity chart with Today/Week/Month/All, from B) and <b>Calendar</b> (green/red days, tap one, from C).</li>
+<li><b>Stats grid</b> with a win-rate ring, then quick log buttons that fit the section (Won/Lost, Long/Short, Buy/Sell), then recent trades.</li>
+</ul><p>Numbers are made up.</p></div>
+
+<div class="phone"><div class="scr">
+ <div class="top"><div><span class="eb">Trades</span><h1>Today <span class="up num" id="tot" style="font-size:20px"></span></h1></div><button class="sync" id="syncall"><i></i>All synced</button></div>
+ <div class="cards" id="cards"></div><div class="dots" id="dots"></div>
+ <div id="body"></div>
+</div></div>
+
+<script>
+const DSUB={coinbase:{label:"Coinbase",auto:"Coinbase",bal:3240,today:121.6,wr:52,score:"14–13",streak:"W2",count:27,avgW:38.2,avgL:-21.5,
+  trades:[["BTC-PERP · 5x","LONG","94,120 → 94,860","+$92.40","Coinbase"],["ETH-PERP · 3x","SHORT","3,455 → 3,441","+$29.20","Coinbase"],["SOL-PERP · 5x","LONG","184.2 → 183.1","−$18.70","Coinbase"]]},
+ futures:{label:"Futures",auto:null,bal:1880,today:64.8,wr:44,score:"5–8",streak:"L1",count:13,avgW:71.3,avgL:-48.2,
+  trades:[["ES · 1 contract","SHORT","6,041 → 6,047","−$75.00","THTrader"],["NQ · 1 contract","LONG","21,310 → 21,366","+$113.40","Liquid Brokers"],["CL · 1 contract","LONG","68.20 → 68.46","+$26.40","THTrader"]]}};
+let dsub="coinbase";
+const DER={k:"deriv",n:"Derivatives",ic:"⚡",bg:"linear-gradient(150deg,#C26A22,#4A2410)",mode:"ls",subs:true};
+["bal","today","wr","score","streak","count","trades","auto","avgW","avgL"].forEach(p=>Object.defineProperty(DER,p,{get:()=>DSUB[dsub][p]}));
+const SEC=[
+ {k:"poly",n:"Polymarket",ic:"PM",bg:"linear-gradient(150deg,#2A4FD6,#14236B)",mode:"wl",auto:"Polymarket",bal:1284.5,today:42.1,wr:61,score:"23–15",streak:"W3",count:38,avgW:9.8,avgL:-5.4,
+  trades:[["BTC up · 5m","YES",.54,"+$9.20"],["BTC up · 5m","NO",.47,"−$5.00"],["ETH up · 15m","YES",.61,"+$6.40"],["BTC up · 1h","YES",.38,"+$16.30"]]},
+ {k:"pred",n:"Prediction",ic:"◎",bg:"linear-gradient(150deg,#6E50C9,#2B1D5C)",mode:"wl",auto:null,bal:640,today:-12,wr:54,score:"13–11",streak:"L1",count:24,avgW:11.2,avgL:-9.6,
+  trades:[["Fed cuts in Dec","YES",.42,"−$12.00"],["CPI above 3%","NO",.66,"+$8.50"],["Rain in NYC Sat","YES",.30,"+$14.00"]]},
+ DER,
+ {k:"spot",n:"Spot",ic:"◐",bg:"linear-gradient(150deg,#1D8F6E,#0B3A2D)",mode:"bs",auto:null,bal:8460,today:-64.2,wr:null,score:"6",streak:"",count:17,
+  trades:[["BTC · 0.042","HOLD","avg 81,200","+$540.20"],["ETH · 1.3","HOLD","avg 3,410","−$112.00"],["SOL · 22","BUY","at 182.40",""]]},
+ {k:"bob",n:"Bob",ic:"B",bg:"linear-gradient(150deg,#B8921C,#4A3A0A)",mode:"ls",auto:"Pionex.US",bal:2010,today:55,wr:67,score:"18–9",streak:"W5",count:27,avgW:14.2,avgL:-9.1,
+  trades:[["BTC grid bot","LONG","+42 grid fills","+$31.00","Pionex"],["ETH-PERP long","LONG","3,402 → 3,431","+$24.00","Pionex"],["SOL spot buy","BUY","at 181.90","","Pionex"]]}];
+const ALL={k:"all",n:"All sections",ic:"Σ",bg:"linear-gradient(150deg,#3A4A52,#121C20)",mode:"wl",auto:"3 accounts",get bal(){return SEC.reduce((t,x)=>t+x.bal,0)},get today(){return SEC.reduce((t,x)=>t+x.today,0)},wr:58,score:"73–56",streak:"W1",count:146,avgW:18.4,avgL:-11.9,
+ get trades(){return[SEC[0].trades[0].concat("Polymarket"),DSUB.coinbase.trades[0],SEC[4].trades[0],SEC[1].trades[1].concat("Prediction")]}};
+const LIST=[ALL,...SEC];
+const $=id=>document.getElementById(id),usd=n=>"$"+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}),money=n=>(n<0?"−":"+")+usd(n);
+let ci=0,view="curve",tf="Week",day=24,s=3;const R=()=>(s=(s*9301+49297)%233280)/233280;
+const series=(n,tr,vol)=>{let v=0;return[...Array(n)].map(()=>v+=(R()-.5+tr)*vol)};
+const path=(p,W,H,pad=6)=>{const mn=Math.min(...p),mx=Math.max(...p),sx=W/(p.length-1),sy=(H-pad*2)/((mx-mn)||1);return p.map((v,i)=>`${i?"L":"M"}${(i*sx).toFixed(1)} ${(H-pad-(v-mn)*sy).toFixed(1)}`).join(" ")};
+function row(t){const tg={LONG:"l",BUY:"l",HOLD:"l",SHORT:"s",YES:"y",NO:"n"}[t[1]]||"y",pr=typeof t[2]==="number"?(t[2]*100).toFixed(0)+"¢":t[2];
+ return`<div class="row"><span class="tag ${tg}">${t[1]}</span><div class="m">${t[0]}${t[4]?`<span class="src">${t[4]}</span>`:""}<small>${pr}</small></div><b class="num ${t[3].startsWith("−")?"dn":"up"}">${t[3]||"—"}</b></div>`}
+function render(){const x=LIST[ci];$("tot").textContent=money(ALL.today);
+ $("cards").innerHTML=LIST.map((c,i)=>{s=40+i*13;return`<button class="card ${i===ci?"on":""}" data-i="${i}" style="--bgc:${c.bg}"><div class="h"><span class="ic">${c.ic}</span><span class="lab">${c.n}${c.auto?"<i>AUTO</i>":""}</span></div><div class="bal num">${usd(c.bal)}</div><div class="pl num" style="color:${c.today<0?"#FFC2BC":"#C8F2DE"}">${money(c.today)} today</div><svg viewBox="0 0 200 52" preserveAspectRatio="none"><path d="${path(series(30,c.today<0?-.05:.08,3),200,52)}" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="2"/></svg></button>`}).join("");
+ $("dots").innerHTML=LIST.map((_,i)=>`<i class="${i===ci?"on":""}"></i>`).join("");
+ document.querySelectorAll("#cards .card").forEach(b=>b.onclick=()=>{ci=+b.dataset.i;render();setTimeout(()=>document.querySelectorAll("#cards .card")[ci].scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"}),10)});
+ s=7+ci*11;const pts=series(44,x.today<0?-.02:.1,8),neg=x.today<0,lc=neg?"#EE8E86":"#86D3B0";
+ const days=[...Array(30)].map((_,i)=>i>25?null:Math.round((R()-.42)*(x.k==="all"?160:90))),mx=Math.max(...days.filter(v=>v!==null).map(Math.abs)),col=v=>v===null?"rgba(255,255,255,.03)":v>0?`rgba(134,211,176,${.18+.62*v/mx})`:v<0?`rgba(238,142,134,${.18+.62*-v/mx})`:"rgba(255,255,255,.06)";
+ const mult={Today:1,Week:3.4,Month:11.8,All:41}[tf],pnl=view==="curve"?x.today*mult:days.reduce((t,v)=>t+(v||0),0);
+ const quick=x.mode==="ls"?["+ Long","+ Short"]:x.mode==="bs"?["+ Buy","− Sell"]:["+ Won","+ Lost"];
+ $("body").innerHTML=`<div class="subrow"><span>${x.auto?`Synced from ${x.auto} · 2 min ago`:"Logged by hand"}</span>${x.auto?`<button class="sync"><i></i>Sync now</button>`:""}</div>
+ ${x.subs?`<div class="seg dsub">${Object.entries(DSUB).map(([k,v])=>`<button class="${k===dsub?"on":""}" data-s="${k}">${v.label}${v.auto?" · auto":""}</button>`).join("")}</div>`:""}
+ <div class="perf"><div class="ph"><span class="eb">${view==="curve"?`${x.n} · ${tf}`:`${x.n} · November`}</span><div class="seg" id="view"><button class="${view==="curve"?"on":""}" data-v="curve">Curve</button><button class="${view==="cal"?"on":""}" data-v="cal">Calendar</button></div></div>
+  <div class="pnl num ${pnl<0?"dn":"up"}">${money(pnl)}<small>${view==="cal"?`${days.filter(v=>v>0).length} green · ${days.filter(v=>v<0).length} red days`:"P&L"}</small></div>
+  ${view==="curve"?`<div class="seg tf" id="tf">${["Today","Week","Month","All"].map(t=>`<button class="${t===tf?"on":""}">${t}</button>`).join("")}</div>
+  <div class="chart"><svg viewBox="0 0 334 140" preserveAspectRatio="none"><defs><linearGradient id="g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${lc}" stop-opacity=".25"/><stop offset="1" stop-color="${lc}" stop-opacity="0"/></linearGradient></defs>${[0,1,2,3].map(i=>`<line x1="0" x2="334" y1="${6+i*42}" y2="${6+i*42}" stroke="rgba(255,255,255,.06)"/>`).join("")}<path d="${path(pts,334,140)} L334 140 L0 140Z" fill="url(#g)"/><path d="${path(pts,334,140)}" fill="none" stroke="${lc}" stroke-width="2"/></svg></div>`
+  :`<div class="cal">${["M","T","W","T","F","S","S"].map(d=>`<span class="h">${d}</span>`).join("")}${"<span class='h'></span>".repeat(5)}${days.map((v,i)=>`<span class="${i+1===day?"sel":""}" data-d="${i+1}" style="background:${col(v)}">${i+1}</span>`).join("")}</div><div class="legend"><span>● Loss</span><span>Tap a day</span><span>Profit ●</span></div>`}</div>
+ <div class="grid">${x.wr!==null?`<div><small>Win rate</small><div class="wr"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="5"/><circle cx="18" cy="18" r="14" fill="none" stroke="#86D3B0" stroke-width="5" stroke-dasharray="${(x.wr/100*88).toFixed(1)} 88" transform="rotate(-90 18 18)"/></svg><b class="num">${x.wr}%</b></div></div><div><small>W–L</small><b class="num">${x.score}</b></div><div><small>Streak</small><b>${x.streak}</b></div><div><small>Avg win</small><b class="num up">${money(x.avgW)}</b></div><div><small>Avg loss</small><b class="num dn">${money(x.avgL)}</b></div><div><small>Trades</small><b class="num">${x.count}</b></div>`
+  :`<div><small>Value</small><b class="num">${usd(x.bal)}</b></div><div><small>Unrealized</small><b class="num up">+$428.20</b></div><div><small>Holdings</small><b>${x.score}</b></div>`}</div>
+ ${x.k==="all"?"":`<div class="qa"><button class="w">${quick[0]}</button><button class="x">${quick[1]}</button></div>`}
+ <h4><span>${view==="cal"?`NOV ${day}`:x.k==="spot"?"HOLDINGS":x.k==="deriv"?"POSITIONS":"RECENT"}</span><span>${view==="cal"&&days[day-1]!==null?money(days[day-1]):"+ ADD WITH DETAILS"}</span></h4>${x.trades.map(row).join("")}`;
+ document.querySelectorAll("#view button").forEach(b=>b.onclick=()=>{view=b.dataset.v;render()});document.querySelectorAll("#tf button").forEach(b=>b.onclick=()=>{tf=b.textContent;render()});
+ document.querySelectorAll(".cal span[data-d]").forEach(b=>b.onclick=()=>{day=+b.dataset.d;render()});document.querySelectorAll(".dsub button").forEach(b=>b.onclick=()=>{dsub=b.dataset.s;render()})}
+render();
+</script>
+</body></html>
