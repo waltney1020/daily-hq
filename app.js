@@ -1367,7 +1367,7 @@ function foodNotifs(now){const F=FO(),R=F.remind;if(!R.on)return[];const out=[],
  return out}
 // in the app: a gentle nudge at most once an hour while you're hungry
 function foodTick(){if(S.view==="today"&&!document.hidden)renderFoodBar();const R=FO().remind,now=Date.now();if(!R.on||document.hidden||!$("sheetwrap").hidden||RO||!isHungry())return;if(now-(R.lastNudge||0)<60*60000)return;
- R.lastNudge=now;save();const la=lastAteTs();toast(eatLog().length?`🍗 Last ate ${sinceStrShort(la)}. Time to eat.`:"🍗 You haven't eaten yet today.","Log meal",()=>openFood("me"))}
+ R.lastNudge=now;save();if(S.view==="today"){foodNote(true);return}const la=lastAteTs();toast(eatLog().length?`🍗 Last ate ${sinceStrShort(la)}. Time to eat.`:"🍗 You haven't eaten yet today.","Log meal",()=>openFood("me"))}
 // original 10x10 pixel drumstick (o outline, h highlight, m meat, d dark meat, b bone, s bone shade)
 const DRUM=["...ooo....","..ohhmo...",".ohhmmmo..",".ohmmmmo..",".ommmmdo..","..ommddo..","...odoobo.","....o.obbo","......obso",".......oo."];
 const DPAL={o:"#2B140A",h:"#F2A65A",m:"#C9632B",d:"#8A3A16",b:"#F1E7D0",s:"#B8AA8E"},DPALE={o:"#2B140A",h:"#3A2A22",m:"#2E211B",d:"#241914",b:"#3A332B",s:"#2C2722"};
@@ -1377,8 +1377,8 @@ function dogFedPills(){const fed=DFED()[dkey()]||{};return S.dogs.list.map(d=>{c
 function renderFoodBar(){const el=$("foodbar");if(!el)return;const F=FO(),t=foodTotals(),g=F.goal,hungry=isHungry(),la=lastAteTs(),meals=todayMeals().filter(m=>!m.optional);
  const sw=`<button class="fbswap" id="fbswap" aria-label="${F.barMode==="pix"?"Switch to the clean food tracker":"Switch to the game food bar"}">${F.barMode==="pix"?"▤":"🍗"}</button>`;
  el.innerHTML=F.barMode==="pix"
-  ?`<div class="fbtop"><span>Hunger</span>${sw}</div><div class="fbpx ${hungry&&!RM?"hungry":""}">${drumBar()}</div><div class="fbfoot"><span class="fbmono">${hungry?(la?"Starving. Last ate "+sinceStrShort(la):"Nothing eaten yet. Go eat!"):t.kcal>=g.kcal?"Full. Nice.":`${t.kcal.toLocaleString()} / ${g.kcal.toLocaleString()} · last ate ${sinceStrShort(la)}`}</span><span class="fbdogs" id="fbdogs">${dogFedPills()}</span></div>`
-  :`<div class="fbtop"><span>Food today</span>${sw}</div><div class="fbclean"><div class="fbrow"><div class="fbbig">${t.kcal.toLocaleString()}<span>/ ${g.kcal.toLocaleString()} kcal · ${t.prot} g protein</span></div><span class="${hungry?"fbwarn":"fbok"}">${hungry?"Time to eat":"Last ate "+sinceStrShort(la)}</span></div>
+  ?`<div class="fbline"><div class="fbpx ${hungry&&!RM?"hungry":""}" aria-label="Hunger bar">${drumBar()}</div>${sw}</div><div class="fbfoot"><span class="fbmono">${hungry?(la?"Starving. Last ate "+sinceStrShort(la):"Nothing eaten yet. Go eat!"):t.kcal>=g.kcal?"Full. Nice.":`${t.kcal.toLocaleString()} / ${g.kcal.toLocaleString()} · last ate ${sinceStrShort(la)}`}</span><span class="fbdogs" id="fbdogs">${dogFedPills()}</span></div>`
+  :`<div class="fbclean"><div class="fbrow"><div class="fbbig">${t.kcal.toLocaleString()}<span>/ ${g.kcal.toLocaleString()} kcal · ${t.prot} g protein</span></div><span class="${hungry?"fbwarn":"fbok"}">${hungry?"Time to eat":"Last ate "+sinceStrShort(la)}</span>${sw}</div>
    <div class="fbsegs">${meals.map(m=>`<i class="${eatLog().some(x=>x.role===m.role)?"f":""}"></i>`).join("")}</div><div class="fbfoot"><span class="fblab">${meals.map(m=>m.label.replace(/^Meal \d · /,"")).join(" · ")}</span><span class="fbdogs" id="fbdogs">${dogFedPills()}</span></div></div>`;
  $("fbswap").onclick=e=>{e.stopPropagation();F.barMode=F.barMode==="pix"?"clean":"pix";save();renderFoodBar()};
  $("fbdogs").onclick=e=>{e.stopPropagation();openFood("dogs",el)};
@@ -1410,6 +1410,11 @@ function foodGoalsSheet(){const F=FO();openSheet(`<h2>Food settings</h2><p class
  root.querySelector("#fg-s").onclick=()=>{const ra=root.querySelector("#fg-a").value.trim(),rb=root.querySelector("#fg-b").value.trim();if(tmin(ra)>=9998||tmin(rb)>=9998||tmin(rb)<=tmin(ra)){toast("Use times like 8:00 AM and 9:00 PM");return}
   Object.assign(F.remind,{on:optVal(root,"rem")==="on",hours:+optVal(root,"hrs")||4,start:ra,end:rb});F.goal={kcal:Math.max(800,Math.round(+root.querySelector("#fg-k").value||2800)),prot:Math.max(0,Math.round(+root.querySelector("#fg-p").value||160))};F.barMode=optVal(root,"bar")||F.barMode;save();closeSheet();renderFoodBar();toast("Food settings saved")};
  root.querySelector("#fg-g").onclick=()=>grocerySheet()})}
+function feedBoth(slot){const k=dkey(),f=DFED(),day=f[k]||(f[k]={}),all=S.dogs.list.every(d=>day[d.id]&&day[d.id][slot]),now=Date.now();
+ for(const d of S.dogs.list){const x=day[d.id]||(day[d.id]={});if(all)delete x[slot];else if(!x[slot])x[slot]=now}try{navigator.vibrate&&navigator.vibrate(all?6:[10,30,10])}catch(e){}
+ save();renderFoodBar();if(RO&&RO.kind==="food")drawRoom();toast(all?"Unmarked both":`Both dogs fed · ${slot==="am"?"morning":"evening"}`)}
+function feedBothHtml(fed){return`<div class="foall">${[["am","Morning"],["pm","Evening"]].map(([sl,n])=>{const all=S.dogs.list.every(d=>fed[d.id]&&fed[d.id][sl]),ts=all?Math.max(...S.dogs.list.map(d=>fed[d.id][sl])):0;
+ return`<button class="foallb ${all?"f":""}" data-all="${sl}" aria-pressed="${all}"><b>${all?"✓ Both fed":"Feed both"}</b><small>${n}${all?" · "+timeStr(ts):""}</small></button>`}).join("")}</div>`}
 function feedDog(id,slot,el){const k=dkey(),f=DFED(),day=f[k]||(f[k]={}),d=day[id]||(day[id]={});if(d[slot]){delete d[slot]}else{d[slot]=Date.now();try{navigator.vibrate&&navigator.vibrate(10)}catch(e){}}save();renderFoodBar();if(RO&&RO.kind==="food")drawRoom()}
 function drawFoodRoom(){const R=$("troom"),F=FO(),tab=RO.tab||"me",k=dkey(),wk=typeof mealWeek==="function"?mealWeek(k):1;
  const head=`<div class="trbar"><button class="trib" id="tr-back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><span class="treb">${typeof MENU_THEMES!=="undefined"&&MENU_THEMES[wk-1]?`Week ${wk} · ${esc(MENU_THEMES[wk-1])}`:"Food"}</span><button class="trib" id="fo-set" aria-label="Food settings"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button></div>
@@ -1425,7 +1430,7 @@ function drawFoodRoom(){const R=$("troom"),F=FO(),tab=RO.tab||"me",k=dkey(),wk=t
    <button class="forem" id="fo-rem" aria-pressed="${F.remind.on}"><span>Remind me to eat<small>${F.remind.on?`If I haven't logged food in ${F.remind.hours} hours · ${esc(F.remind.start)}–${esc(F.remind.end)}`:"Off"}</small></span><i class="${F.remind.on?"on":""}"></i></button>
    ${log.length?`<div class="foh4"><span>Eaten today</span><span>${t.kcal.toLocaleString()} kcal · ${t.prot} g</span></div>${[...log].sort((a,b)=>a.ts-b.ts).map(x=>`<button class="folog" data-id="${x.id}"><span>${esc(x.name)}<small>${timeStr(x.ts)}${x.kcal?" · "+x.kcal+" kcal":""}${x.prot?" · "+x.prot+" g protein":""}</small></span><b>✎</b></button>`).join("")}`:""}`}
  if(tab==="dogs"){const fed=DFED()[k]||{},D=S.dogs;
-  body=D.list.map(d=>{const s=dogStatus(d),p=dogPortions(d,s.fresh),x=fed[d.id]||{},w=dogCurrentWeight(d);
+  body=feedBothHtml(fed)+D.list.map(d=>{const s=dogStatus(d),p=dogPortions(d,s.fresh),x=fed[d.id]||{},w=dogCurrentWeight(d);
    return`<div class="fodog ${s.urgent.length?"alert":""}"><div class="fodh"><div><b>${esc(d.name)}</b><small>${w>0?w+" lb":"Weight not set"}${d.sensitive?" · settling stomach":""}${d.goal==="lose"?" · losing weight":""}</small></div><span class="fochk ${s.logged?"ok":""}">${s.logged?"✓ Checked in":"Check-in at 9 PM"}</span></div>
     <div class="fofeeds">${[["am","Morning"],["pm","Evening"]].map(([sl,n])=>`<button class="fofeed ${x[sl]?"f":""}" data-dog="${d.id}" data-slot="${sl}" aria-pressed="${!!x[sl]}"><b>${n}</b><small>${x[sl]?"Fed at "+timeStr(x[sl]):"Tap when fed"}</small></button>`).join("")}</div>
     ${p?`<div class="foport"><span>Per meal: <b>${cupStr(p.kibCup/2)} kibble</b> + ${r5(p.freshG/2)} g fresh</span><span>${100-s.fresh}/${s.fresh}</span></div>`:`<div class="trmin">Add ${esc(d.name)}'s weight to see portions.</div>`}
@@ -1444,7 +1449,7 @@ function drawFoodRoom(){const R=$("troom"),F=FO(),tab=RO.tab||"me",k=dkey(),wk=t
   const m=todayMeals().find(x=>x.role===role);if(m)logMeal({name:m.name,kcal:m.kcal,prot:m.prot,role},b)});
  R.querySelectorAll(".forec,.forc").forEach(b=>b.onclick=()=>openRecipe(b.dataset.r));
  R.querySelectorAll(".folog").forEach(b=>b.onclick=()=>editMeal(b.dataset.id));const rm=q("#fo-rem");if(rm)rm.onclick=()=>{F.remind.on=!F.remind.on;save();drawRoom();toast(F.remind.on?"Eat reminders on":"Eat reminders off")};const ad=q("#fo-add");if(ad)ad.onclick=()=>editMeal();
- R.querySelectorAll(".fofeed").forEach(b=>b.onclick=()=>feedDog(b.dataset.dog,b.dataset.slot,b));
+ R.querySelectorAll(".fofeed").forEach(b=>b.onclick=()=>feedDog(b.dataset.dog,b.dataset.slot,b));R.querySelectorAll("[data-all]").forEach(b=>b.onclick=()=>feedBoth(b.dataset.all));
  const fz=n=>{S.dogs.freezer=Math.max(0,(S.dogs.freezer||0)+n);save();drawRoom()};if(q("#fz-m")){q("#fz-m").onclick=()=>fz(-1);q("#fz-p").onclick=()=>fz(1);
   q("#fz-b").onclick=()=>openSheet(`<h2>Add a batch</h2><p class="desc">How many bags went into the freezer?</p><div class="field"><label for="fz-n">Bags</label><input id="fz-n" type="number" inputmode="numeric" value="7"></div><div class="btns"><button class="action p" id="fz-save">Add bags</button></div>`,r=>{r.querySelector("#fz-save").onclick=()=>{const n=Math.round(+r.querySelector("#fz-n").value);if(!(n>0)){toast("Enter how many bags");return}closeSheet();fz(n);toast(n+" bags added to the freezer")}})}
  if(q("#dg-check")){q("#dg-check").onclick=()=>dogCheckIn();q("#dg-rec").onclick=()=>{const r=S.food.recipes.find(x=>x.name===HUSKY_RECIPE.name);if(r)openRecipe(r.id)};q("#dg-edit").onclick=()=>dogEdit()}
@@ -1549,6 +1554,18 @@ function waterNote(force){const n=$("wnote");if(!n||!$("p-today").classList.cont
  n.hidden=false;n.classList.remove("pop","out");void n.offsetWidth;n.classList.add("pop");
  n.onclick=e=>{if(e.target.closest(".wnx"))return hideNote();waterNote(true)};
  clearTimeout(wnoteT);wnoteT=setTimeout(hideNote,25000)}
+const FOOD_TIPS_HUNGRY=["Grab a snack: Greek yogurt, a banana or a handful of nuts. Something beats nothing.","No time to cook? Have a shake now and eat properly later.","Hungry and busy? Eat one of your meal-prep containers cold. It still counts.","A slice of toast with peanut butter takes two minutes and buys you hours.","Eat first, then decide. Skipping meals makes the next one harder.","Low appetite? Start small: a few bites now, the rest in 30 minutes."];
+const FOOD_TIPS=["Protein with every meal. It's the easiest way to hit 160 g.","Eat breakfast within an hour of waking. It sets the pace for the day.","Keep snacks where you'll see them: nuts, fruit, yogurt.","Bulking? Liquid calories are easier: whole milk, shakes and smoothies.","Plan tomorrow's first meal tonight so the morning is automatic.","Eat slowly. It's easier on your stomach and you'll notice when you're full.","Add olive oil, avocado or nuts to meals for easy extra calories.","Train hungry? Have a small carb snack 30 to 60 minutes before."];
+let fnoteAt=0,fnoteLast=-1,fnoteT=0;
+function foodNote(force){const n=$("fnote");if(!n||!$("p-today").classList.contains("on"))return;
+ if(!force&&(Date.now()-fnoteAt<15*60e3||Math.random()>.5))return;fnoteAt=Date.now();const list=isHungry()?FOOD_TIPS_HUNGRY:FOOD_TIPS;
+ let i;do i=Math.floor(Math.random()*list.length);while(i===fnoteLast&&list.length>1);fnoteLast=i;
+ n.style.setProperty("--r",(Math.random()*5-2).toFixed(1)+"deg");
+ n.innerHTML=`<b>🍗 ${isHungry()?"Time to eat":"Food tip"}</b><p>${esc(list[i])}</p><button class="wnx" aria-label="Close tip">×</button>`;
+ n.hidden=false;n.classList.remove("pop","out");void n.offsetWidth;n.classList.add("pop");
+ n.onclick=e=>{if(e.target.closest(".wnx"))return hideFNote();hideFNote();openFood("me")};
+ clearTimeout(fnoteT);fnoteT=setTimeout(hideFNote,25000)}
+function hideFNote(){const n=$("fnote");if(!n||n.hidden)return;clearTimeout(fnoteT);n.classList.add("out");setTimeout(()=>{n.hidden=true;n.classList.remove("out")},260)}
 function hideNote(){const n=$("wnote");if(!n||n.hidden)return;clearTimeout(wnoteT);n.classList.add("out");setTimeout(()=>{n.hidden=true;n.classList.remove("out")},260)}
 /* ===== Water room: the water chip / glasses grow into a full-screen page whose top is a tank that fills
    as you drink (waves, bubbles, a peach pace mark). Quick add, today's drinks, a 7-day chart and the reminder
@@ -1737,7 +1754,7 @@ function go(v,o={}){if(v==="food"){if(o.instant){v="today"}else{openFood(S.ui.wh
  document.querySelectorAll("#dock .tb").forEach(b=>b.classList.toggle("on",b.dataset.v===v||(b.dataset.k==="more"&&!["home","today","money"].includes(v))));qlog(false);
  $("crumb").textContent=NAMES[v];setGreet();morphWeek(v==="today",!!o.instant&&weekCompact===null);
  if(v==="home"){renderCards();layout();requestAnimationFrame(fitHome)}else{setAmbient(PALOF[v]);fitHome()}
- if(v==="today")setTimeout(()=>waterNote(),1200);else hideNote();
+ if(v==="today")setTimeout(()=>{if(typeof isHungry==="function"&&isHungry()&&Math.random()<.75)foodNote(true);else if(Math.random()<.5)waterNote();else foodNote()},1200);else{hideNote();hideFNote()}
  if(v==="today")setTimeout(()=>{const d=$("donext");if(!d||!$("p-today").classList.contains("on"))return;const r=d.getBoundingClientRect();if(r.bottom>innerHeight-90)d.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"})},450);
  if(v==="trades"){renderTrades();requestAnimationFrame(()=>txCenter(false));txSchedule();if(S.settings.wallet&&Date.now()-S.sync.last>60000)sync(false);if(NATIVE&&cbKey()&&Date.now()-((S.cbsync&&S.cbsync.last)||0)>120000)cbSync(false)}
  if(v==="journal")renderJournal();if(v==="today")renderToday();if(v==="food")renderFood();if(v==="smoke")renderSmoke();if(v==="money")renderMoney();
