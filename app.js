@@ -1050,6 +1050,7 @@ function buildNotifs(){const N=nset(),out=[],now=Date.now()+5000;
    if(N.start&&start>now&&t.st!=="pre")out.push({id:nid(k+t.id+"s"),title:"Now: "+t.t,body:`${t.time}${steps}.${nx?` Up next: ${nx.t} at ${nx.time}.`:" Last timed task today."}`,schedule:{at:start,allowWhileIdle:true},channelId:"tasks",actionTypeId:"TASK",extra});
    if(N.pre>0){const pre=atDate(k,t.T-N.pre);if(pre>now&&t.st!=="pre")out.push({id:nid(k+t.id+"p"),title:`In ${N.pre} min: ${t.t}`,body:`Starts at ${t.time}${steps}.`,schedule:{at:pre,allowWhileIdle:true},channelId:"tasks",actionTypeId:"TASK",extra})}
    const dl=atDate(k,t.dl);if(N.missed&&!t.optional&&t.st!=="pre"&&dl>now)out.push({id:nid(k+t.id+"m"),title:"Missed: "+t.t,body:`Planned for ${t.time}. Tap Done if you did it, or check it off late in Today.`,schedule:{at:dl,allowWhileIdle:true},channelId:"missed",actionTypeId:"MISSED",extra})}
+  if(i===0&&typeof foodNotifs==="function")out.push(...foodNotifs(now));
   if(N.water&&!(i===0&&waterToday()>=W().goal)){for(let m=tmin(W().start);m<=tmin(W().end);m+=W().every){const at=atDate(k,m);if(at>now)out.push({id:nid(k+"w"+m),title:"💧 Time for water",body:`Log ${W().step} ml. Goal ${fmtL(W().goal)} today.`,schedule:{at,allowWhileIdle:true},channelId:"water",actionTypeId:"WATER",extra:{k,kind:"water"}})}}}
  out.sort((a,b)=>a.schedule.at-b.schedule.at);return out.slice(0,400)}
 async function scheduleNative(){if(!LN)return;try{const list=buildNotifs();const p=await LN.getPending();
@@ -1057,12 +1058,13 @@ async function scheduleNative(){if(!LN)return;try{const list=buildNotifs();const
   if(list.length)await LN.schedule({notifications:list.map(n=>({...n,smallIcon:"ic_stat_dailyhq",iconColor:"#EFBC90"}))});
   S.native={...(S.native||{}),count:list.length,at:Date.now(),next:list[0]?{t:list[0].title,at:+list[0].schedule.at}:null};try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}catch(e){console.warn("schedule failed",e)}}
 async function nativeInit(){if(!LN)return;try{
- for(const c of [{id:"tasks",name:"Tasks: now and next",importance:4},{id:"missed",name:"Missed tasks",importance:4},{id:"water",name:"Water reminders",importance:3}])await LN.createChannel({...c,visibility:1,vibration:true,lights:true,lightColor:"#EFBC90"}).catch(()=>{});
+ for(const c of [{id:"tasks",name:"Tasks: now and next",importance:4},{id:"missed",name:"Missed tasks",importance:4},{id:"water",name:"Water reminders",importance:3},{id:"food",name:"Eat reminders",importance:4}])await LN.createChannel({...c,visibility:1,vibration:true,lights:true,lightColor:"#EFBC90"}).catch(()=>{});
  await LN.registerActionTypes({types:[{id:"TASK",actions:[{id:"done",title:"Done"},{id:"snooze",title:"Snooze 10 min"}]},{id:"MISSED",actions:[{id:"done",title:"Done (late)"}]},{id:"WATER",actions:[{id:"log",title:`Log ${W().step} ml`}]}]});
  const perm=await LN.checkPermissions();if(perm.display!=="granted")await LN.requestPermissions();
  LN.addListener("localNotificationActionPerformed",ev=>setTimeout(()=>handleNotif(ev),300));
  nativeReady=true;await scheduleNative()}catch(e){console.warn("native init failed",e)}}
 function handleNotif(ev){const n=ev.notification||{},x=n.extra||{},a=ev.actionId;closeSheet();orbit(false);
+ if(x.kind==="food"){go("today");setTimeout(()=>openFood("me"),450);return}
  if(x.kind==="water"){if(a==="log")addWater(W().step);else{go("today");openWater()}return}
  if(!x.id)return;const dd=dayData(x.k),t=tasksFor(x.k).find(y=>y.id===x.id);
  if(a==="done"){if(!dd.done[x.id])toggleTask(x.id,null,x.k);go("today");toast("Checked off: "+(t?t.t:"task"));return}
@@ -1343,7 +1345,7 @@ if($("calmbtn"))$("calmbtn").onclick=()=>openCalm();
    A food bar on Today (an original pixel drumstick bar, or a clean tracker) opens one full Food page in the
    room shell with three tabs: You (calories, protein, today's meal plan), Dogs (fed AM/PM, portions, weight,
    freezer, check-in) and Recipes. Meal calories are estimates you can edit; goals live in Food settings. */
-const FO=()=>{const f=S.food;f.eat=f.eat||{};f.goal=f.goal||{kcal:2800,prot:160};f.barMode=f.barMode||"pix";return f};
+const FO=()=>{const f=S.food;f.eat=f.eat||{};f.goal=f.goal||{kcal:2800,prot:160};f.barMode=f.barMode||"pix";f.remind=f.remind||{on:true,hours:4,start:"8:00 AM",end:"9:00 PM",lastNudge:0};return f};
 const DFED=()=>{S.dogs.fed=S.dogs.fed||{};return S.dogs.fed};
 const eatLog=(k=dkey())=>FO().eat[k]||(FO().eat[k]=[]);
 const ROLE_EST={breakfast:[650,40],prepA:[750,50],prepB:[800,50],drink:[600,35]};
@@ -1354,7 +1356,18 @@ function todayMeals(k=dkey()){const tk=tasksFor(k);return["breakfast","prepA","d
 function foodTotals(k=dkey()){const l=eatLog(k);return{kcal:l.reduce((s,x)=>s+(+x.kcal||0),0),prot:l.reduce((s,x)=>s+(+x.prot||0),0),n:l.length}}
 function lastAteTs(){const all=[...eatLog(dkey())];const y=new Date();y.setDate(y.getDate()-1);all.push(...(FO().eat[dkey(y)]||[]));return all.reduce((m,x)=>Math.max(m,x.ts||0),0)}
 function sinceStrShort(ts){if(!ts)return"not yet today";const m=Math.round((Date.now()-ts)/60000);if(m<2)return"just now";if(m<60)return m+" m ago";const h=Math.floor(m/60);return h+" h "+(m%60?(m%60)+" m ":"")+"ago"}
-function isHungry(){const t=foodTotals(),g=FO().goal,h=new Date().getHours(),la=lastAteTs();if(t.kcal>=g.kcal)return false;if(h<8||h>=22)return false;return !la||Date.now()-la>4*36e5}
+// hungry = inside your reminder window, under your calorie goal, and either nothing eaten 2 h into the day or no food for N hours
+function isHungry(){const t=foodTotals(),g=FO().goal,R=FO().remind,m=new Date().getHours()*60+new Date().getMinutes();if(t.kcal>=g.kcal)return false;if(m<tmin(R.start)||m>tmin(R.end))return false;
+ if(!eatLog().length)return m>=tmin(R.start)+120;return Date.now()-lastAteTs()>(+R.hours||4)*36e5}
+// phone alerts for eating: first one 2 h after your window opens if nothing's logged, then every N hours after your last meal, until the window closes
+function foodNotifs(now){const F=FO(),R=F.remind;if(!R.on)return[];const out=[],a=tmin(R.start),b=tmin(R.end),hrs=Math.max(1,+R.hours||4);if(a>=9998||b>=9998)return out;
+ for(let i=0;i<2;i++){const d=new Date();d.setDate(d.getDate()+i);const k=dkey(d),log=F.eat[k]||[],last=log.reduce((m,x)=>Math.max(m,x.ts||0),0),kc=log.reduce((s,x)=>s+(+x.kcal||0),0);if(kc>=F.goal.kcal)continue;
+  const open=+atDate(k,a),end=+atDate(k,b);let t=last?last+hrs*36e5:+atDate(k,a+120);
+  while(t<=end){if(t>now&&t>=open)out.push({id:nid(k+"food"+Math.round(t/6e4)),title:last?"🍗 Time to eat":"🍗 You haven't eaten today",body:last?`Last meal ${hrs}+ hours ago${kc?` · ${kc.toLocaleString()} of ${F.goal.kcal.toLocaleString()} kcal so far`:""}. Tap to log your next meal.`:"Tap to see today's meal plan and log breakfast.",schedule:{at:new Date(t),allowWhileIdle:true},channelId:"food",extra:{k,kind:"food"}});t+=hrs*36e5}}
+ return out}
+// in the app: a gentle nudge at most once an hour while you're hungry
+function foodTick(){if(S.view==="today"&&!document.hidden)renderFoodBar();const R=FO().remind,now=Date.now();if(!R.on||document.hidden||!$("sheetwrap").hidden||RO||!isHungry())return;if(now-(R.lastNudge||0)<60*60000)return;
+ R.lastNudge=now;save();const la=lastAteTs();toast(eatLog().length?`🍗 Last ate ${sinceStrShort(la)}. Time to eat.`:"🍗 You haven't eaten yet today.","Log meal",()=>openFood("me"))}
 // original 10x10 pixel drumstick (o outline, h highlight, m meat, d dark meat, b bone, s bone shade)
 const DRUM=["...ooo....","..ohhmo...",".ohhmmmo..",".ohmmmmo..",".ommmmdo..","..ommddo..","...odoobo.","....o.obbo","......obso",".......oo."];
 const DPAL={o:"#2B140A",h:"#F2A65A",m:"#C9632B",d:"#8A3A16",b:"#F1E7D0",s:"#B8AA8E"},DPALE={o:"#2B140A",h:"#3A2A22",m:"#2E211B",d:"#241914",b:"#3A332B",s:"#2C2722"};
@@ -1390,8 +1403,12 @@ function editMeal(id){const l=eatLog(),x=id?l.find(e=>e.id===id):null,isNew=!x,m
 function foodGoalsSheet(){const F=FO();openSheet(`<h2>Food settings</h2><p class="desc">Your lean-bulk plan says 150–165 g protein. Set your daily calorie goal to match how you're gaining.</p>
  <div class="pair"><div class="field"><label for="fg-k">Calories a day</label><input id="fg-k" type="number" inputmode="numeric" value="${F.goal.kcal}"></div><div class="field"><label for="fg-p">Protein (g)</label><input id="fg-p" type="number" inputmode="numeric" value="${F.goal.prot}"></div></div>
  <div class="field"><label>Food bar on Today</label>${opts("bar",[["pix","Game (pixel)"],["clean","Clean tracker"]],F.barMode)}</div>
+ <div class="field"><label>Remind me to eat</label>${opts("rem",[["on","On"],["off","Off"]],F.remind.on?"on":"off")}</div>
+ <div class="field"><label>If I haven't logged food for</label>${opts("hrs",[["3","3 hours"],["4","4 hours"],["5","5 hours"]],String(F.remind.hours))}</div>
+ <div class="pair"><div class="field"><label for="fg-a">Between</label><input id="fg-a" value="${esc(F.remind.start)}"></div><div class="field"><label for="fg-b">And</label><input id="fg-b" value="${esc(F.remind.end)}"></div></div>
  <div class="btns"><button class="action p" id="fg-s">Save</button><button class="action" id="fg-g">Grocery list</button></div>`,root=>{bindOpts(root);
- root.querySelector("#fg-s").onclick=()=>{F.goal={kcal:Math.max(800,Math.round(+root.querySelector("#fg-k").value||2800)),prot:Math.max(0,Math.round(+root.querySelector("#fg-p").value||160))};F.barMode=optVal(root,"bar")||F.barMode;save();closeSheet();renderFoodBar();toast("Food settings saved")};
+ root.querySelector("#fg-s").onclick=()=>{const ra=root.querySelector("#fg-a").value.trim(),rb=root.querySelector("#fg-b").value.trim();if(tmin(ra)>=9998||tmin(rb)>=9998||tmin(rb)<=tmin(ra)){toast("Use times like 8:00 AM and 9:00 PM");return}
+  Object.assign(F.remind,{on:optVal(root,"rem")==="on",hours:+optVal(root,"hrs")||4,start:ra,end:rb});F.goal={kcal:Math.max(800,Math.round(+root.querySelector("#fg-k").value||2800)),prot:Math.max(0,Math.round(+root.querySelector("#fg-p").value||160))};F.barMode=optVal(root,"bar")||F.barMode;save();closeSheet();renderFoodBar();toast("Food settings saved")};
  root.querySelector("#fg-g").onclick=()=>grocerySheet()})}
 function feedDog(id,slot,el){const k=dkey(),f=DFED(),day=f[k]||(f[k]={}),d=day[id]||(day[id]={});if(d[slot]){delete d[slot]}else{d[slot]=Date.now();try{navigator.vibrate&&navigator.vibrate(10)}catch(e){}}save();renderFoodBar();if(RO&&RO.kind==="food")drawRoom()}
 function drawFoodRoom(){const R=$("troom"),F=FO(),tab=RO.tab||"me",k=dkey(),wk=typeof mealWeek==="function"?mealWeek(k):1;
@@ -1405,6 +1422,7 @@ function drawFoodRoom(){const R=$("troom"),F=FO(),tab=RO.tab||"me",k=dkey(),wk=t
    <div class="fomac"><div><small>Protein</small><b>${t.prot} / ${g.prot} g</b><i><em style="width:${Math.min(100,t.prot/g.prot*100)}%"></em></i></div><div><small>Meals</small><b>${meals.filter(m=>!m.optional&&log.some(x=>x.role===m.role)).length} of ${meals.filter(m=>!m.optional).length}</b><i><em style="width:${meals.length?meals.filter(m=>!m.optional&&log.some(x=>x.role===m.role)).length/Math.max(1,meals.filter(m=>!m.optional).length)*100:0}%"></em></i></div><div><small>Logged</small><b>${log.length} today</b><i><em style="width:0"></em></i></div></div>
    <div class="foh4"><span>Today's meal plan</span><button class="link" id="fo-add">+ Something else</button></div>
    ${meals.map(m=>{const done=log.find(x=>x.role===m.role);return`<div class="fomeal ${done?"done":m===next?"next":""}"><i>${ROLE_ICON[m.role]||"🍽️"}</i><div class="m">${esc(m.name)}<small>${esc(m.label)}${m.time?" · "+esc(m.time):""}${m.kcal?` · ~${m.kcal} kcal · ${m.prot} g`:""}${m.optional?" · if intake is low":""}</small></div>${m.r?`<button class="forec" data-r="${m.r.id}">Recipe</button>`:""}<button class="fogo" data-role="${m.role}">${done?"✓ Ate":"Ate it"}</button></div>`}).join("")||`<p class="trmin">No meal plan for today.</p>`}
+   <button class="forem" id="fo-rem" aria-pressed="${F.remind.on}"><span>Remind me to eat<small>${F.remind.on?`If I haven't logged food in ${F.remind.hours} hours · ${esc(F.remind.start)}–${esc(F.remind.end)}`:"Off"}</small></span><i class="${F.remind.on?"on":""}"></i></button>
    ${log.length?`<div class="foh4"><span>Eaten today</span><span>${t.kcal.toLocaleString()} kcal · ${t.prot} g</span></div>${[...log].sort((a,b)=>a.ts-b.ts).map(x=>`<button class="folog" data-id="${x.id}"><span>${esc(x.name)}<small>${timeStr(x.ts)}${x.kcal?" · "+x.kcal+" kcal":""}${x.prot?" · "+x.prot+" g protein":""}</small></span><b>✎</b></button>`).join("")}`:""}`}
  if(tab==="dogs"){const fed=DFED()[k]||{},D=S.dogs;
   body=D.list.map(d=>{const s=dogStatus(d),p=dogPortions(d,s.fresh),x=fed[d.id]||{},w=dogCurrentWeight(d);
@@ -1425,7 +1443,7 @@ function drawFoodRoom(){const R=$("troom"),F=FO(),tab=RO.tab||"me",k=dkey(),wk=t
  R.querySelectorAll(".fogo").forEach(b=>b.onclick=()=>{const role=b.dataset.role,l=eatLog(),ex=l.findIndex(x=>x.role===role);if(ex>=0){l.splice(ex,1);save();renderFoodBar();drawRoom();return}
   const m=todayMeals().find(x=>x.role===role);if(m)logMeal({name:m.name,kcal:m.kcal,prot:m.prot,role},b)});
  R.querySelectorAll(".forec,.forc").forEach(b=>b.onclick=()=>openRecipe(b.dataset.r));
- R.querySelectorAll(".folog").forEach(b=>b.onclick=()=>editMeal(b.dataset.id));const ad=q("#fo-add");if(ad)ad.onclick=()=>editMeal();
+ R.querySelectorAll(".folog").forEach(b=>b.onclick=()=>editMeal(b.dataset.id));const rm=q("#fo-rem");if(rm)rm.onclick=()=>{F.remind.on=!F.remind.on;save();drawRoom();toast(F.remind.on?"Eat reminders on":"Eat reminders off")};const ad=q("#fo-add");if(ad)ad.onclick=()=>editMeal();
  R.querySelectorAll(".fofeed").forEach(b=>b.onclick=()=>feedDog(b.dataset.dog,b.dataset.slot,b));
  const fz=n=>{S.dogs.freezer=Math.max(0,(S.dogs.freezer||0)+n);save();drawRoom()};if(q("#fz-m")){q("#fz-m").onclick=()=>fz(-1);q("#fz-p").onclick=()=>fz(1);
   q("#fz-b").onclick=()=>openSheet(`<h2>Add a batch</h2><p class="desc">How many bags went into the freezer?</p><div class="field"><label for="fz-n">Bags</label><input id="fz-n" type="number" inputmode="numeric" value="7"></div><div class="btns"><button class="action p" id="fz-save">Add bags</button></div>`,r=>{r.querySelector("#fz-save").onclick=()=>{const n=Math.round(+r.querySelector("#fz-n").value);if(!(n>0)){toast("Enter how many bags");return}closeSheet();fz(n);toast(n+" bags added to the freezer")}})}
@@ -1842,7 +1860,7 @@ rail.classList.add("still");paintCards();renderAll();layout();requestAnimationFr
 const start=(location.hash||"").slice(1);if(start==="dogs"){S.ui.who="dog";go("today",{instant:true});setTimeout(()=>openFood("dogs"),500)}else if(start==="calm"){go("smoke",{instant:true});setTimeout(openCalm,300)}
 else go(NAMES[start]?start:"home",{instant:true});
 addEventListener("resize",()=>{glide();segAll()});
-setInterval(waterTick,60000);setInterval(()=>{if(S.view==="today"&&!document.hidden)renderFoodBar()},60000);setTimeout(waterTick,4000);setInterval(taskTick,30000);setTimeout(taskTick,2000);$("alertsbtn").onclick=()=>NATIVE?nativeAlertsSheet():alertsSheet();if(NATIVE){nativeInit();document.documentElement.classList.add("native")}$("waterbtn").onclick=e=>openWater(e.currentTarget);
+setInterval(waterTick,60000);setInterval(foodTick,60000);setTimeout(foodTick,6000);setTimeout(waterTick,4000);setInterval(taskTick,30000);setTimeout(taskTick,2000);$("alertsbtn").onclick=()=>NATIVE?nativeAlertsSheet():alertsSheet();if(NATIVE){nativeInit();document.documentElement.classList.add("native")}$("waterbtn").onclick=e=>openWater(e.currentTarget);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){tick();waterTick();taskTick();scheduleSoon();if(S.settings.wallet&&Date.now()-S.sync.last>120000)sync(false)}});
 if(S.settings.wallet&&Date.now()-S.sync.last>120000)setTimeout(()=>sync(false),800);
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(()=>{});
