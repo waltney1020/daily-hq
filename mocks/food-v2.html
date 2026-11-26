@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Food v2 mocks</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,500&display=swap">
+<style>
+:root{--ink:#EEF3F0;--soft:#C4D5D8;--muted:#8FA3A1;--line:#2A1C14;--line2:#3A2A20;--peach:#EFBC90;--mint:#86D3B0;--rose:#EE8E86;--acc:#E9A25E;--bg:#0E0805}
+*{box-sizing:border-box}body{margin:0;background:#05090B;font-family:"Work Sans",system-ui,sans-serif;color:var(--ink);padding:24px 14px}
+h1{text-align:center;font-size:20px;font-weight:600;margin:0 0 4px}.lead{text-align:center;color:var(--muted);font-size:13px;margin:0 auto 22px;max-width:760px;line-height:1.5}
+.wrap{display:flex;gap:26px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+.col{width:390px}.col h2{margin:0 0 4px;font-size:17px;font-weight:600}.col p{margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.45;min-height:92px}
+.phone{position:relative;width:390px;height:820px;border-radius:38px;overflow:hidden;background:var(--bg);border:8px solid #1A1F22}
+.scr{position:absolute;inset:0;overflow-y:auto;padding:18px 16px 30px;scrollbar-width:none}
+button{font-family:inherit;cursor:pointer;color:inherit}
+.tabs{display:flex;gap:3px;padding:4px;border-radius:14px;background:rgba(40,22,12,.9);margin-bottom:14px}.tabs span{flex:1;text-align:center;font-weight:600;font-size:13px;padding:9px 0;border-radius:10px;color:var(--muted)}.tabs span.on{background:var(--acc);color:#2A1606}
+.eb{font-size:10.5px;font-weight:700;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+/* You tab */
+.top{display:flex;justify-content:space-between;align-items:flex-end}
+.big{font-size:38px;font-weight:600;letter-spacing:-.04em;line-height:1}.big span{font-size:14px;color:var(--muted);font-weight:500;margin-left:5px;letter-spacing:0}
+.st{font-size:12.5px;margin-top:6px;color:var(--muted)}.st b{color:var(--peach)}
+.px{display:flex;gap:2px;margin-top:12px}.px svg{width:31px;height:31px;image-rendering:pixelated;shape-rendering:crispEdges;transition:opacity .3s}
+.px.low svg{animation:sh .45s steps(2) infinite}.px.low svg:nth-child(odd){animation-delay:.1s}@keyframes sh{50%{transform:translateY(-2px)}}
+.meter{display:flex;justify-content:space-between;font-family:ui-monospace,Consolas,monospace;font-size:11.5px;color:#E9D4A8;margin-top:6px}
+.sim{margin-top:12px;padding:10px 12px;border-radius:12px;background:rgba(120,160,255,.08);border:1px dashed rgba(140,170,255,.35)}.sim label{display:flex;justify-content:space-between;font-size:11.5px;color:var(--soft)}.sim input{width:100%;margin-top:6px;accent-color:var(--acc)}
+.quick{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:14px;padding-bottom:2px}
+.qp{flex:none;display:flex;align-items:center;gap:6px;border:1px solid var(--line2);background:rgba(255,255,255,.03);border-radius:999px;padding:7px 11px 7px 8px;font-size:12.5px;font-weight:600;color:var(--soft);transition:transform .12s,background .2s}
+.qp small{font-weight:500;color:var(--muted);font-size:11px}.qp:active{transform:scale(.94)}.qp.hit{background:rgba(134,211,176,.15);border-color:rgba(134,211,176,.5)}
+.qlab{display:flex;justify-content:space-between;align-items:center;margin-top:16px}.qlab a{font-size:12px;color:var(--peach);font-weight:600}
+.meal{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}.meal i{font-style:normal;font-size:18px;width:24px;text-align:center}.meal .m{flex:1;min-width:0}.meal small{display:block;font-size:11px;color:var(--muted)}
+.meal button{border:0;border-radius:9px;padding:7px 10px;font-size:12px;font-weight:700;background:rgba(255,255,255,.07)}.meal.done{opacity:.55}.meal.done button{color:var(--mint);background:rgba(134,211,176,.14)}.meal.next button{background:var(--acc);color:#2A1606}
+.log{margin-top:10px;font-size:12px;color:var(--muted)}
+/* Recipes menu */
+.mtabs{display:flex;gap:16px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--line2);margin:0 -16px;padding:0 16px}
+.mtabs button{flex:none;border:0;background:none;padding:10px 0;font-size:13.5px;font-weight:600;color:var(--muted);position:relative}.mtabs button.on{color:var(--ink)}.mtabs button.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--acc);border-radius:2px}
+.pick{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.pick button{border:0;border-radius:14px;padding:13px;font-weight:700;font-size:13.5px;text-align:left}.pick small{display:block;font-weight:500;font-size:11px;margin-top:2px;opacity:.8}
+.pick .r{background:rgba(255,255,255,.07)}.pick .c{background:var(--acc);color:#2A1606}
+.menu{margin-top:14px;padding:18px 16px;border-radius:18px;background:linear-gradient(180deg,#1B110B,#140C08);box-shadow:inset 0 0 0 1px rgba(233,162,94,.18)}
+.menu h3{margin:0;text-align:center;font-family:"Playfair Display",serif;font-weight:600;font-size:22px;color:#F3D9B8}.menu .sub{text-align:center;font-family:"Playfair Display",serif;font-style:italic;font-size:12.5px;color:var(--muted);margin-top:2px}
+.sec{margin-top:16px}.sec h5{margin:0 0 6px;display:flex;align-items:center;gap:8px;font-size:10.5px;font-weight:700;letter-spacing:.18em;color:var(--acc);text-transform:uppercase}.sec h5::after{content:"";flex:1;height:1px;background:rgba(233,162,94,.25)}
+.dish{display:block;width:100%;border:0;background:none;text-align:left;padding:7px 0}
+.dl{display:flex;align-items:baseline;gap:6px}.dl b{font-family:"Playfair Display",serif;font-size:15.5px;font-weight:600;color:var(--ink)}.dl i{flex:1;border-bottom:1.5px dotted rgba(255,255,255,.2);transform:translateY(-3px)}.dl span{font-size:12px;color:var(--peach);font-weight:600;white-space:nowrap}
+.dd{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.35}.wk{display:inline-block;font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:999px;background:rgba(233,162,94,.15);color:var(--acc);margin-left:6px;vertical-align:2px}
+/* choose-for-me reveal */
+.reveal{position:absolute;inset:0;z-index:5;background:rgba(8,4,2,.72);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:24px}.reveal.on{display:flex}
+.rcard{width:100%;border-radius:22px;padding:20px;background:linear-gradient(160deg,#2A170C,#140C08);box-shadow:0 30px 80px rgba(0,0,0,.6),inset 0 0 0 1px rgba(233,162,94,.3);text-align:center}
+.rcard .why{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--acc);text-transform:uppercase}
+.slot{height:70px;overflow:hidden;margin:12px 0 6px;position:relative}.slot div{font-family:"Playfair Display",serif;font-size:22px;font-weight:600;line-height:70px;transition:transform .08s}
+.rcard .meta{font-size:12.5px;color:var(--muted)}.rcard .acts{display:flex;gap:8px;margin-top:16px}.rcard .acts button{flex:1;border:0;border-radius:12px;padding:12px;font-weight:700;font-size:13.5px;background:rgba(255,255,255,.08)}.rcard .acts .p{background:var(--acc);color:#2A1606}
+</style></head><body>
+<h1>Food · presets, hunger that drains, and a recipe menu</h1>
+<p class="lead">Two phones, both interactive. Left: the <b>You</b> tab with quick presets and a game-style hunger bar that drops through the day (drag the time slider to watch it). Right: <b>Recipes</b> as a menu, with tabs by meal, sections by main food, and <b>Random</b> / <b>Choose for me</b>.</p>
+<div class="wrap">
+
+<div class="col"><h2>You tab · presets + draining hunger</h2><p><b>Quick presets:</b> a single row of small chips (Banana ~105, Yogurt ~150, Nuts ~170, Toast + PB ~300, Sandwich ~450, Takeout ~900). One tap logs it; long-press to edit. <b>Hunger bar:</b> starts a bit low when you wake, drains about one drumstick every 70 minutes, and each meal refills it based on its calories, like in the game. Under 3 drumsticks it wobbles.</p>
+<div class="phone"><div class="scr">
+ <div class="tabs"><span class="on">You</span><span>Dogs</span><span>Recipes</span></div>
+ <div class="top"><div><div class="big" id="kc"></div><div class="st" id="st"></div></div><span class="eb" id="clock"></span></div>
+ <div class="px" id="px"></div><div class="meter"><span id="hl"></span><span>empties in <b id="eta"></b></span></div>
+ <div class="sim"><label><span>⏱ Mock only: move through the day</span><b id="simt"></b></label><input type="range" id="slider" min="420" max="1320" step="10" value="800"></div>
+ <div class="qlab"><span class="eb">Quick add</span><a>Edit presets</a></div>
+ <div class="quick" id="quick"></div>
+ <div class="qlab"><span class="eb">Today's plan</span><a>+ Something else</a></div>
+ <div id="meals"></div>
+ <div class="log" id="log"></div>
+</div></div></div>
+
+<div class="col"><h2>Recipes · a menu</h2><p><b>Tabs by meal:</b> Breakfast · Mains · Shakes &amp; drinks · Snacks · Lessons · Dogs. Inside each, dishes are <b>grouped by main food</b> (Chicken, Beef, Seafood, Eggs…) like a restaurant menu, with time and est. calories. <b>🎲 Random</b> spins through the tab; <b>Choose for me</b> picks smartly: this week's theme first, something you haven't eaten lately, and enough protein.</p>
+<div class="phone" id="ph2"><div class="scr">
+ <div class="tabs"><span>You</span><span>Dogs</span><span class="on">Recipes</span></div>
+ <div class="mtabs" id="mtabs"></div>
+ <div class="pick"><button class="r" id="rand">🎲 Random<small>Spin through this tab</small></button><button class="c" id="choose">✨ Choose for me<small>This week, high protein, not eaten lately</small></button></div>
+ <div class="menu"><h3 id="mh"></h3><div class="sub" id="ms"></div><div id="menu"></div></div>
+</div>
+<div class="reveal" id="reveal"><div class="rcard"><div class="why" id="rwhy"></div><div class="slot"><div id="slot"></div></div><div class="meta" id="rmeta"></div><div class="acts"><button id="again">Another</button><button class="p" id="cook">Cook this →</button></div></div></div>
+</div></div>
+
+</div>
+<script>
+const $=id=>document.getElementById(id);
+// ---------- left phone ----------
+const SPR=["...ooo....","..ohhmo...",".ohhmmmo..",".ohmmmmo..",".ommmmdo..","..ommddo..","...odoobo.","....o.obbo","......obso",".......oo."];
+const PAL={o:"#2B140A",h:"#F2A65A",m:"#C9632B",d:"#8A3A16",b:"#F1E7D0",s:"#B8AA8E"},PALE={o:"#2B140A",h:"#3A2A22",m:"#2E211B",d:"#241914",b:"#3A332B",s:"#2C2722"};
+const stick=f=>{let r="";SPR.forEach((row,y)=>[...row].forEach((ch,x)=>{if(ch===".")return;const full=f>=1||(f>=.5&&x>=5);r+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${(full?PAL:PALE)[ch]}"/>`}));return`<svg viewBox="0 0 10 10">${r}</svg>`};
+const GOAL=2800,WAKE=420,DRAIN=70; // 1 point (half drumstick) per 35 min → one drumstick per 70 min
+const PRESETS=[["🍌","Banana",105,1],["🥛","Greek yogurt",150,15],["🥜","Handful of nuts",170,6],["🍞","Toast + peanut butter",300,10],["🥪","Sandwich",450,25],["🥡","Takeout meal",900,35]];
+const PLAN=[["🍳","Salmon, eggs and avocado toast",650,"7:15 AM",435],["🥗","Lemon garlic chicken rice bowls",750,"12:30 PM",750],["🍝","Creamy garlic chicken pasta",800,"5:30 PM",1050]];
+let now=800,eaten=[[PLAN[0][1],650,445]];
+// hunger points 0..20 (10 drumsticks): start 8 at wake, -1 per 35 min, +kcal*20/GOAL*1.4 per meal (capped at 20)
+function hunger(t){let lvl=8,last=WAKE;const evs=[...eaten].filter(e=>e[2]<=t).sort((a,b)=>a[2]-b[2]);for(const e of evs){lvl=Math.max(0,lvl-(e[2]-last)/35);lvl=Math.min(20,lvl+e[1]*20/GOAL*1.4);last=e[2]}return Math.max(0,lvl-(t-last)/35)}
+const tstr=m=>{const h=Math.floor(m/60),mm=m%60;return`${h%12||12}:${String(mm).padStart(2,"0")} ${h<12?"AM":"PM"}`};
+function renderL(){const lv=hunger(now),k=eaten.filter(e=>e[2]<=now).reduce((s,e)=>s+e[1],0);
+ $("px").innerHTML=[...Array(10)].map((_,i)=>stick(lv/2-i>=1?1:lv/2-i>=.5?.5:0)).join("");$("px").classList.toggle("low",lv<6);
+ $("kc").innerHTML=`${k.toLocaleString()}<span>/ ${GOAL.toLocaleString()} kcal</span>`;$("st").innerHTML=lv<6?"<b>You're running on empty. Eat something.</b>":lv<12?"Getting hungry soon":"You're good for now";
+ $("hl").textContent=`hunger ${Math.round(lv/2*10)/10}/10`;$("eta").textContent=lv<=0?"now":`${Math.floor(lv*35/60)} h ${Math.round(lv*35%60)} m`;$("clock").textContent=tstr(now);$("simt").textContent=tstr(now);
+ $("quick").innerHTML=PRESETS.map((p,i)=>`<button class="qp" data-i="${i}">${p[0]} ${p[1]} <small>~${p[2]}</small></button>`).join("");
+ document.querySelectorAll(".qp").forEach(b=>b.onclick=()=>{const p=PRESETS[+b.dataset.i];eaten.push([p[1],p[2],now]);b.classList.add("hit");setTimeout(renderL,350)});
+ const next=PLAN.findIndex(p=>!eaten.some(e=>e[0]===p[1]));
+ $("meals").innerHTML=PLAN.map((p,i)=>{const d=eaten.some(e=>e[0]===p[1]);return`<div class="meal ${d?"done":i===next?"next":""}"><i>${p[0]}</i><div class="m">${p[1]}<small>${p[3]} · ~${p[2]} kcal</small></div><button data-i="${i}">${d?"✓ Ate":"Ate it"}</button></div>`}).join("");
+ document.querySelectorAll(".meal button").forEach(b=>b.onclick=()=>{const p=PLAN[+b.dataset.i],ix=eaten.findIndex(e=>e[0]===p[1]);if(ix>=0)eaten.splice(ix,1);else eaten.push([p[1],p[2],now]);renderL()});
+ const ex=eaten.filter(e=>!PLAN.some(p=>p[1]===e[0]));$("log").textContent=ex.length?"Also logged: "+ex.map(e=>`${e[0]} at ${tstr(e[2])}`).join(", "):""}
+$("slider").oninput=e=>{now=+e.target.value;renderL()};
+// ---------- right phone ----------
+const R=[
+ ["Breakfast","Eggs","Salmon, eggs and avocado toast","Salmon, 2–3 eggs, avocado, sourdough",650,"20 min",1],["Breakfast","Beef","Steak and egg breakfast bowl","Steak, eggs, roast potatoes, pico",720,"30 min",2],
+ ["Breakfast","Eggs","Greek breakfast plate","Eggs, yogurt & berries, avocado toast",600,"15 min",3],["Breakfast","Seafood","Egg, salmon and rice bowl","Salmon, eggs, jasmine rice, cucumber",680,"20 min",4],
+ ["Mains","Chicken","Lemon garlic chicken rice bowls","Thighs, jasmine rice, broccoli, parsley",750,"45 min",1],["Mains","Chicken","Creamy garlic chicken pasta","Parmesan, spinach, light cream",800,"35 min",1],
+ ["Mains","Chicken","Cilantro-lime chicken bowls","Rice, black beans, corn, avocado",760,"40 min",2],["Mains","Chicken","Fresh ginger garlic chicken rice","Broccoli, peppers, lime, green onion",720,"30 min",4],
+ ["Mains","Beef","Beef tomato pasta","Lean beef, crushed tomato, basil",820,"35 min",2],["Mains","Beef","Beef and spinach garlic pasta","Seared beef, spinach, Parmesan",800,"30 min",3],
+ ["Mains","Seafood","Garlic herb salmon bowls","Basmati, cucumber, yogurt sauce",740,"30 min",3],["Mains","Seafood","Garlic shrimp pasta","Cherry tomatoes, spinach, lemon",700,"25 min",4],
+ ["Shakes & drinks","Shakes","Banana peanut butter bulk shake","Whole milk, yogurt, banana, PB, oats",600,"5 min",1],["Shakes & drinks","Shakes","Berry yogurt shake","Milk, yogurt, berries, banana, oats",520,"5 min",3],
+ ["Shakes & drinks","Refreshers","Lime-cucumber water","Cucumber, lime, mint",0,"5 min",2],["Shakes & drinks","Refreshers","Ginger-lemon iced green tea","Ginger, lemon, mint",0,"10 min",4],
+ ["Snacks","Quick","Toast + peanut butter","Sourdough, natural PB, banana",300,"3 min",0],["Snacks","Quick","Greek yogurt bowl","Yogurt, berries, walnuts",320,"3 min",0],
+ ["Lessons","Fridays","Pan-seared steak + garlic potatoes","Learn to sear and rest a steak",900,"50 min",1],["Lessons","Fridays","Homemade chicken tacos","Pico, lime, warm tortillas",780,"40 min",2],["Lessons","Fridays","Homemade beef stir-fry","Knife skills, high heat",760,"35 min",4],
+ ["Dogs","Meals","Senior husky meal prep","Turkey, rice, green beans, carrots",0,"1 h",0],["Dogs","Meals","Plain chicken and rice","For upset stomachs",0,"30 min",0],["Dogs","Treats","Frozen peanut butter banana bites","Xylitol-free PB only",0,"10 min",0]];
+const TABS=["Breakfast","Mains","Shakes & drinks","Snacks","Lessons","Dogs"],WEEK=1;let tab="Mains";
+function renderR(){$("mtabs").innerHTML=TABS.map(t=>`<button class="${t===tab?"on":""}">${t}</button>`).join("");document.querySelectorAll("#mtabs button").forEach(b=>b.onclick=()=>{tab=b.textContent;renderR()});
+ const list=R.filter(r=>r[0]===tab),groups=[...new Set(list.map(r=>r[1]))];$("mh").textContent=tab;$("ms").textContent=tab==="Dogs"?"no seasoning, ever":`week ${WEEK} · lemon garlic`;
+ $("menu").innerHTML=groups.map(g=>`<div class="sec"><h5>${g}</h5>${list.filter(r=>r[1]===g).map(r=>`<button class="dish"><div class="dl"><b>${r[2]}</b>${r[6]===WEEK?'<span class="wk">THIS WEEK</span>':""}<i></i><span>${r[4]?"~"+r[4]+" kcal":r[5]}</span></div><div class="dd">${r[3]} · ${r[5]}</div></button>`).join("")}</div>`).join("")}
+function spin(smart){const list=R.filter(r=>r[0]===tab);let pick;if(smart){const c=list.filter(r=>r[6]===WEEK||r[6]===0);pick=(c.length?c:list).sort((a,b)=>b[4]-a[4])[0]}else pick=list[Math.floor(Math.random()*list.length)];
+ $("reveal").classList.add("on");$("rwhy").textContent=smart?"Chosen for you":"🎲 Random pick";$("rmeta").textContent="";let n=0;const iv=setInterval(()=>{$("slot").textContent=list[n++%list.length][2];if(n>14){clearInterval(iv);$("slot").textContent=pick[2];
+  $("rmeta").textContent=smart?`This week's menu · ~${pick[4]} kcal · ${pick[5]} · high protein`:`${pick[3]} · ${pick[5]}${pick[4]?" · ~"+pick[4]+" kcal":""}`}},70+n*4)}
+$("rand").onclick=()=>spin(false);$("choose").onclick=()=>spin(true);$("again").onclick=()=>spin(false);$("cook").onclick=()=>$("reveal").classList.remove("on");$("reveal").onclick=e=>{if(e.target.id==="reveal")$("reveal").classList.remove("on")};
+renderL();renderR();
+</script>
+</body></html>
