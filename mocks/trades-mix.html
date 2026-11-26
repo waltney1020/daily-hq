@@ -19,7 +19,14 @@ button{font-family:inherit;cursor:pointer;color:inherit}
 .card .lab i{font-style:normal;font-size:9px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18)}
 .card .bal{font-size:27px;font-weight:600;letter-spacing:-.03em;margin-top:12px}.card .pl{font-size:12.5px;font-weight:600;margin-top:1px}
 .card svg{position:absolute;left:0;right:0;bottom:0;width:100%;height:52px;opacity:.55}
-.dots{display:flex;gap:5px;justify-content:center;margin-top:2px}.dots i{width:6px;height:6px;border-radius:50%;background:var(--line2)}.dots i.on{background:var(--peach);width:16px;border-radius:3px}
+.dots{display:flex;gap:5px;justify-content:center;margin-top:2px}.dots i{width:6px;height:6px;border-radius:50%;background:var(--line2);position:relative;overflow:hidden;transition:width .3s}
+.dots i.on{width:22px;border-radius:3px;background:rgba(239,188,144,.3)}
+.dots i.on::after{content:"";position:absolute;inset:0;background:var(--peach);transform-origin:left;animation:dotfill var(--dur,6s) linear forwards}
+.dots.paused i.on::after{animation-play-state:paused}.dots.held i.on::after{animation:none;transform:none}
+@keyframes dotfill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+#body{transition:opacity .25s}#body.swap{opacity:0}
+.card svg path{stroke-dasharray:600;stroke-dashoffset:0}.card.on.draw svg path{animation:draw 1.2s ease-out}
+@keyframes draw{from{stroke-dashoffset:600}}
 .subrow{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:var(--muted);gap:8px}
 .sync{border:1px solid var(--line2);background:none;border-radius:999px;padding:6px 11px;font-size:11.5px;font-weight:600;color:var(--soft);display:flex;align-items:center;gap:6px;white-space:nowrap}
 .sync i{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 0 3px rgba(134,211,176,.2)}
@@ -44,7 +51,7 @@ h4{margin:18px 0 2px;font-size:10.5px;letter-spacing:.12em;color:var(--muted);di
 </style></head><body>
 <div class="note"><h2>Trades · combined mock</h2>
 <ul>
-<li><b>Cards on top (from A):</b> swipe or tap. "All" first, then Polymarket, Prediction, Derivatives, Spot, Bob. Each shows balance, today and a mini chart.</li>
+<li><b>Cards on top (from A):</b> they <b>rotate on their own every 6 s</b> (the peach dot fills up as a timer) and the page below fades to that section. Touch to pause; tap a card to stay on it for 20 s. Or swipe/tap yourself. "All" first, then Polymarket, Prediction, Derivatives, Spot, Bob. Each shows balance, today and a mini chart.</li>
 <li><b>Auto-sync badges:</b> Polymarket, Coinbase and Bob (Pionex.US) show "Synced · 2 min ago" with a Sync now button.</li>
 <li><b>Derivatives</b> has a Coinbase / Futures switch.</li>
 <li><b>Performance card:</b> switch between <b>Curve</b> (equity chart with Today/Week/Month/All, from B) and <b>Calendar</b> (green/red days, tap one, from C).</li>
@@ -87,7 +94,8 @@ function row(t){const tg={LONG:"l",BUY:"l",HOLD:"l",SHORT:"s",YES:"y",NO:"n"}[t[
 function render(){const x=LIST[ci];$("tot").textContent=money(ALL.today);
  $("cards").innerHTML=LIST.map((c,i)=>{s=40+i*13;return`<button class="card ${i===ci?"on":""}" data-i="${i}" style="--bgc:${c.bg}"><div class="h"><span class="ic">${c.ic}</span><span class="lab">${c.n}${c.auto?"<i>AUTO</i>":""}</span></div><div class="bal num">${usd(c.bal)}</div><div class="pl num" style="color:${c.today<0?"#FFC2BC":"#C8F2DE"}">${money(c.today)} today</div><svg viewBox="0 0 200 52" preserveAspectRatio="none"><path d="${path(series(30,c.today<0?-.05:.08,3),200,52)}" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="2"/></svg></button>`}).join("");
  $("dots").innerHTML=LIST.map((_,i)=>`<i class="${i===ci?"on":""}"></i>`).join("");
- document.querySelectorAll("#cards .card").forEach(b=>b.onclick=()=>{ci=+b.dataset.i;render();setTimeout(()=>document.querySelectorAll("#cards .card")[ci].scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"}),10)});
+ document.querySelectorAll("#cards .card").forEach(b=>b.onclick=()=>{ci=+b.dataset.i;hold();render();center()});
+ $("dots").classList.toggle("held",heldUntil>Date.now());
  s=7+ci*11;const pts=series(44,x.today<0?-.02:.1,8),neg=x.today<0,lc=neg?"#EE8E86":"#86D3B0";
  const days=[...Array(30)].map((_,i)=>i>25?null:Math.round((R()-.42)*(x.k==="all"?160:90))),mx=Math.max(...days.filter(v=>v!==null).map(Math.abs)),col=v=>v===null?"rgba(255,255,255,.03)":v>0?`rgba(134,211,176,${.18+.62*v/mx})`:v<0?`rgba(238,142,134,${.18+.62*-v/mx})`:"rgba(255,255,255,.06)";
  const mult={Today:1,Week:3.4,Month:11.8,All:41}[tf],pnl=view==="curve"?x.today*mult:days.reduce((t,v)=>t+(v||0),0);
@@ -105,6 +113,16 @@ function render(){const x=LIST[ci];$("tot").textContent=money(ALL.today);
  <h4><span>${view==="cal"?`NOV ${day}`:x.k==="spot"?"HOLDINGS":x.k==="deriv"?"POSITIONS":"RECENT"}</span><span>${view==="cal"&&days[day-1]!==null?money(days[day-1]):"+ ADD WITH DETAILS"}</span></h4>${x.trades.map(row).join("")}`;
  document.querySelectorAll("#view button").forEach(b=>b.onclick=()=>{view=b.dataset.v;render()});document.querySelectorAll("#tf button").forEach(b=>b.onclick=()=>{tf=b.textContent;render()});
  document.querySelectorAll(".cal span[data-d]").forEach(b=>b.onclick=()=>{day=+b.dataset.d;render()});document.querySelectorAll(".dsub button").forEach(b=>b.onclick=()=>{dsub=b.dataset.s;render()})}
-render();
+// auto-rotate the account cards: every 6 s the next card slides in and the page below crossfades to it.
+// Touching the cards pauses it; tapping a card or using the page holds that card for 20 s, then rotation resumes.
+const AUTO=6000;let heldUntil=0,timer=null,touching=false;
+const center=()=>setTimeout(()=>{const c=document.querySelectorAll("#cards .card")[ci],w=$("cards");if(c)w.scrollTo({left:c.offsetLeft-(w.clientWidth-c.offsetWidth)/2,behavior:"smooth"})},10);
+function hold(){heldUntil=Date.now()+20000;schedule()}
+function schedule(){clearTimeout(timer);const wait=Math.max(AUTO,heldUntil-Date.now());timer=setTimeout(step,wait)}
+function step(){if(touching||heldUntil>Date.now()){schedule();return}$("body").classList.add("swap");setTimeout(()=>{ci=(ci+1)%LIST.length;render();center();document.querySelectorAll("#cards .card")[ci].classList.add("draw");$("body").classList.remove("swap")},220);schedule()}
+const cw=$("cards");cw.addEventListener("pointerdown",()=>{touching=true;$("dots").classList.add("paused")});
+addEventListener("pointerup",()=>{if(touching){touching=false;$("dots").classList.remove("paused")}});
+$("body").addEventListener("click",hold);
+render();center();schedule();
 </script>
 </body></html>
