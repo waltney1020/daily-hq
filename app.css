@@ -392,7 +392,7 @@ body.roomopen{overflow:hidden}
 .stm b{display:block;font-size:17px}.stm small{font-size:10px}.stm.got{background:rgba(243,198,79,.16);color:#F3C64F}.stm.next{box-shadow:inset 0 0 0 1.5px var(--acc);color:var(--ink)}
 .stm i{position:absolute;left:0;bottom:0;height:3px;background:var(--acc)}
 .stcal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.stcal span.h{font-size:10px;color:var(--muted);text-align:center}
-.stcal button{aspect-ratio:1;border:0;border-radius:8px;background:rgba(255,255,255,.05);color:rgba(255,255,255,.78);font:600 11px var(--f);cursor:pointer;padding:0}
+.stcal button{aspect-ratio:auto;height:clamp(34px,10vw,46px);border:0;border-radius:8px;background:rgba(255,255,255,.05);color:rgba(255,255,255,.78);font:600 11px var(--f);cursor:pointer;padding:0}
 .stcal button.ok{background:rgba(255,154,77,.3)}.stcal button.part{background:linear-gradient(0deg,rgba(255,154,77,.22) var(--p),rgba(255,255,255,.05) var(--p))}.stcal button.miss{background:rgba(238,142,134,.12)}
 .stcal button.fut,.stcal button.pre{opacity:.3;cursor:default}.stcal button.today{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.5)}.stcal button.sel{outline:2px solid var(--acc);outline-offset:1px}
 .stlegend{display:flex;gap:14px;margin-top:8px;font-size:11px;color:var(--muted)}.stlegend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px}
