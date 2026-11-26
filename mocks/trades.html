@@ -56,7 +56,7 @@ button{font-family:inherit;cursor:pointer;color:inherit}
 .c .day{margin-top:14px;padding:12px;border-radius:14px;background:rgba(255,255,255,.04)}
 </style></head><body>
 <h1>Trades · three directions</h1>
-<p class="lead">Every option has the five sections you asked for: <b>Polymarket · Prediction · Derivatives · Spot · Bob</b>. Tap the sections on each phone to see how each one changes (made-up numbers). <b>Polymarket and Coinbase (Spot) sync automatically</b>; Prediction, Derivatives and Bob you log by hand.</p>
+<p class="lead">Every option has the five sections you asked for: <b>Polymarket · Prediction · Derivatives (Coinbase + Futures) · Spot · Bob</b>. Tap the sections on each phone to see how each one changes (made-up numbers). <b>Polymarket, Coinbase (under Derivatives) and Bob via Pionex.US sync automatically</b>. Prediction, Futures and Spot you log by hand.</p>
 <div class="wrap">
 
 <div class="col"><h2>A · Account cards</h2><p>Each section is a colored card you swipe through, like bank accounts in a wallet app: balance, today's P&amp;L and a mini chart. Below it: that section's stats, quick log buttons and recent trades.</p>
@@ -70,17 +70,25 @@ button{font-family:inherit;cursor:pointer;color:inherit}
 
 </div>
 <script>
+// Derivatives has two sub-accounts: Coinbase (auto-sync) and Futures (the market you trade, logged by hand)
+const DSUB={coinbase:{label:"Coinbase · auto",auto:true,bal:3240,today:121.6,wr:52,score:"14–13",streak:"W2",count:27,
+  trades:[["BTC-PERP · 5x (Coinbase)","LONG","94,120 → 94,860","+$92.40"],["ETH-PERP · 3x (Coinbase)","SHORT","3,455 → 3,441","+$29.20"],["SOL-PERP · 5x (Coinbase)","LONG","184.2 → 183.1","−$18.70"]],sub:"Synced from Coinbase 1 min ago"},
+ futures:{label:"Futures",auto:false,bal:1880,today:64.8,wr:44,score:"5–8",streak:"L1",count:13,
+  trades:[["ES · 1 contract","SHORT","6,041 → 6,047","−$75.00"],["NQ · 1 contract","LONG","21,310 → 21,366","+$113.40"],["CL · 1 contract","LONG","68.20 → 68.46","+$26.40"]],sub:"Liquid Brokers / THTrader · logged by hand"}};
+let dsub="coinbase";const DER={k:"deriv",n:"Derivatives",ic:"⚡",c:"#D97A2B",bg:"linear-gradient(150deg,#C26A22,#4A2410)",subs:true};
+["bal","today","wr","score","streak","count","trades","sub","auto"].forEach(p=>Object.defineProperty(DER,p,{get:()=>DSUB[dsub][p]}));
+const subSeg=x=>x.subs?`<div class="seg dsub" style="margin-top:10px;width:max-content">${Object.entries(DSUB).map(([k,v])=>`<button class="${k===dsub?"on":""}" data-s="${k}">${v.label}</button>`).join("")}</div>`:"";
+document.addEventListener("click",e=>{const b=e.target.closest(".dsub button");if(b){dsub=b.dataset.s;A();B();C()}});
 const SEC=[
  {k:"poly",n:"Polymarket",ic:"PM",c:"#2E5BFF",bg:"linear-gradient(150deg,#2A4FD6,#14236B)",bal:1284.5,today:42.1,wr:61,score:"23–15",streak:"W3",count:38,auto:true,
   trades:[["BTC up · 5m","YES",.54,"+$9.20"],["BTC up · 5m","NO",.47,"−$5.00"],["ETH up · 15m","YES",.61,"+$6.40"],["BTC up · 1h","YES",.38,"+$16.30"]],sub:"Synced 2 min ago · 5m"},
  {k:"pred",n:"Prediction",ic:"◎",c:"#7C5CE0",bg:"linear-gradient(150deg,#6E50C9,#2B1D5C)",bal:640,today:-12,wr:54,score:"13–11",streak:"L1",count:24,
   trades:[["Fed cuts in Dec","YES",.42,"−$12.00"],["CPI above 3%","NO",.66,"+$8.50"],["Rain in NYC Sat","YES",.30,"+$14.00"]],sub:"Kalshi and others · logged by hand"},
- {k:"deriv",n:"Derivatives",ic:"⚡",c:"#D97A2B",bg:"linear-gradient(150deg,#C26A22,#4A2410)",bal:5120,today:186.4,wr:48,score:"19–21",streak:"W2",count:40,
-  trades:[["BTC-PERP · 10x","LONG","94,120 → 94,860","+$148.00"],["ES · 1 contract","SHORT","6,041 → 6,047","−$75.00"],["NQ · 1 contract","LONG","21,310 → 21,366","+$113.40"]],sub:"Futures and perps · Liquid Brokers, THTrader"},
- {k:"spot",n:"Spot",ic:"C",c:"#0052FF",bg:"linear-gradient(150deg,#1D5BE0,#0A2160)",bal:8460,today:-64.2,wr:null,score:"6 holdings",streak:"",count:17,auto:true,
-  trades:[["BTC · 0.042","HOLD","avg 81,200","+$540.20"],["ETH · 1.3","HOLD","avg 3,410","−$112.00"],["SOL · 22","BUY","at 182.40",""]],sub:"Synced from Coinbase 1 min ago · buys and sells log themselves"},
- {k:"bob",n:"Bob",ic:"B",c:"#C9A227",bg:"linear-gradient(150deg,#B8921C,#4A3A0A)",bal:2010,today:55,wr:67,score:"18–9",streak:"W5",count:27,
-  trades:[["BTC up · 15m (Bob)","YES",.52,"+$11.00"],["ETH-PERP long (Bob)","LONG","3,402 → 3,431","+$44.00"]],sub:"Bob's calls · you copied 6 of 9 this week"}];
+ DER,
+ {k:"spot",n:"Spot",ic:"◐",c:"#1F9E7A",bg:"linear-gradient(150deg,#1D8F6E,#0B3A2D)",bal:8460,today:-64.2,wr:null,score:"6 holdings",streak:"",count:17,
+  trades:[["BTC · 0.042","HOLD","avg 81,200","+$540.20"],["ETH · 1.3","HOLD","avg 3,410","−$112.00"],["SOL · 22","BUY","at 182.40",""]],sub:"Holdings · logged by hand"},
+ {k:"bob",n:"Bob",ic:"B",c:"#C9A227",bg:"linear-gradient(150deg,#B8921C,#4A3A0A)",bal:2010,today:55,wr:67,score:"18–9",streak:"W5",count:27,auto:true,
+  trades:[["BTC grid bot (Pionex)","LONG","+42 grid fills","+$31.00"],["ETH-PERP long (Pionex)","LONG","3,402 → 3,431","+$24.00"],["SOL spot buy","BUY","at 181.90",""]],sub:"Synced from Pionex.US 3 min ago"}];
 const $=id=>document.getElementById(id),money=n=>(n<0?"−":"+")+"$"+Math.abs(n).toFixed(2),cls=n=>n<0?"dn":"up";
 let s=3;const R=()=>(s=(s*9301+49297)%233280)/233280;
 const series=(n,trend,vol)=>{let v=0;return[...Array(n)].map(()=>v+=(R()-.5+trend)*vol)};
@@ -91,14 +99,14 @@ function trRow(t,sec){const tg=t[1]==="LONG"||t[1]==="BUY"||t[1]==="HOLD"?"l":t[
 let ai=0;function A(){$("atot").textContent=money(SEC.reduce((t,x)=>t+x.today,0));
  $("acards").innerHTML=SEC.map((x,i)=>`<button class="acard ${i===ai?"on":""}" data-i="${i}" style="--bgc:${x.bg}"><div class="top"><span class="ic">${x.ic}</span><span class="eb" style="color:rgba(255,255,255,.75)">${x.n}${x.auto?" · auto":""}</span></div><div class="bal num">$${x.bal.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="pl num" style="color:${x.today<0?"#FFC2BC":"#C8F2DE"}">${money(x.today)} today</div><svg viewBox="0 0 200 56" preserveAspectRatio="none"><path d="${path(series(30,x.today<0?-.05:.08,3),200,56)}" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2"/></svg></button>`).join("");
  document.querySelectorAll("#acards .acard").forEach(b=>b.onclick=()=>{ai=+b.dataset.i;A();b.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"})});
- const x=SEC[ai];$("abody").innerHTML=`<div class="mute" style="font-size:12px;margin-top:6px">${x.sub}</div>
+ const x=SEC[ai];$("abody").innerHTML=`${subSeg(x)}<div class="mute" style="font-size:12px;margin-top:6px">${x.sub}</div>
  <div class="stats">${x.wr!==null?`<div><small>Win rate</small><b class="num">${x.wr}%</b></div><div><small>Score</small><b class="num">${x.score}</b></div><div><small>Streak</small><b>${x.streak}</b></div>`:`<div style="grid-column:span 3"><small>Holdings</small><b>${x.score}</b></div>`}<div><small>Trades</small><b class="num">${x.count}</b></div></div>
  ${x.k==="spot"?`<div class="qa"><button class="w">+ Buy</button><button class="x">− Sell</button></div>`:x.k==="deriv"?`<div class="qa"><button class="w">+ Long</button><button class="x">+ Short</button></div>`:`<div class="qa"><button class="w">+ Won</button><button class="x">+ Lost</button></div>`}
  <div class="eb" style="margin-top:16px">Recent</div>${x.trades.map(t=>trRow(t,x)).join("")}`}
 // B
 let bi=0,btf="Week";function B(){$("btabs").innerHTML=SEC.map((x,i)=>`<button class="${i===bi?"on":""}" data-i="${i}">${x.n}</button>`).join("");document.querySelectorAll("#btabs button").forEach(b=>b.onclick=()=>{bi=+b.dataset.i;B()});
  const x=SEC[bi],pts=series(40,x.today<0?-.02:.1,8),last=pts[pts.length-1];
- $("bbody").innerHTML=`<div class="head"><div><span class="eb">${x.n} · ${btf}</span><div class="pnl num ${cls(x.today*3)}">${money(x.today*3.4)}<small class="mute">Balance $${x.bal.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} · ${x.sub.split(" · ")[0]}</small></div></div><div class="seg" id="btf">${["Today","Week","Month","All"].map(t=>`<button class="${t===btf?"on":""}">${t}</button>`).join("")}</div></div>
+ $("bbody").innerHTML=`${subSeg(x)}<div class="head"><div><span class="eb">${x.n} · ${btf}</span><div class="pnl num ${cls(x.today*3)}">${money(x.today*3.4)}<small class="mute">Balance $${x.bal.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} · ${x.sub.split(" · ")[0]}</small></div></div><div class="seg" id="btf">${["Today","Week","Month","All"].map(t=>`<button class="${t===btf?"on":""}">${t}</button>`).join("")}</div></div>
  <div class="chart"><svg viewBox="0 0 352 150" preserveAspectRatio="none"><defs><linearGradient id="bg${bi}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${x.today<0?"#EE8E86":"#86D3B0"}" stop-opacity=".25"/><stop offset="1" stop-color="${x.today<0?"#EE8E86":"#86D3B0"}" stop-opacity="0"/></linearGradient></defs>
   ${[0,1,2,3].map(i=>`<line x1="0" x2="352" y1="${8+i*44}" y2="${8+i*44}" stroke="rgba(255,255,255,.06)"/>`).join("")}<path d="${path(pts,352,150,8)} L352 150 L0 150Z" fill="url(#bg${bi})"/><path d="${path(pts,352,150,8)}" fill="none" stroke="${x.today<0?"#EE8E86":"#86D3B0"}" stroke-width="2"/></svg></div>
  <div class="grid">${x.wr!==null?`<div><small>Win rate</small><b class="num">${x.wr}%</b></div><div><small>W–L</small><b class="num">${x.score}</b></div><div><small>Streak</small><b>${x.streak}</b></div><div><small>Avg win</small><b class="num up">+$14.20</b></div><div><small>Avg loss</small><b class="num dn">−$9.10</b></div><div><small>Trades</small><b class="num">${x.count}</b></div>`:`<div><small>Value</small><b class="num">$${x.bal.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</b></div><div><small>Unrealized</small><b class="num up">+$428</b></div><div><small>Holdings</small><b>6</b></div>`}</div>
@@ -110,7 +118,7 @@ let ci=-1,cday=24;const SECALL={k:"all",n:"All",c:"#EFBC90"};function C(){$("cse
  const x=ci<0?null:SEC[ci],wr=x?(x.wr??58):58;s=11+ci*7;const days=[...Array(30)].map((_,i)=>i>25?null:Math.round((R()-.42)*120));
  const max=Math.max(...days.filter(v=>v!==null).map(Math.abs)),col=v=>v===null?"rgba(255,255,255,.03)":v===0?"rgba(255,255,255,.06)":v>0?`rgba(134,211,176,${.18+.62*v/max})`:`rgba(238,142,134,${.18+.62*-v/max})`;
  const green=days.filter(v=>v>0).length,red=days.filter(v=>v<0).length,dv=days[cday-1];
- $("cbody").innerHTML=`<div class="score"><div class="ring"><svg viewBox="0 0 36 36" width="86" height="86"><circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="3.5"/><circle cx="18" cy="18" r="15" fill="none" stroke="#86D3B0" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="${(wr/100*94.2).toFixed(1)} 94.2" transform="rotate(-90 18 18)"/></svg><b>${wr}%<small>WIN RATE</small></b></div>
+ $("cbody").innerHTML=`${x?subSeg(x):""}<div class="score"><div class="ring"><svg viewBox="0 0 36 36" width="86" height="86"><circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="3.5"/><circle cx="18" cy="18" r="15" fill="none" stroke="#86D3B0" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="${(wr/100*94.2).toFixed(1)} 94.2" transform="rotate(-90 18 18)"/></svg><b>${wr}%<small>WIN RATE</small></b></div>
   <div><span class="eb">November · ${x?x.n:"All sections"}</span><div class="big num up">+$1,482.60</div><div class="mute" style="font-size:12.5px">${green} green days · ${red} red days</div></div></div>
  <div class="cal">${["M","T","W","T","F","S","S"].map(d=>`<span class="h">${d}</span>`).join("")}<span class="h"></span><span class="h"></span><span class="h"></span><span class="h"></span><span class="h"></span>${days.map((v,i)=>`<span class="${i+1===cday?"sel":""}" data-d="${i+1}" style="background:${col(v)}">${i+1}</span>`).join("")}</div>
  <div class="legend"><span>● Loss</span><span>Tap a day</span><span>Profit ●</span></div>
