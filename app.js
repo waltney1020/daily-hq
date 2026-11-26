@@ -545,8 +545,8 @@ function renderSyncLine(msg){const el=$("syncline");if(!el)return;const sec=txSe
 let shownBal=null;
 function renderTrades(){if(!$("txcards"))return;const sec=txSec(),accs=sec.accs(),kind=sec.k==="all"?"all":TKIND[accs[0]],range=S.ui.trange||"Week",view=S.ui.tview||"curve",tf=sec.k==="poly"?S.ui.tf:undefined;
  const allSt=tstats(Object.keys(ACCTS),"All"),tt=$("txtoday");tt.textContent=pnlStr(allSt.today);tt.className="num "+(allSt.today>0?"up":allSt.today<0?"dn":"");
- $("txcards").innerHTML=TSEC.map(s=>{const st=tstats(s.accs(),"All"),spot=s.k==="spot",bal=spot?holdings().reduce((t,h)=>t+h.cost,0):st.bal,auto=((s.k==="poly"||s.k==="all")&&!!S.settings.wallet)||(s.k==="deriv"&&S.ui.dsub!=="fut"&&!!cbKey());
-  return`<button class="txc ${s.k===sec.k?"on":""}" data-s="${s.k}" style="--bgc:${s.bg}"><span class="h"><span class="ic">${s.ic}</span><span class="lab">${s.k==="deriv"?"Derivatives · "+ACCTS[S.ui.dsub==="fut"?"fut":"cb"]:s.n}${auto?"<i>AUTO</i>":""}</span></span><span class="bal num">${money(bal)}</span><span class="pl num" style="color:${!spot&&st.today<0?"#FFC2BC":"#C8F2DE"}">${spot?"invested · "+holdings().length+" holdings":pnlStr(st.today)+" today"}</span><svg viewBox="0 0 200 52" preserveAspectRatio="none" aria-hidden="true"><path d="${txSpark(s.accs())}" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="2" vector-effect="non-scaling-stroke"/></svg></button>`}).join("");
+ txPaintCards(TSEC.map(s=>{const st=tstats(s.accs(),"All"),spot=s.k==="spot",bal=spot?holdings().reduce((t,h)=>t+h.cost,0):st.bal,auto=((s.k==="poly"||s.k==="all")&&!!S.settings.wallet)||(s.k==="deriv"&&S.ui.dsub!=="fut"&&!!cbKey());
+  return`<button class="txc ${s.k===sec.k?"on":""}" data-s="${s.k}" style="--bgc:${s.bg}"><span class="h"><span class="ic">${s.ic}</span><span class="lab">${s.k==="deriv"?"Derivatives · "+ACCTS[S.ui.dsub==="fut"?"fut":"cb"]:s.n}${auto?"<i>AUTO</i>":""}</span></span><span class="bal num">${money(bal)}</span><span class="pl num" style="color:${!spot&&st.today<0?"#FFC2BC":"#C8F2DE"}">${spot?"invested · "+holdings().length+" holdings":pnlStr(st.today)+" today"}</span><svg viewBox="0 0 200 52" preserveAspectRatio="none" aria-hidden="true"><path d="${txSpark(s.accs())}" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="2" vector-effect="non-scaling-stroke"/></svg></button>`}));
  $("txdots").innerHTML=TSEC.map(s=>`<i class="${s.k===sec.k?"on":""}"></i>`).join("");$("txdots").classList.toggle("held",txHeld>Date.now()||RM);
  const st=tstats(accs,range,tf),hold=kind==="bs"?holdings():null;
  // performance: curve or calendar
@@ -577,7 +577,7 @@ function renderTrades(){if(!$("txcards"))return;const sec=txSec(),accs=sec.accs(
  <div class="txh4"><span>${view==="cal"&&txDay?now.toLocaleDateString([], {month:"long"})+" "+txDay:kind==="bs"?"Buys and sells":"Recent"}</span>${kind!=="all"?`<button class="link" id="addtrade">+ Add with details</button>`:""}</div>
  <div id="log">${list.length?list.slice(0,n).map(x=>txRow(x,sec.k==="all")).join("")+(list.length>n?`<button class="action more" id="moretr">Show more</button>`:""):`<div class="empty"><b>${view==="cal"&&txDay?"No trades that day":sec.k==="poly"&&!S.settings.wallet?"Connect your wallet or log your first trade":"Nothing here yet"}</b>${kind==="all"?"Pick a section and log your first trade.":kind==="wl"?"Tap + Won or + Lost after each trade.":kind==="ls"?"Tap + Long or + Short to log a position.":kind==="bs"?"Tap + Buy when you buy, − Sell when you sell.":""}</div>`}</div>`;
  const B=$("txbody");renderSyncLine();
- $("txcards").querySelectorAll(".txc").forEach(b=>b.onclick=()=>{S.ui.tsec=b.dataset.s;S.ui.shown=30;txDay=null;txHold();save();renderTrades();txCenter()});
+
  B.querySelectorAll("[data-d]").forEach(b=>{if(b.closest(".txsub"))b.onclick=()=>{S.ui.dsub=b.dataset.d;txHold();save();renderTrades()};else b.onclick=()=>{const d=+b.dataset.d;txDay=txDay===d?null:d;txHold();renderTrades()}});
  B.querySelectorAll("[data-tf]").forEach(b=>b.onclick=()=>{S.ui.tf=b.dataset.tf;S.ui.shown=30;txHold();save();renderTrades();renderCards()});
  B.querySelectorAll("#txview button").forEach(b=>b.onclick=()=>{S.ui.tview=b.dataset.v;txDay=null;txHold();save();renderTrades()});
@@ -586,19 +586,32 @@ function renderTrades(){if(!$("txcards"))return;const sec=txSec(),accs=sec.accs(
  const ad=$("addtrade");if(ad)ad.onclick=()=>{txHold();editTrade(accs[0])};
  B.querySelectorAll(".txrow[data-id]").forEach(b=>b.onclick=()=>{txHold();editTrade(b.dataset.a,b.dataset.id)});
  const mt=$("moretr");if(mt)mt.onclick=()=>{S.ui.shown=(S.ui.shown||30)+30;txHold();renderTrades()}}
-function txCenter(smooth=true){const w=$("txcards"),c=w&&w.querySelector(".txc.on");if(c&&w.clientWidth)w.scrollTo({left:c.offsetLeft-(w.clientWidth-c.offsetWidth)/2,behavior:smooth&&!RM?"smooth":"auto"})}
+function txCenter(smooth=true){const w=$("txcards"),c=w&&w.querySelector(".txc.on");txProgUntil=Date.now()+(smooth&&!RM?900:120);if(c&&w.clientWidth)w.scrollTo({left:c.offsetLeft-(w.clientWidth-c.offsetWidth)/2,behavior:smooth&&!RM?"smooth":"auto"})}
 function txHold(){txHeld=Date.now()+20000;const d=$("txdots");if(d)d.classList.add("held");txSchedule()}
 function txSchedule(){clearTimeout(txTimer);if(RM)return;txTimer=setTimeout(txStep,Math.max(6000,txHeld-Date.now()))}
 function txStep(){if(S.view!=="trades")return;
  if(txTouch||txHeld>Date.now()||document.hidden||!$("sheetwrap").hidden||RO||scrollY>160){txSchedule();return}
  const i=TSEC.findIndex(s=>s.k===S.ui.tsec);S.ui.tsec=TSEC[(i+1)%TSEC.length].k;txDay=null;S.ui.shown=30;const b=$("txbody");b.classList.add("swap");
  setTimeout(()=>{renderTrades();txCenter();const c=$("txcards").querySelector(".txc.on");if(c)c.classList.add("draw");b.classList.remove("swap")},200);txSchedule()}
+// Card strip touch handling. A swipe ends with touchend OR touchcancel/pointercancel (Android cancels the pointer
+// when the browser takes over scrolling), so all of them release the "finger down" state. Only scrolls that started
+// with your finger can change the selected section; the app's own centering animation is ignored.
+let txProgUntil=0,txUser=false,txLastScroll=0;
+function txPaintCards(list){const w=$("txcards"),tmp=document.createElement("div");tmp.innerHTML=list.join("");const nb=[...tmp.children];
+ if(w.children.length!==nb.length){w.innerHTML="";nb.forEach(b=>{b.addEventListener("click",function(){if(Date.now()-txLastScroll<250&&txUser)return;S.ui.tsec=this.dataset.s;S.ui.shown=30;txDay=null;txHold();save();renderTrades();txCenter()});w.appendChild(b)});return}
+ [...w.children].forEach((el,i)=>{const b=nb[i];el.className=b.className;el.dataset.s=b.dataset.s;el.setAttribute("style",b.getAttribute("style")||"");el.setAttribute("aria-selected",b.classList.contains("on"));el.innerHTML=b.innerHTML})}
+function txSettle(){const w=$("txcards");if(!w||!txUser||txTouch||Date.now()<txProgUntil)return;txUser=false;const mid=w.scrollLeft+w.clientWidth/2;let best=null,bd=1e9;
+ w.querySelectorAll(".txc").forEach(c=>{const d=Math.abs(c.offsetLeft+c.offsetWidth/2-mid);if(d<bd){bd=d;best=c}});
+ if(best&&best.dataset.s!==S.ui.tsec){S.ui.tsec=best.dataset.s;txDay=null;S.ui.shown=30;txHold();save();renderTrades()}else txHold()}
 (function(){const w=$("txcards");if(!w)return;
- w.addEventListener("pointerdown",()=>{txTouch=true;$("txdots").classList.add("paused")});
- addEventListener("pointerup",()=>{if(!txTouch)return;txTouch=false;$("txdots").classList.remove("paused")});
- // after you swipe the strip yourself, the card that lands in the middle becomes the selected section
- w.addEventListener("scroll",()=>{if(!txTouch&&!w.dataset.swiping)return;w.dataset.swiping=1;clearTimeout(txScrollT);txScrollT=setTimeout(()=>{delete w.dataset.swiping;const mid=w.scrollLeft+w.clientWidth/2;let best=null,bd=1e9;
-  w.querySelectorAll(".txc").forEach(c=>{const d=Math.abs(c.offsetLeft+c.offsetWidth/2-mid);if(d<bd){bd=d;best=c}});if(best&&best.dataset.s!==S.ui.tsec){S.ui.tsec=best.dataset.s;txDay=null;S.ui.shown=30;txHold();save();renderTrades();txCenter()}},160)},{passive:true})})();
+ const down=()=>{txTouch=true;txUser=true;$("txdots").classList.add("paused")};
+ const up=()=>{if(!txTouch)return;txTouch=false;$("txdots").classList.remove("paused");clearTimeout(txScrollT);txScrollT=setTimeout(txSettle,220)};
+ w.addEventListener("touchstart",down,{passive:true});w.addEventListener("pointerdown",e=>{if(e.pointerType==="mouse")down()});
+ for(const ev of ["touchend","touchcancel"])addEventListener(ev,up,{passive:true});for(const ev of ["pointerup","pointercancel"])addEventListener(ev,up);
+ w.addEventListener("scroll",()=>{if(Date.now()<txProgUntil)return;txLastScroll=Date.now();clearTimeout(txScrollT);txScrollT=setTimeout(txSettle,180)},{passive:true});
+ if("onscrollend" in w)w.addEventListener("scrollend",()=>{if(Date.now()<txProgUntil)return;clearTimeout(txScrollT);txSettle()});
+ // touching anywhere on the Trades page means you're reading or about to scroll: don't rotate under your finger
+ const pg=$("p-trades");if(pg)pg.addEventListener("touchstart",()=>{txHeld=Math.max(txHeld,Date.now()+8000)},{passive:true})})();
 function quickLog(win,el,a=txSec().accs()[0]){const stake=+S.settings.stake[a]||0,tf=a==="poly"?(S.ui.tf==="All"?"5m":S.ui.tf):"";
  const t={id:uid(),src:"manual",ts:Date.now(),title:S.settings.label[a]||ACCTS[a],tf,side:"",cost:stake,pnl:win?stake:-stake,res:win?"win":"loss",note:""};S.trades[a].push(t);addXP(5,el);save();renderTrades();renderCards();
  if(win)burst(el,["#86D3B0","#EFBC90","#F6E3CC"]);toast((win?"Win":"Loss")+" logged · "+pnlStr(t.pnl),"Edit",()=>editTrade(a,t.id))}
