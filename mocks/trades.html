@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Trades mocks</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{--ink:#EEF3F0;--soft:#C4D5D8;--muted:#8FA3A1;--line:#1C2E33;--line2:#2A4248;--peach:#EFBC90;--up:#86D3B0;--dn:#EE8E86}
+*{box-sizing:border-box}body{margin:0;background:#05090B;font-family:"Work Sans",system-ui,sans-serif;color:var(--ink);padding:24px 14px}
+h1{text-align:center;font-size:20px;font-weight:600;margin:0 0 4px}.lead{text-align:center;color:var(--muted);font-size:13px;margin:0 auto 22px;max-width:720px;line-height:1.5}
+.wrap{display:flex;gap:24px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+.col{width:380px}.col h2{margin:0 0 4px;font-size:17px;font-weight:600}.col p{margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.45;min-height:76px}
+.phone{position:relative;width:380px;height:780px;border-radius:36px;overflow:hidden;background:#0A1416;border:8px solid #1A1F22}
+.scr{position:absolute;inset:0;overflow-y:auto;padding:18px 14px 30px;scrollbar-width:none}
+button{font-family:inherit;cursor:pointer;color:inherit}
+.eb{font-size:10.5px;font-weight:700;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+.num{font-variant-numeric:tabular-nums}.up{color:var(--up)}.dn{color:var(--dn)}.mute{color:var(--muted)}
+.tag{font-size:10.5px;font-weight:700;padding:3px 7px;border-radius:6px;letter-spacing:.04em}
+.tag.l{background:rgba(134,211,176,.15);color:var(--up)}.tag.s{background:rgba(238,142,134,.15);color:var(--dn)}.tag.y{background:rgba(122,184,240,.15);color:#9CCBF5}.tag.n{background:rgba(239,188,144,.15);color:var(--peach)}
+.row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.row .m{flex:1;min-width:0}.row .m small{display:block;color:var(--muted);font-size:11px;margin-top:2px}.row b{font-weight:600}
+.seg{display:flex;gap:2px;padding:3px;border-radius:10px;background:rgba(0,0,0,.3)}.seg button{border:0;background:none;color:var(--muted);font-size:11.5px;font-weight:600;padding:6px 9px;border-radius:8px}.seg button.on{background:rgba(255,255,255,.12);color:var(--ink)}
+.addbtn{width:100%;margin-top:14px;border:0;border-radius:14px;padding:14px;background:var(--peach);color:#1C3438;font-weight:700;font-size:14px}
+
+/* A — account cards */
+.a .cards{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:12px -14px 0;padding:4px 14px 8px;scrollbar-width:none}
+.a .acard{flex:0 0 76%;scroll-snap-align:center;border-radius:20px;padding:14px;position:relative;overflow:hidden;border:2px solid transparent;text-align:left;background:var(--bgc);transition:transform .2s,border-color .2s}
+.a .acard.on{border-color:rgba(255,255,255,.35)}.a .acard:not(.on){transform:scale(.95);opacity:.75}
+.a .acard .top{display:flex;justify-content:space-between;align-items:center}.a .acard .ic{width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.14);display:grid;place-items:center;font-size:14px;font-weight:700}
+.a .acard .bal{font-size:28px;font-weight:600;letter-spacing:-.03em;margin-top:14px}.a .acard .pl{font-size:12.5px;font-weight:600;margin-top:2px}
+.a .acard svg{position:absolute;left:0;right:0;bottom:0;width:100%;height:56px;opacity:.6}
+.a .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}.a .stats div{padding:9px 8px;border-radius:12px;background:rgba(255,255,255,.04)}.a .stats small{display:block;font-size:10px;color:var(--muted)}.a .stats b{font-size:14px}
+.a .qa{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.a .qa button{border:0;border-radius:14px;padding:14px;font-weight:700;font-size:14px}
+.a .qa .w{background:rgba(134,211,176,.16);color:var(--up)}.a .qa .x{background:rgba(238,142,134,.16);color:var(--dn)}
+
+/* B — terminal */
+.b{background:#070D0F}
+.b .tabs{display:flex;gap:16px;overflow-x:auto;border-bottom:1px solid var(--line);margin:0 -14px;padding:0 14px;scrollbar-width:none}
+.b .tabs button{border:0;background:none;padding:12px 0;font-size:13.5px;font-weight:600;color:var(--muted);white-space:nowrap;position:relative}
+.b .tabs button.on{color:var(--ink)}.b .tabs button.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--peach);border-radius:2px}
+.b .head{display:flex;justify-content:space-between;align-items:flex-end;margin-top:16px}
+.b .pnl{font-size:38px;font-weight:600;letter-spacing:-.04em;line-height:1}.b .pnl small{display:block;font-size:12px;font-weight:600;letter-spacing:0;margin-top:6px}
+.b .chart{margin-top:12px;position:relative}.b .chart svg{width:100%;height:150px;display:block}
+.b .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border-radius:12px;overflow:hidden;margin-top:12px}.b .grid div{background:#0B1416;padding:10px}.b .grid small{display:block;font-size:10px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}.b .grid b{font-size:15px}
+.b h4{margin:18px 0 2px;font-size:10.5px;letter-spacing:.12em;color:var(--muted);display:flex;justify-content:space-between}
+
+/* C — scoreboard / calendar */
+.c .sec{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:10px}
+.c .sec button{flex:none;border:1px solid var(--line2);background:none;border-radius:999px;padding:8px 12px;font-size:12.5px;font-weight:600;color:var(--soft);display:flex;align-items:center;gap:6px}
+.c .sec button i{width:8px;height:8px;border-radius:50%}.c .sec button.on{background:rgba(239,188,144,.15);border-color:var(--peach);color:var(--peach)}
+.c .score{display:flex;align-items:center;gap:14px;margin-top:16px}
+.c .score .ring{width:86px;height:86px;position:relative;flex:none}.c .score .ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:18px;font-weight:700;text-align:center;line-height:1.1}.c .score .ring b small{display:block;font-size:9.5px;color:var(--muted);font-weight:600}
+.c .big{font-size:30px;font-weight:600;letter-spacing:-.03em}
+.c .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:14px}
+.c .cal span{aspect-ratio:1;border-radius:7px;display:grid;place-items:center;font-size:10.5px;font-weight:600;color:rgba(255,255,255,.75);background:rgba(255,255,255,.04)}
+.c .cal span.h{color:var(--muted);background:none;aspect-ratio:auto;font-size:10px}
+.c .cal span.sel{outline:2px solid var(--peach)}
+.c .legend{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:8px}
+.c .day{margin-top:14px;padding:12px;border-radius:14px;background:rgba(255,255,255,.04)}
+</style></head><body>
+<h1>Trades · three directions</h1>
+<p class="lead">Every option has the five sections you asked for: <b>Polymarket · Prediction · Derivatives · Spot · Bob</b>. Tap the sections on each phone to see how each one changes (made-up numbers). Polymarket syncs automatically; the others you log by hand.</p>
+<div class="wrap">
+
+<div class="col"><h2>A · Account cards</h2><p>Each section is a colored card you swipe through, like bank accounts in a wallet app: balance, today's P&amp;L and a mini chart. Below it: that section's stats, quick log buttons and recent trades.</p>
+<div class="phone a"><div class="scr"><span class="eb">Trades · all sections</span><div style="font-size:13px;margin-top:4px" class="mute">Total today <b class="up num" id="atot"></b></div><div class="cards" id="acards"></div><div id="abody"></div></div></div></div>
+
+<div class="col"><h2>B · Trading terminal</h2><p>A sharper, pro-trader look. Text tabs across the top, big P&amp;L with an equity curve you can switch (today · week · month · all), a stats grid, and positions with LONG/SHORT or YES/NO tags.</p>
+<div class="phone b"><div class="scr"><div class="tabs" id="btabs"></div><div id="bbody"></div></div></div></div>
+
+<div class="col"><h2>C · Scoreboard</h2><p>Built around consistency: a win-rate ring and a month calendar where every day is green or red by P&amp;L. Tap a day to see its trades. Section chips at the top, "All" combines everything.</p>
+<div class="phone c"><div class="scr"><span class="eb">Trades</span><div class="sec" id="csec"></div><div id="cbody"></div></div></div></div>
+
+</div>
+<script>
+const SEC=[
+ {k:"poly",n:"Polymarket",ic:"PM",c:"#2E5BFF",bg:"linear-gradient(150deg,#2A4FD6,#14236B)",bal:1284.5,today:42.1,wr:61,score:"23–15",streak:"W3",count:38,auto:true,
+  trades:[["BTC up · 5m","YES",.54,"+$9.20"],["BTC up · 5m","NO",.47,"−$5.00"],["ETH up · 15m","YES",.61,"+$6.40"],["BTC up · 1h","YES",.38,"+$16.30"]],sub:"Synced 2 min ago · 5m"},
+ {k:"pred",n:"Prediction",ic:"◎",c:"#7C5CE0",bg:"linear-gradient(150deg,#6E50C9,#2B1D5C)",bal:640,today:-12,wr:54,score:"13–11",streak:"L1",count:24,
+  trades:[["Fed cuts in Dec","YES",.42,"−$12.00"],["CPI above 3%","NO",.66,"+$8.50"],["Rain in NYC Sat","YES",.30,"+$14.00"]],sub:"Kalshi and others · logged by hand"},
+ {k:"deriv",n:"Derivatives",ic:"⚡",c:"#D97A2B",bg:"linear-gradient(150deg,#C26A22,#4A2410)",bal:5120,today:186.4,wr:48,score:"19–21",streak:"W2",count:40,
+  trades:[["BTC-PERP · 10x","LONG","94,120 → 94,860","+$148.00"],["ES · 1 contract","SHORT","6,041 → 6,047","−$75.00"],["NQ · 1 contract","LONG","21,310 → 21,366","+$113.40"]],sub:"Futures and perps · Liquid Brokers, THTrader"},
+ {k:"spot",n:"Spot",ic:"◐",c:"#1F9E7A",bg:"linear-gradient(150deg,#1D8F6E,#0B3A2D)",bal:8460,today:-64.2,wr:null,score:"6 holdings",streak:"",count:17,
+  trades:[["BTC · 0.042","HOLD","avg 81,200","+$540.20"],["ETH · 1.3","HOLD","avg 3,410","−$112.00"],["SOL · 22","BUY","at 182.40",""]],sub:"Holdings · Coinbase"},
+ {k:"bob",n:"Bob",ic:"B",c:"#C9A227",bg:"linear-gradient(150deg,#B8921C,#4A3A0A)",bal:2010,today:55,wr:67,score:"18–9",streak:"W5",count:27,
+  trades:[["BTC up · 15m (Bob)","YES",.52,"+$11.00"],["ETH-PERP long (Bob)","LONG","3,402 → 3,431","+$44.00"]],sub:"Bob's calls · you copied 6 of 9 this week"}];
+const $=id=>document.getElementById(id),money=n=>(n<0?"−":"+")+"$"+Math.abs(n).toFixed(2),cls=n=>n<0?"dn":"up";
+let s=3;const R=()=>(s=(s*9301+49297)%233280)/233280;
+const series=(n,trend,vol)=>{let v=0;return[...Array(n)].map(()=>v+=(R()-.5+trend)*vol)};
+const path=(pts,W,H,pad=4)=>{const mn=Math.min(...pts),mx=Math.max(...pts),sx=W/(pts.length-1),sy=(H-pad*2)/((mx-mn)||1);return pts.map((v,i)=>`${i?"L":"M"}${(i*sx).toFixed(1)} ${(H-pad-(v-mn)*sy).toFixed(1)}`).join(" ")};
+function trRow(t,sec){const tg=t[1]==="LONG"||t[1]==="BUY"||t[1]==="HOLD"?"l":t[1]==="SHORT"?"s":t[1]==="YES"?"y":"n";const pr=typeof t[2]==="number"?(t[2]*100).toFixed(0)+"¢":t[2];
+ return`<div class="row"><span class="tag ${tg}">${t[1]}</span><div class="m">${t[0]}<small>${pr}</small></div><b class="num ${t[3].startsWith("−")?"dn":"up"}">${t[3]||"—"}</b></div>`}
+// A
+let ai=0;function A(){$("atot").textContent=money(SEC.reduce((t,x)=>t+x.today,0));
+ $("acards").innerHTML=SEC.map((x,i)=>`<button class="acard ${i===ai?"on":""}" data-i="${i}" style="--bgc:${x.bg}"><div class="top"><span class="ic">${x.ic}</span><span class="eb" style="color:rgba(255,255,255,.75)">${x.n}${x.auto?" · auto":""}</span></div><div class="bal num">$${x.bal.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="pl num" style="color:${x.today<0?"#FFC2BC":"#C8F2DE"}">${money(x.today)} today</div><svg viewBox="0 0 200 56" preserveAspectRatio="none"><path d="${path(series(30,x.today<0?-.05:.08,3),200,56)}" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2"/></svg></button>`).join("");
+ document.querySelectorAll("#acards .acard").forEach(b=>b.onclick=()=>{ai=+b.dataset.i;A();b.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"})});
+ const x=SEC[ai];$("abody").innerHTML=`<div class="mute" style="font-size:12px;margin-top:6px">${x.sub}</div>
+ <div class="stats">${x.wr!==null?`<div><small>Win rate</small><b class="num">${x.wr}%</b></div><div><small>Score</small><b class="num">${x.score}</b></div><div><small>Streak</small><b>${x.streak}</b></div>`:`<div style="grid-column:span 3"><small>Holdings</small><b>${x.score}</b></div>`}<div><small>Trades</small><b class="num">${x.count}</b></div></div>
+ ${x.k==="spot"?`<div class="qa"><button class="w">+ Buy</button><button class="x">− Sell</button></div>`:x.k==="deriv"?`<div class="qa"><button class="w">+ Long</button><button class="x">+ Short</button></div>`:`<div class="qa"><button class="w">+ Won</button><button class="x">+ Lost</button></div>`}
+ <div class="eb" style="margin-top:16px">Recent</div>${x.trades.map(t=>trRow(t,x)).join("")}`}
+// B
+let bi=0,btf="Week";function B(){$("btabs").innerHTML=SEC.map((x,i)=>`<button class="${i===bi?"on":""}" data-i="${i}">${x.n}</button>`).join("");document.querySelectorAll("#btabs button").forEach(b=>b.onclick=()=>{bi=+b.dataset.i;B()});
+ const x=SEC[bi],pts=series(40,x.today<0?-.02:.1,8),last=pts[pts.length-1];
+ $("bbody").innerHTML=`<div class="head"><div><span class="eb">${x.n} · ${btf}</span><div class="pnl num ${cls(x.today*3)}">${money(x.today*3.4)}<small class="mute">Balance $${x.bal.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} · ${x.sub.split(" · ")[0]}</small></div></div><div class="seg" id="btf">${["Today","Week","Month","All"].map(t=>`<button class="${t===btf?"on":""}">${t}</button>`).join("")}</div></div>
+ <div class="chart"><svg viewBox="0 0 352 150" preserveAspectRatio="none"><defs><linearGradient id="bg${bi}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${x.today<0?"#EE8E86":"#86D3B0"}" stop-opacity=".25"/><stop offset="1" stop-color="${x.today<0?"#EE8E86":"#86D3B0"}" stop-opacity="0"/></linearGradient></defs>
+  ${[0,1,2,3].map(i=>`<line x1="0" x2="352" y1="${8+i*44}" y2="${8+i*44}" stroke="rgba(255,255,255,.06)"/>`).join("")}<path d="${path(pts,352,150,8)} L352 150 L0 150Z" fill="url(#bg${bi})"/><path d="${path(pts,352,150,8)}" fill="none" stroke="${x.today<0?"#EE8E86":"#86D3B0"}" stroke-width="2"/></svg></div>
+ <div class="grid">${x.wr!==null?`<div><small>Win rate</small><b class="num">${x.wr}%</b></div><div><small>W–L</small><b class="num">${x.score}</b></div><div><small>Streak</small><b>${x.streak}</b></div><div><small>Avg win</small><b class="num up">+$14.20</b></div><div><small>Avg loss</small><b class="num dn">−$9.10</b></div><div><small>Trades</small><b class="num">${x.count}</b></div>`:`<div><small>Value</small><b class="num">$${x.bal.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</b></div><div><small>Unrealized</small><b class="num up">+$428</b></div><div><small>Holdings</small><b>6</b></div>`}</div>
+ <h4><span>${x.k==="spot"?"HOLDINGS":x.k==="deriv"?"POSITIONS":"TRADES"}</span><span>${x.auto?"AUTO-SYNC ON":"+ ADD"}</span></h4>${x.trades.map(t=>trRow(t,x)).join("")}`;
+ document.querySelectorAll("#btf button").forEach(b=>b.onclick=()=>{btf=b.textContent;B()})}
+// C
+let ci=-1,cday=24;const SECALL={k:"all",n:"All",c:"#EFBC90"};function C(){$("csec").innerHTML=[SECALL,...SEC].map((x,i)=>`<button class="${i-1===ci?"on":""}" data-i="${i-1}"><i style="background:${x.c}"></i>${x.n}</button>`).join("");
+ document.querySelectorAll("#csec button").forEach(b=>b.onclick=()=>{ci=+b.dataset.i;C()});
+ const x=ci<0?null:SEC[ci],wr=x?(x.wr??58):58;s=11+ci*7;const days=[...Array(30)].map((_,i)=>i>25?null:Math.round((R()-.42)*120));
+ const max=Math.max(...days.filter(v=>v!==null).map(Math.abs)),col=v=>v===null?"rgba(255,255,255,.03)":v===0?"rgba(255,255,255,.06)":v>0?`rgba(134,211,176,${.18+.62*v/max})`:`rgba(238,142,134,${.18+.62*-v/max})`;
+ const green=days.filter(v=>v>0).length,red=days.filter(v=>v<0).length,dv=days[cday-1];
+ $("cbody").innerHTML=`<div class="score"><div class="ring"><svg viewBox="0 0 36 36" width="86" height="86"><circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="3.5"/><circle cx="18" cy="18" r="15" fill="none" stroke="#86D3B0" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="${(wr/100*94.2).toFixed(1)} 94.2" transform="rotate(-90 18 18)"/></svg><b>${wr}%<small>WIN RATE</small></b></div>
+  <div><span class="eb">November · ${x?x.n:"All sections"}</span><div class="big num up">+$1,482.60</div><div class="mute" style="font-size:12.5px">${green} green days · ${red} red days</div></div></div>
+ <div class="cal">${["M","T","W","T","F","S","S"].map(d=>`<span class="h">${d}</span>`).join("")}<span class="h"></span><span class="h"></span><span class="h"></span><span class="h"></span><span class="h"></span>${days.map((v,i)=>`<span class="${i+1===cday?"sel":""}" data-d="${i+1}" style="background:${col(v)}">${i+1}</span>`).join("")}</div>
+ <div class="legend"><span>● Loss</span><span>Tap a day</span><span>Profit ●</span></div>
+ <div class="day"><div style="display:flex;justify-content:space-between"><b>Nov ${cday}</b><b class="num ${dv<0?"dn":"up"}">${dv===null?"—":money(dv)}</b></div>${(x||SEC[0]).trades.slice(0,3).map(t=>trRow(t)).join("")}</div>
+ <button class="addbtn">+ Log a trade</button>`;
+ document.querySelectorAll("#cbody .cal span[data-d]").forEach(b=>b.onclick=()=>{cday=+b.dataset.d;C()})}
+A();B();C();
+</script>
+</body></html>
