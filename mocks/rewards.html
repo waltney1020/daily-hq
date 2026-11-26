@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Streak and rewards mock</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{--ink:#EEF3F0;--soft:#C4D5D8;--muted:#8FA3A1;--line:#1C2E33;--line2:#2A4248;--peach:#EFBC90;--mint:#86D3B0;--rose:#EE8E86;--acc:#FF9A4D;--gold:#F3C64F;--bg:#0B0504}
+*{box-sizing:border-box}body{margin:0;background:#05090B;font-family:"Work Sans",system-ui,sans-serif;color:var(--ink);padding:24px 14px;display:flex;gap:28px;justify-content:center;flex-wrap:wrap}
+button{font-family:inherit;cursor:pointer;color:inherit}
+.note{width:300px;color:var(--muted);font-size:13px;line-height:1.5}.note h2{color:var(--ink);font-size:18px;margin:0 0 8px;font-weight:600}.note li{margin-bottom:6px}
+.phone{position:relative;width:390px;height:820px;border-radius:38px;overflow:hidden;background:var(--bg);border:8px solid #1A1F22}
+canvas{position:absolute;left:0;top:0;width:100%;height:300px}
+.fade{position:absolute;left:0;right:0;top:190px;height:112px;background:linear-gradient(rgba(11,5,4,0),var(--bg))}
+.rs{position:absolute;inset:0;overflow-y:auto;padding:16px 16px 40px;scrollbar-width:none}
+.bar{display:flex;align-items:center;justify-content:space-between}
+.ib{width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(5,12,14,.35);color:#fff;display:grid;place-items:center}.ib svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.eb{font-size:11px;font-weight:700;letter-spacing:.14em;color:rgba(255,255,255,.8);text-transform:uppercase}
+.wallet{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:rgba(243,198,79,.14);color:var(--gold);font-weight:700;font-size:14px}
+.hero{margin-top:70px;display:flex;align-items:center;gap:14px}
+.flame{font-size:54px;filter:drop-shadow(0 0 18px rgba(255,140,60,.6));animation:fl 2.4s ease-in-out infinite}@keyframes fl{50%{transform:scale(1.06) translateY(-2px)}}
+.num{font-size:52px;font-weight:600;letter-spacing:-.045em;line-height:1}.num span{font-size:17px;color:rgba(255,255,255,.7);margin-left:6px;letter-spacing:0;font-weight:500}
+.sub{font-size:12.5px;color:rgba(255,255,255,.7);margin-top:6px}
+.tier{display:flex;align-items:center;gap:10px;margin-top:14px;padding:11px 13px;border-radius:14px;background:rgba(255,255,255,.05)}
+.tier b{font-size:14px}.tier small{display:block;font-size:11.5px;color:var(--muted)}.tier .badge{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:18px;background:linear-gradient(145deg,#C0C6CC,#7D858C);box-shadow:inset 0 2px 4px rgba(255,255,255,.4)}
+.tier .tb{flex:1}.tier .tb i{display:block;height:5px;border-radius:3px;background:rgba(255,255,255,.1);margin-top:6px;overflow:hidden}.tier .tb i em{display:block;height:100%;background:linear-gradient(90deg,#C0C6CC,var(--gold))}
+.tabs{position:sticky;top:-16px;z-index:3;display:flex;gap:3px;padding:4px;border-radius:14px;background:rgba(26,12,8,.92);backdrop-filter:blur(8px);margin:14px 0}
+.tabs button{flex:1;border:0;background:none;color:var(--muted);font-weight:600;font-size:13px;padding:10px 0;border-radius:10px}.tabs button.on{background:var(--acc);color:#2A1206}
+.view{display:none}.view.on{display:block;animation:f .3s ease}@keyframes f{from{opacity:0;transform:translateY(6px)}}
+h4{margin:18px 0 8px;font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--muted);display:flex;justify-content:space-between;align-items:center}h4 a{color:var(--peach);letter-spacing:0;text-transform:none;font-size:12px;font-weight:600}
+.today{padding:13px;border-radius:16px;background:rgba(255,154,77,.08);box-shadow:inset 0 0 0 1px rgba(255,154,77,.25)}.today .t{display:flex;justify-content:space-between;font-size:14px}.today .t b{font-weight:600}.today .t span{color:var(--muted);font-size:12.5px}
+.pbar{height:7px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:8px}.pbar i{display:block;height:100%;background:linear-gradient(90deg,#FF7A2E,var(--gold))}
+.miles{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}.mile{flex:none;width:64px;padding:9px 0;border-radius:12px;text-align:center;background:rgba(255,255,255,.04);color:var(--muted)}.mile b{display:block;font-size:17px}.mile small{font-size:10px}
+.mile.got{background:rgba(243,198,79,.16);color:var(--gold)}.mile.next{box-shadow:inset 0 0 0 1.5px var(--acc);color:var(--ink)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.cal span{aspect-ratio:1;border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:600;background:rgba(255,255,255,.05);color:rgba(255,255,255,.75)}
+.cal span.h{background:none;aspect-ratio:auto;font-size:10px;color:var(--muted)}.cal span.ok{background:rgba(255,154,77,.3)}.cal span.part{background:linear-gradient(0deg,rgba(255,154,77,.22) var(--p),rgba(255,255,255,.05) var(--p))}.cal span.t{outline:2px solid var(--acc)}.cal span.fut{opacity:.3}
+.earn .r{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px}.earn .r i{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-style:normal;background:rgba(255,255,255,.06)}.earn .r span{flex:1}.earn .r b{color:var(--gold);font-weight:700}
+/* store */
+.cats{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}.cats button{flex:none;border:1px solid var(--line2);background:none;border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:600;color:var(--soft)}.cats button.on{background:rgba(255,154,77,.15);border-color:var(--acc);color:var(--acc)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.item{position:relative;border-radius:18px;padding:13px;background:rgba(255,255,255,.045);display:flex;flex-direction:column;gap:6px;min-height:150px}
+.item .ic{font-size:26px}.item b{font-size:14px;line-height:1.25}.item small{font-size:11px;color:var(--muted)}
+.item .price{margin-top:auto;display:flex;justify-content:space-between;align-items:center}.item .c{color:var(--gold);font-weight:700;font-size:13.5px}
+.item .buy{border:0;border-radius:10px;padding:7px 11px;font-size:12px;font-weight:700;background:var(--gold);color:#2A1E04}
+.item.locked{opacity:.75}.item.locked .buy{background:rgba(255,255,255,.08);color:var(--muted)}
+.item .prog{height:4px;border-radius:2px;background:rgba(255,255,255,.1);overflow:hidden}.item .prog i{display:block;height:100%;background:var(--gold)}
+.item .lock{position:absolute;right:10px;top:10px;font-size:11px;font-weight:700;padding:3px 7px;border-radius:999px;background:rgba(0,0,0,.4);color:var(--soft)}
+.item.add{align-items:center;justify-content:center;border:1.5px dashed var(--line2);background:none;color:var(--muted);font-weight:600}
+.hist .r{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px}.hist .r span{flex:1}.hist .r small{display:block;color:var(--muted);font-size:11px}.hist .r b{font-weight:700}.hist .r b.p{color:var(--mint)}.hist .r b.m{color:var(--rose)}
+.nudge{display:flex;align-items:center;gap:12px;width:100%;margin-bottom:10px;padding:12px 13px;border:0;border-radius:16px;background:rgba(120,160,255,.1);box-shadow:inset 0 0 0 1px rgba(140,170,255,.3);text-align:left;color:var(--ink)}.nudge span{font-size:22px}.nudge b{font-size:13.5px}.nudge small{display:block;font-size:11.5px;color:var(--soft);margin-top:2px}
+.csum{display:flex;justify-content:space-between;align-items:center;padding:13px;border-radius:16px;background:rgba(255,255,255,.045)}.csum b{font-size:15px}.csum small{display:block;font-size:12px;color:var(--muted);margin-top:2px}.cring{position:relative;width:64px;height:64px}.cring b{position:absolute;inset:0;display:grid;place-items:center;font-size:14px}
+.miss-by{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}.miss-by div{padding:10px;border-radius:12px;background:rgba(255,255,255,.04);text-align:center}.miss-by b{font-size:22px;color:var(--acc)}.miss-by small{display:block;font-size:10.5px;color:var(--muted)}
+.insight{padding:14px;border-radius:18px;background:rgba(255,255,255,.045);margin-bottom:10px}.insight.good{background:rgba(134,211,176,.07)}
+.ih{display:flex;gap:10px;align-items:center}.ii{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:18px;background:rgba(255,154,77,.14);flex:none}.ih b{font-size:14px}.ih small{display:block;font-size:11.5px;color:var(--rose);margin-top:2px}.insight.good .ih small{color:var(--mint)}
+.insight p{margin:10px 0 0;font-size:13px;line-height:1.5;color:var(--soft)}.insight p b{color:var(--ink)}
+.acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.act{border:1px solid var(--line2);background:none;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:600;color:var(--soft)}.act.p{background:var(--acc);border-color:var(--acc);color:#2A1206}.act.done{background:rgba(134,211,176,.16);border-color:rgba(134,211,176,.5);color:var(--mint)}
+.toast{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);padding:10px 16px;border-radius:12px;background:#1E1208;border:1px solid var(--gold);color:var(--gold);font-weight:700;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}.toast.on{opacity:1}
+.coinfly{position:absolute;font-size:20px;pointer-events:none;animation:fly .8s cubic-bezier(.2,.8,.2,1) forwards;z-index:9}@keyframes fly{to{transform:translate(var(--dx),var(--dy)) scale(.4);opacity:0}}
+</style></head><body>
+<div class="note"><h2>Streak + Rewards · interactive mock</h2>
+<ul>
+<li>The 🔥 chip opens this page. Four tabs: <b>Streak</b>, <b>Coach</b>, <b>Store</b>, <b>History</b>.</li>
+<li><b>You earn coins 🪙 for discipline:</b> each task, clearing your day, hitting water and meal goals, beating a smoke urge, logging trades and journal entries, plus big bonuses at streak milestones.</li>
+<li><b>Tiers:</b> your streak sets your tier (Bronze 3 days, Silver 7, Gold 30, Diamond 100). Bigger rewards unlock at higher tiers, so you can't just save up; you have to stay consistent.</li>
+<li><b>Store:</b> rewards to <b>do</b> (gaming hour, cheat meal, sleep in, day off) and to <b>buy</b> (pulled from your <i>Things to buy</i> list, priced by its $). Tap <b>Buy</b> to spend coins; add your own rewards.</li>
+<li><b>Coach:</b> looks at the last 30 days and tells you <i>why</i> streaks break: how often you miss by just 1 task, which task it usually is, when misses happen (e.g. evenings), and why, using your actual schedule. Each insight has one-tap fixes like "Move to 5:00 PM", "Remind me 10 min before" or "Make optional on weekends". The Streak tab shows the top insight up front.</li><li>Try buying something on the Store tab, and the fix buttons on Coach.</li>
+</ul><p>Numbers are examples.</p></div>
+<div class="phone"><canvas id="cv"></canvas><div class="fade"></div><div class="rs">
+ <div class="bar"><button class="ib"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><span class="eb">Streak · Rewards</span><span class="wallet" id="wallet"></span></div>
+ <div class="hero"><div class="flame">🔥</div><div><div class="num">12<span>days</span></div><div class="sub">Best ever: 19 days · Level 4</div></div></div>
+ <div class="tier"><span class="badge">🥈</span><div class="tb"><b>Silver tier</b><small>18 more days to Gold (unlocks Gold rewards)</small><i><em style="width:22%"></em></i></div></div>
+ <div class="tabs" id="tabs"><button data-t="streak" class="on">Streak</button><button data-t="coach">Coach</button><button data-t="store">Store</button><button data-t="hist">History</button></div>
+ <div class="view on" id="v-streak">
+  <button class="nudge" onclick="document.querySelector('#tabs [data-t=coach]').click()"><span>🧭</span><div><b>You lost 4 streaks this month by just 1 task</b><small>It's usually "Walk or cardio" at 1:30 PM. See why and how to fix it →</small></div></button>
+  <div class="today"><div class="t"><b>7 left to keep the streak</b><span>23 of 30 · +50 🪙 when cleared</span></div><div class="pbar"><i style="width:77%"></i></div></div>
+  <h4><span>Milestones</span><span>2 days to 14 · +300 🪙</span></h4>
+  <div class="miles">${''}</div>
+  <h4><span>Last 5 weeks</span><span>24 cleared</span></h4><div class="cal" id="cal"></div>
+  <h4><span>How you earn</span><span>today +185 🪙</span></h4>
+  <div class="earn"><div class="r"><i>✓</i><span>Each task done</span><b>+10</b></div><div class="r"><i>🔥</i><span>Clear the whole day</span><b>+50</b></div><div class="r"><i>💧</i><span>Hit your water goal</span><b>+20</b></div><div class="r"><i>🍗</i><span>Eat all your meals</span><b>+20</b></div><div class="r"><i>🌬️</i><span>Beat a smoke urge</span><b>+30</b></div><div class="r"><i>📈</i><span>Log a trade · journal entry</span><b>+5</b></div><div class="r"><i>🏆</i><span>Streak milestones (7 · 14 · 30 · 100 days)</span><b>+150 to +2000</b></div></div>
+ </div>
+ <div class="view" id="v-coach">
+  <div class="csum"><div><b>Last 30 days</b><small>24 cleared · 6 missed</small></div><div class="cring"><svg viewBox="0 0 36 36" width="64" height="64"><circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="3.5"/><circle cx="18" cy="18" r="15" fill="none" stroke="#FF9A4D" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="75.4 94.2" transform="rotate(-90 18 18)"/></svg><b>80%</b></div></div>
+  <div class="miss-by"><div><b>4</b><small>days missed by 1 task</small></div><div><b>1</b><small>by 2–3 tasks</small></div><div><b>1</b><small>by 4+</small></div></div>
+  <h4><span>What keeps breaking it</span><span>most missed first</span></h4>
+  <div class="insight"><div class="ih"><span class="ii">🚶</span><div><b>Walk or cardio · 1:30 PM</b><small>Missed 5 of the last 14 days · 3 of those were your only miss</small></div></div>
+   <p class="why"><b>Why:</b> it lands right after lunch and your trade review, when you're usually still at the desk. On 4 of the 5 days you ticked "Review/replay trades" late, so the walk got squeezed out.</p>
+   <p class="fix"><b>Try:</b> move it to 5:00 PM, after Engineering, when you're already up. Or walk during the trade replay (it's audio-only on Wednesdays).</p>
+   <div class="acts"><button class="act p">Move to 5:00 PM</button><button class="act">Remind me 10 min before</button><button class="act">Make it 15 min</button></div></div>
+  <div class="insight"><div class="ih"><span class="ii">⚖️</span><div><b>Morning weigh-in · 6:05 AM</b><small>Missed 3 times, all on weekends</small></div></div>
+   <p class="why"><b>Why:</b> on Saturday and Sunday you open the app after 8 AM, so the 6:05 slot has already passed.</p>
+   <p class="fix"><b>Try:</b> keep it "first thing after waking" instead of a fixed time, or make weekends optional.</p>
+   <div class="acts"><button class="act p">Make it Anytime (morning)</button><button class="act">Optional on weekends</button></div></div>
+  <div class="insight"><div class="ih"><span class="ii">🕘</span><div><b>Evenings are your weak spot</b><small>62% of all misses happen after 8 PM</small></div></div>
+   <p class="why"><b>Why:</b> you have 9 tasks after 8 PM (dogs, skin PM, journal, reset, patching the room). By then energy is low.</p>
+   <p class="fix"><b>Try:</b> move "Reset for tomorrow" and "Journal: gratitude" earlier, or stack them into one 15-minute "night routine" checklist.</p>
+   <div class="acts"><button class="act p">Combine into Night routine</button><button class="act">Show me the evening</button></div></div>
+  <div class="insight good"><div class="ih"><span class="ii">✅</span><div><b>What's working</b><small>Never missed in 14 days</small></div></div>
+   <p class="why">Wake up and review markets, Skin AM, Primary engineering project. Your mornings are locked in. Build on that.</p></div>
+ </div>
+ <div class="view" id="v-store"><div class="cats" id="cats"></div><div class="grid" id="grid"></div></div>
+ <div class="view" id="v-hist"><div class="hist" id="hist"></div></div>
+</div><div class="toast" id="toast"></div></div>
+<script>
+const $=id=>document.getElementById(id);let coins=1240,cat="All";const STREAK=12,TIER={Bronze:3,Silver:7,Gold:30,Diamond:100};
+const tierOf=s=>s>=100?"Diamond":s>=30?"Gold":s>=7?"Silver":s>=3?"Bronze":"None";
+const ITEMS=[
+ {c:"Do",ic:"🎮",n:"1 hour of gaming",d:"Guilt-free",p:200,t:"Bronze"},{c:"Do",ic:"🍔",n:"Cheat meal",d:"One meal, anything you want",p:350,t:"Bronze"},
+ {c:"Do",ic:"😴",n:"Sleep in",d:"Skip the 6 AM alarm once",p:300,t:"Silver"},{c:"Do",ic:"🎬",n:"Movie night",d:"Phone off, full movie",p:250,t:"Bronze"},
+ {c:"Do",ic:"🏖️",n:"Full day off",d:"No routine, no guilt",p:1500,t:"Gold"},{c:"Treat",ic:"🍦",n:"Dessert",d:"Any dessert",p:150,t:"Bronze"},
+ {c:"Buy",ic:"👟",n:"New running shoes",d:"From Things to buy · $120",p:2400,t:"Silver"},{c:"Buy",ic:"💡",n:"Desk lamp",d:"From Things to buy · $72",p:1440,t:"Bronze"},
+ {c:"Buy",ic:"🎧",n:"New headphones",d:"From Things to buy · $250",p:5000,t:"Gold"}];
+const HIST=[["+50","Cleared Tuesday","yesterday","p"],["−200","Bought: 1 hour of gaming","Mon","m"],["+300","Milestone: 7-day streak","Sun","p"],["+30","Beat a smoke urge","Sun","p"],["+20","Water goal","Sun","p"]];
+function toast(t){const e=$("toast");e.textContent=t;e.classList.add("on");setTimeout(()=>e.classList.remove("on"),1600)}
+function render(){$("wallet").textContent="🪙 "+coins.toLocaleString();
+ document.querySelector(".miles").innerHTML=[3,7,14,30,60,100].map(m=>`<div class="mile ${19>=m?"got":""} ${m===14?"next":""}"><b>${m}</b><small>${m} days</small></div>`).join("");
+ $("cal").innerHTML=["M","T","W","T","F","S","S"].map(d=>`<span class="h">${d}</span>`).join("")+[...Array(35)].map((_,i)=>{const fut=i>31,t=i===31,ok=!fut&&!t&&(i>19||i%5!==2),part=!ok&&!fut&&!t;return`<span class="${fut?"fut":t?"t part":ok?"ok":"part"}" style="--p:${t?77:part?40:0}%">${ok?"🔥":(i%31)+1}</span>`}).join("");
+ const cats=["All","Do","Treat","Buy"];$("cats").innerHTML=cats.map(c=>`<button class="${c===cat?"on":""}">${c}</button>`).join("");document.querySelectorAll("#cats button").forEach(b=>b.onclick=()=>{cat=b.textContent;render()});
+ const ti=TIER[tierOf(STREAK)]||0;
+ $("grid").innerHTML=ITEMS.filter(x=>cat==="All"||x.c===cat).map((x,i)=>{const tierLocked=TIER[x.t]>STREAK,short=x.p>coins,lock=tierLocked||short;
+  return`<div class="item ${lock?"locked":""}">${tierLocked?`<span class="lock">🔒 ${x.t}</span>`:""}<span class="ic">${x.ic}</span><b>${x.n}</b><small>${x.d}</small>${!tierLocked&&short?`<div class="prog"><i style="width:${Math.round(coins/x.p*100)}%"></i></div>`:""}
+   <div class="price"><span class="c">🪙 ${x.p.toLocaleString()}</span><button class="buy" data-n="${x.n}">${tierLocked?"Locked":short?`${(x.p-coins).toLocaleString()} more`:"Buy"}</button></div></div>`}).join("")+`<button class="item add">+ Add your own reward</button>`;
+ document.querySelectorAll(".buy").forEach(b=>b.onclick=e=>{const x=ITEMS.find(i=>i.n===b.dataset.n);if(TIER[x.t]>STREAK){toast(`Reach ${x.t} tier (${TIER[x.t]}-day streak) to unlock`);return}if(x.p>coins){toast(`${(x.p-coins).toLocaleString()} more coins needed`);return}
+  coins-=x.p;HIST.unshift(["−"+x.p,"Bought: "+x.n,"just now","m"]);const r=b.getBoundingClientRect(),w=$("wallet").getBoundingClientRect(),ph=document.querySelector(".phone").getBoundingClientRect();
+  for(let k=0;k<6;k++){const c=document.createElement("span");c.className="coinfly";c.textContent="🪙";c.style.left=(w.left-ph.left+10)+"px";c.style.top=(w.top-ph.top)+"px";c.style.setProperty("--dx",(r.left-w.left+Math.random()*40-20)+"px");c.style.setProperty("--dy",(r.top-w.top+Math.random()*30)+"px");c.style.animationDelay=k*60+"ms";document.querySelector(".phone").appendChild(c);setTimeout(()=>c.remove(),1200)}
+  toast("Enjoy it: "+x.n);render()});
+ $("hist").innerHTML=HIST.map(h=>`<div class="r"><span>${h[1]}<small>${h[2]}</small></span><b class="${h[3]}">${h[0]} 🪙</b></div>`).join("")}
+document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on",v.id==="v-"+b.dataset.t))});
+(function paint(){const cv=$("cv"),d=devicePixelRatio||1,W=cv.clientWidth,H=300;cv.width=W*d;cv.height=H*d;const c=cv.getContext("2d");c.scale(d,d);let s=9;const R=()=>(s=(s*9301+49297)%233280)/233280;
+ let g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,"#0B0504");g.addColorStop(1,"#4A1E0C");c.fillStyle=g;c.fillRect(0,0,W,H);for(let i=0;i<60;i++){c.fillStyle=`rgba(255,255,255,${.3+R()*.5})`;c.beginPath();c.arc(R()*W,R()*H*.5,R()*.9+.4,0,7);c.fill()}
+ g=c.createRadialGradient(W*.5,H*.95,0,W*.5,H*.95,H*.8);g.addColorStop(0,"rgba(255,140,60,.35)");g.addColorStop(1,"rgba(255,140,60,0)");c.fillStyle=g;c.fillRect(0,0,W,H);
+ ["#7A3A1C","#56281A","#3A1A12"].forEach((col,L)=>{const base=H*(.55+L*.15),N=65,h=new Array(N).fill(0);let st=N-1,amp=H*.12;while(st>1){const hf=st/2;for(let i=hf;i<N;i+=st)h[i]=(h[i-hf]+h[i+hf])/2+(R()-.5)*amp;amp*=.55;st=hf}
+  const pk=[...Array(2+L)].map(()=>({x:R()*W,h:H*(.12+R()*.2),w:W*(.2+R()*.25)})),env=x=>Math.max(0,...pk.map(p=>p.h*Math.pow(Math.max(0,1-Math.abs(x-p.x)/p.w),1.5)));
+  c.beginPath();c.moveTo(0,H);for(let i=0;i<N;i++){const x=i/(N-1)*W;c.lineTo(x,base-env(x)-h[i]*.5)}c.lineTo(W,H);c.fillStyle=col;c.fill()})})();
+document.addEventListener("click",e=>{const a=e.target.closest(".act");if(!a||a.classList.contains("done"))return;a.classList.add("done");a.textContent="✓ "+a.textContent;toast("Schedule updated")});
+render();
+</script>
+</body></html>
