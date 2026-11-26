@@ -418,7 +418,7 @@ function closeRoom(instant){const el=$("troom");if(!el||!el.classList.contains("
  el.animate([{clipPath:"inset(0px 0px 0px 0px round 0px)"},{clipPath:roomClip(r)}],{duration:560,easing:"cubic-bezier(.32,.72,0,1)",fill:"forwards"}).onfinish=fin;
  setTimeout(fin,700)} // backup: never leave the room stuck on screen if the animation is paused
 function roomCelebrate(){roomFlash("✓","Done","+10 XP",true)}
-function drawRoom(){if(!RO)return;if(RO.kind==="water")return drawWaterRoom();const {id,k}=RO,t=tasksFor(k).find(x=>x.id===id);if(!t){closeRoom(true);return}
+function drawRoom(){if(!RO)return;if(RO.kind==="water")return drawWaterRoom();if(RO.kind==="food")return drawFoodRoom();const {id,k}=RO,t=tasksFor(k).find(x=>x.id===id);if(!t){closeRoom(true);return}
  const dd=dayData(k),steps=stepList(k,t),sk=stepKey(k,t),s=(dd.steps||{})[sk]||{},n=stepsDone(k,t),total=steps.length,isDone=!!dd.done[id],pct=isDone?100:total?Math.round(n/total*100):0,RC=94.25;
  const adh=t.g==="Hair care"?{...adherence(x=>x.g==="Hair care",S.hairStart),label:"Hair routine",target:" Target 85–100%."}:isSkin(t)?{...adherence(isSkin,S.skinStart),label:"Skin routines",target:""}:t.main?{...adherence(x=>!!x.main,S.fitStart),label:"Main workouts",target:" Target: 5 a week."}:null;
  const lr=t.link&&ROLE_LABEL[t.link]?recipeFor(t.link,k):null,phase=phaseFor(t,k)||(lr?[0,0,"Week "+mealWeek(k)+" · "+MENU_THEMES[mealWeek(k)-1]+": "+lr.name]:null),minDone=dd.minDone&&dd.minDone[id];
@@ -840,7 +840,7 @@ function renderToday(just){const k=dkey(),dd=dayData(k),tl=timing(k),req=tl.filt
  $("tasks").querySelectorAll("[data-past]").forEach(b=>b.onclick=()=>{const [pk,id]=b.dataset.past.split("|");toggleTask(id,b,pk)});
  $("tasks").querySelectorAll("[data-ack]").forEach(b=>b.onclick=()=>{const dk=b.dataset.ack;dayData(dk).ack=true;save();renderToday();toast("Cleared. Those stay marked as missed.","Undo",()=>{delete dayData(dk).ack;save();renderToday()})});
  $("tasks").querySelectorAll(".main[data-id]").forEach(b=>b.onclick=()=>{const t=tl.find(x=>x.id===b.dataset.id);if(t&&t.link==="weigh"&&!dd.done[t.id])weighSheet(t.id);else if(t&&t.link==="water")openWater(b.closest(".tlr")||b);else if(t&&t.link==="dogs"&&!dd.done[t.id])dogCheckIn();else if(t&&((t.steps&&t.steps.length)||t.note||t.link))openSteps(t.id);else toggleTask(b.dataset.id,b)});$("tasks").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>editTask(b.dataset.ed));
- $("streaklbl").textContent=streak()+(streak()===1?" day":" days")}
+ $("streaklbl").textContent=streak()+(streak()===1?" day":" days");renderFoodBar()}
 function toggleTask(id,el,k=dkey()){const dd=dayData(k);dd.done[id]=!dd.done[id];if(!dd.done[id])delete dd.done[id];addXP(dd.done[id]?10:-10,el);
  dd.doneAt=dd.doneAt||{};dd.late=dd.late||{};if(dd.done[id]){dd.doneAt[id]=Date.now();if(k!==dkey())dd.late[id]="late"}else{delete dd.doneAt[id];delete dd.late[id]}
  const rt=S.routine.find(r=>r.id===id);if(rt&&rt.link==="freezer"&&S.dogs&&k===dkey()){S.dogs.freezer=Math.max(0,(S.dogs.freezer||0)+(dd.done[id]?-1:1))}
@@ -1339,6 +1339,100 @@ function closeCalm(outcome){if(!calm){$("calm").hidden=true;document.body.style.
   else{save();go("smoke");startSmoke(S.ui.smokeLimit??5,moods);toast("No judgment. Logging it helps you spot patterns.")}}}
 if($("calmbtn"))$("calmbtn").onclick=()=>openCalm();
 
+/* ================= Food (merged): your intake + the dogs + recipes =================
+   A food bar on Today (an original pixel drumstick bar, or a clean tracker) opens one full Food page in the
+   room shell with three tabs: You (calories, protein, today's meal plan), Dogs (fed AM/PM, portions, weight,
+   freezer, check-in) and Recipes. Meal calories are estimates you can edit; goals live in Food settings. */
+const FO=()=>{const f=S.food;f.eat=f.eat||{};f.goal=f.goal||{kcal:2800,prot:160};f.barMode=f.barMode||"pix";return f};
+const DFED=()=>{S.dogs.fed=S.dogs.fed||{};return S.dogs.fed};
+const eatLog=(k=dkey())=>FO().eat[k]||(FO().eat[k]=[]);
+const ROLE_EST={breakfast:[650,40],prepA:[750,50],prepB:[800,50],drink:[600,35]};
+const ROLE_ICON={breakfast:"🍳",prepA:"🥗",prepB:"🍝",drink:"🥤"};
+function mealEst(role,r){if(role==="drink"&&r&&!/shake/i.test(r.name))return[0,0];return ROLE_EST[role]||[500,30]}
+function todayMeals(k=dkey()){const tk=tasksFor(k);return["breakfast","prepA","drink","prepB"].map(role=>{const r=recipeFor(role,k),t=tk.find(x=>x.link===role);if(!r&&!t)return null;
+  const [kc,pr]=mealEst(role,r);return{role,r,t,name:r?r.name:(t?t.t:role),label:ROLE_LABEL[role]||role,time:t&&t.time||"",kcal:kc,prot:pr,optional:!!(t&&t.optional)}}).filter(Boolean).sort((a,b)=>tmin(a.time||"11:59 PM")-tmin(b.time||"11:59 PM"))}
+function foodTotals(k=dkey()){const l=eatLog(k);return{kcal:l.reduce((s,x)=>s+(+x.kcal||0),0),prot:l.reduce((s,x)=>s+(+x.prot||0),0),n:l.length}}
+function lastAteTs(){const all=[...eatLog(dkey())];const y=new Date();y.setDate(y.getDate()-1);all.push(...(FO().eat[dkey(y)]||[]));return all.reduce((m,x)=>Math.max(m,x.ts||0),0)}
+function sinceStrShort(ts){if(!ts)return"not yet today";const m=Math.round((Date.now()-ts)/60000);if(m<2)return"just now";if(m<60)return m+" m ago";const h=Math.floor(m/60);return h+" h "+(m%60?(m%60)+" m ":"")+"ago"}
+function isHungry(){const t=foodTotals(),g=FO().goal,h=new Date().getHours(),la=lastAteTs();if(t.kcal>=g.kcal)return false;if(h<8||h>=22)return false;return !la||Date.now()-la>4*36e5}
+// original 10x10 pixel drumstick (o outline, h highlight, m meat, d dark meat, b bone, s bone shade)
+const DRUM=["...ooo....","..ohhmo...",".ohhmmmo..",".ohmmmmo..",".ommmmdo..","..ommddo..","...odoobo.","....o.obbo","......obso",".......oo."];
+const DPAL={o:"#2B140A",h:"#F2A65A",m:"#C9632B",d:"#8A3A16",b:"#F1E7D0",s:"#B8AA8E"},DPALE={o:"#2B140A",h:"#3A2A22",m:"#2E211B",d:"#241914",b:"#3A332B",s:"#2C2722"};
+function drumSvg(f){let r="";DRUM.forEach((row,y)=>[...row].forEach((ch,x)=>{if(ch===".")return;const full=f>=1||(f>=.5&&x>=5);r+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${(full?DPAL:DPALE)[ch]}"/>`}));return`<svg viewBox="0 0 10 10" aria-hidden="true">${r}</svg>`}
+function drumBar(){const t=foodTotals(),f=Math.min(1,t.kcal/FO().goal.kcal)*10;return[...Array(10)].map((_,i)=>drumSvg(f-i>=1?1:f-i>=.5?.5:0)).join("")}
+function dogFedPills(){const fed=DFED()[dkey()]||{};return S.dogs.list.map(d=>{const x=fed[d.id]||{};return`<span><i class="${x.am?"f":""}"></i><i class="${x.pm?"f":""}"></i>${esc(d.name)}</span>`}).join("")}
+function renderFoodBar(){const el=$("foodbar");if(!el)return;const F=FO(),t=foodTotals(),g=F.goal,hungry=isHungry(),la=lastAteTs(),meals=todayMeals().filter(m=>!m.optional);
+ const sw=`<button class="fbswap" id="fbswap" aria-label="${F.barMode==="pix"?"Switch to the clean food tracker":"Switch to the game food bar"}">${F.barMode==="pix"?"▤":"🍗"}</button>`;
+ el.innerHTML=F.barMode==="pix"
+  ?`<div class="fbtop"><span>Hunger</span>${sw}</div><div class="fbpx ${hungry&&!RM?"hungry":""}">${drumBar()}</div><div class="fbfoot"><span class="fbmono">${hungry?(la?"Starving. Last ate "+sinceStrShort(la):"Nothing eaten yet. Go eat!"):t.kcal>=g.kcal?"Full. Nice.":`${t.kcal.toLocaleString()} / ${g.kcal.toLocaleString()} · last ate ${sinceStrShort(la)}`}</span><span class="fbdogs" id="fbdogs">${dogFedPills()}</span></div>`
+  :`<div class="fbtop"><span>Food today</span>${sw}</div><div class="fbclean"><div class="fbrow"><div class="fbbig">${t.kcal.toLocaleString()}<span>/ ${g.kcal.toLocaleString()} kcal · ${t.prot} g protein</span></div><span class="${hungry?"fbwarn":"fbok"}">${hungry?"Time to eat":"Last ate "+sinceStrShort(la)}</span></div>
+   <div class="fbsegs">${meals.map(m=>`<i class="${eatLog().some(x=>x.role===m.role)?"f":""}"></i>`).join("")}</div><div class="fbfoot"><span class="fblab">${meals.map(m=>m.label.replace(/^Meal \d · /,"")).join(" · ")}</span><span class="fbdogs" id="fbdogs">${dogFedPills()}</span></div></div>`;
+ $("fbswap").onclick=e=>{e.stopPropagation();F.barMode=F.barMode==="pix"?"clean":"pix";save();renderFoodBar()};
+ $("fbdogs").onclick=e=>{e.stopPropagation();openFood("dogs",el)};
+ el.onclick=()=>openFood("me",el);el.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openFood("me",el)}}}
+function openFood(tab="me",from){const el=$("troom");if(!el)return;roomGen++;el.getAnimations().forEach(a=>a.cancel());
+ const src=from&&from.getBoundingClientRect?from:$("foodbar");RO={kind:"food",tab,q:"",who:"all",origin:()=>{const r=src&&src.isConnected&&src.offsetParent!==null&&src.getBoundingClientRect();return r&&r.width&&r.bottom>0&&r.top<innerHeight?r:null}};
+ const P=PAL[1];el.style.setProperty("--acc",P.road[0]);el.style.setProperty("--tbg",P.sky[0]);el.classList.remove("water");
+ const d=Math.min(2,devicePixelRatio||1);paintScene($("trcv"),1,Math.round(Math.min(1800,innerWidth*d)),Math.round(340*d),23);
+ drawRoom();roomShow(RO.origin())}
+function logMeal(entry,el,ts){const e={id:uid(),ts:ts||Date.now(),...entry};eatLog().push(e);
+ const t=entry.role&&tasksFor(dkey()).find(x=>x.link===entry.role);if(t&&!dayData(dkey()).done[t.id])toggleTask(t.id,el);else addXP(5,el);
+ save();renderFoodBar();if(RO&&RO.kind==="food")drawRoom();toast(`Logged ${entry.name}${entry.kcal?" · "+entry.kcal+" kcal":""}`,"Undo",()=>{const l=eatLog(),i=l.findIndex(x=>x.id===e.id);if(i>=0)l.splice(i,1);save();renderFoodBar();if(RO&&RO.kind==="food")drawRoom()})}
+function editMeal(id){const l=eatLog(),x=id?l.find(e=>e.id===id):null,isNew=!x,m=x||{name:"",kcal:"",prot:"",ts:Date.now()};
+ openSheet(`<h2>${isNew?"Log something to eat":"Edit meal"}</h2><p class="desc">Calories and protein are estimates. Adjust them if you know better.</p>
+ <div class="field"><label for="em-n">What</label><input id="em-n" value="${esc(m.name)}" placeholder="Chicken wrap, protein bar…" autocomplete="off"></div>
+ <div class="pair"><div class="field"><label for="em-k">Calories</label><input id="em-k" type="number" inputmode="numeric" value="${m.kcal}" placeholder="500"></div><div class="field"><label for="em-p">Protein (g)</label><input id="em-p" type="number" inputmode="numeric" value="${m.prot}" placeholder="30"></div></div>
+ <div class="field"><label for="em-t">When</label><input id="em-t" type="datetime-local" value="${toLocalInput(m.ts)}"></div>
+ <div class="btns"><button class="action p" id="em-s">${isNew?"Log it":"Save"}</button>${isNew?"":`<button class="action danger" id="em-d">Delete</button>`}</div>`,
+ root=>{const q=s=>root.querySelector(s);q("#em-s").onclick=()=>{const name=q("#em-n").value.trim();if(!name){toast("What did you eat?");return}const e={name,kcal:Math.max(0,Math.round(+q("#em-k").value||0)),prot:Math.max(0,Math.round(+q("#em-p").value||0))},ts=new Date(q("#em-t").value).getTime()||Date.now();
+   if(isNew){closeSheet();logMeal({...e,role:""},null,ts)}else{Object.assign(x,e,{ts});save();closeSheet();renderFoodBar();toast("Saved")}};
+  const dl=q("#em-d");if(dl)dl.onclick=()=>{const i=l.indexOf(x);if(i>=0)l.splice(i,1);save();closeSheet();renderFoodBar();toast("Removed")}})}
+function foodGoalsSheet(){const F=FO();openSheet(`<h2>Food settings</h2><p class="desc">Your lean-bulk plan says 150–165 g protein. Set your daily calorie goal to match how you're gaining.</p>
+ <div class="pair"><div class="field"><label for="fg-k">Calories a day</label><input id="fg-k" type="number" inputmode="numeric" value="${F.goal.kcal}"></div><div class="field"><label for="fg-p">Protein (g)</label><input id="fg-p" type="number" inputmode="numeric" value="${F.goal.prot}"></div></div>
+ <div class="field"><label>Food bar on Today</label>${opts("bar",[["pix","Game (pixel)"],["clean","Clean tracker"]],F.barMode)}</div>
+ <div class="btns"><button class="action p" id="fg-s">Save</button><button class="action" id="fg-g">Grocery list</button></div>`,root=>{bindOpts(root);
+ root.querySelector("#fg-s").onclick=()=>{F.goal={kcal:Math.max(800,Math.round(+root.querySelector("#fg-k").value||2800)),prot:Math.max(0,Math.round(+root.querySelector("#fg-p").value||160))};F.barMode=optVal(root,"bar")||F.barMode;save();closeSheet();renderFoodBar();toast("Food settings saved")};
+ root.querySelector("#fg-g").onclick=()=>grocerySheet()})}
+function feedDog(id,slot,el){const k=dkey(),f=DFED(),day=f[k]||(f[k]={}),d=day[id]||(day[id]={});if(d[slot]){delete d[slot]}else{d[slot]=Date.now();try{navigator.vibrate&&navigator.vibrate(10)}catch(e){}}save();renderFoodBar();if(RO&&RO.kind==="food")drawRoom()}
+function drawFoodRoom(){const R=$("troom"),F=FO(),tab=RO.tab||"me",k=dkey(),wk=typeof mealWeek==="function"?mealWeek(k):1;
+ const head=`<div class="trbar"><button class="trib" id="tr-back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><span class="treb">${typeof MENU_THEMES!=="undefined"&&MENU_THEMES[wk-1]?`Week ${wk} · ${esc(MENU_THEMES[wk-1])}`:"Food"}</span><button class="trib" id="fo-set" aria-label="Food settings"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button></div>
+ <div class="trin"><div class="fotitle">Food</div><div class="fotabs" role="tablist">${[["me","You"],["dogs","Dogs"],["rec","Recipes"]].map(([t,n])=>`<button role="tab" data-ft="${t}" class="${t===tab?"on":""}" aria-selected="${t===tab}">${n}</button>`).join("")}</div>`;
+ let body="";
+ if(tab==="me"){const t=foodTotals(),g=F.goal,f=t.kcal/g.kcal,RC=94.25,meals=todayMeals(),log=eatLog(),la=lastAteTs(),hungry=isHungry(),next=meals.find(m=>!m.optional&&!log.some(x=>x.role===m.role));
+  body=`<div class="fohero"><div><div class="fobig">${t.kcal.toLocaleString()}<span>/ ${g.kcal.toLocaleString()} kcal</span></div><div class="trsub">${hungry?`<b class="wrbehind">${la?"Last ate "+sinceStrShort(la):"Nothing yet today"}. Time to eat.</b>`:t.kcal>=g.kcal?"Goal reached today":"Last ate "+sinceStrShort(la)}</div></div>
+   <div class="trring"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,.13)" stroke-width="3"/><circle class="p" cx="18" cy="18" r="15" fill="none" stroke="var(--acc)" stroke-width="3" stroke-linecap="round" stroke-dasharray="${(Math.min(1,f)*RC).toFixed(1)} ${RC}" transform="rotate(-90 18 18)"/></svg><b>${Math.round(Math.min(1,f)*100)}%</b></div></div>
+   ${F.barMode==="pix"?`<div class="fbpx foroom">${drumBar()}</div>`:""}
+   <div class="fomac"><div><small>Protein</small><b>${t.prot} / ${g.prot} g</b><i><em style="width:${Math.min(100,t.prot/g.prot*100)}%"></em></i></div><div><small>Meals</small><b>${meals.filter(m=>!m.optional&&log.some(x=>x.role===m.role)).length} of ${meals.filter(m=>!m.optional).length}</b><i><em style="width:${meals.length?meals.filter(m=>!m.optional&&log.some(x=>x.role===m.role)).length/Math.max(1,meals.filter(m=>!m.optional).length)*100:0}%"></em></i></div><div><small>Logged</small><b>${log.length} today</b><i><em style="width:0"></em></i></div></div>
+   <div class="foh4"><span>Today's meal plan</span><button class="link" id="fo-add">+ Something else</button></div>
+   ${meals.map(m=>{const done=log.find(x=>x.role===m.role);return`<div class="fomeal ${done?"done":m===next?"next":""}"><i>${ROLE_ICON[m.role]||"🍽️"}</i><div class="m">${esc(m.name)}<small>${esc(m.label)}${m.time?" · "+esc(m.time):""}${m.kcal?` · ~${m.kcal} kcal · ${m.prot} g`:""}${m.optional?" · if intake is low":""}</small></div>${m.r?`<button class="forec" data-r="${m.r.id}">Recipe</button>`:""}<button class="fogo" data-role="${m.role}">${done?"✓ Ate":"Ate it"}</button></div>`}).join("")||`<p class="trmin">No meal plan for today.</p>`}
+   ${log.length?`<div class="foh4"><span>Eaten today</span><span>${t.kcal.toLocaleString()} kcal · ${t.prot} g</span></div>${[...log].sort((a,b)=>a.ts-b.ts).map(x=>`<button class="folog" data-id="${x.id}"><span>${esc(x.name)}<small>${timeStr(x.ts)}${x.kcal?" · "+x.kcal+" kcal":""}${x.prot?" · "+x.prot+" g protein":""}</small></span><b>✎</b></button>`).join("")}`:""}`}
+ if(tab==="dogs"){const fed=DFED()[k]||{},D=S.dogs;
+  body=D.list.map(d=>{const s=dogStatus(d),p=dogPortions(d,s.fresh),x=fed[d.id]||{},w=dogCurrentWeight(d);
+   return`<div class="fodog ${s.urgent.length?"alert":""}"><div class="fodh"><div><b>${esc(d.name)}</b><small>${w>0?w+" lb":"Weight not set"}${d.sensitive?" · settling stomach":""}${d.goal==="lose"?" · losing weight":""}</small></div><span class="fochk ${s.logged?"ok":""}">${s.logged?"✓ Checked in":"Check-in at 9 PM"}</span></div>
+    <div class="fofeeds">${[["am","Morning"],["pm","Evening"]].map(([sl,n])=>`<button class="fofeed ${x[sl]?"f":""}" data-dog="${d.id}" data-slot="${sl}" aria-pressed="${!!x[sl]}"><b>${n}</b><small>${x[sl]?"Fed at "+timeStr(x[sl]):"Tap when fed"}</small></button>`).join("")}</div>
+    ${p?`<div class="foport"><span>Per meal: <b>${cupStr(p.kibCup/2)} kibble</b> + ${r5(p.freshG/2)} g fresh</span><span>${100-s.fresh}/${s.fresh}</span></div>`:`<div class="trmin">Add ${esc(d.name)}'s weight to see portions.</div>`}
+    ${p?dogWeightLine(d):""}${s.urgent.map(u=>`<div class="flag urgent">⚠ ${esc(u)}. Call your vet.</div>`).join("")}${s.watch.map(u=>`<div class="flag">${esc(u)}</div>`).join("")}</div>`}).join("")
+   +`<div class="fomini"><div><small>Freezer bags</small><b>${D.freezer||0}</b><div class="foctl"><button id="fz-m" aria-label="Use one bag">−1</button><button id="fz-p" aria-label="Add one bag">+1</button><button id="fz-b">+ Batch</button></div></div><div><small>One batch lasts</small><b>${(()=>{const bd=batchDays();return bd?"≈ "+Math.floor(bd)+" days":"–"})()}</b><small style="margin-top:6px">at today's ratios</small></div></div>
+   <button class="fowide p" id="dg-check">Daily check-in · food, water, stool, energy</button><div class="fotwo"><button class="fowide" id="dg-rec">Meal-prep recipe</button><button class="fowide" id="dg-edit">Names and weights</button></div>
+   <details class="foflags"><summary>Red flags</summary><p>${esc(DOG_FLAGS)}</p></details>`}
+ if(tab==="rec"){const q=(RO.q||"").toLowerCase(),who=RO.who||"all",list=S.food.recipes.filter(r=>(who==="all"||r.who===who)&&(!q||(r.name+" "+(r.ingredients||[]).join(" ")).toLowerCase().includes(q))).sort((a,b)=>(b.fav?1:0)-(a.fav?1:0)||a.name.localeCompare(b.name));
+  body=`<div class="fosearch"><input id="fo-q" type="search" value="${esc(RO.q||"")}" placeholder="Search recipes or ingredients" autocomplete="off" aria-label="Search recipes"></div>
+   <div class="fochips">${[["all","All"],["me","You"],["dog","Dogs"]].map(([w,n])=>`<button data-who="${w}" class="${w===who?"on":""}">${n}</button>`).join("")}<button id="fo-new" class="fonew">+ New recipe</button></div>
+   <div class="forgrid">${list.map(r=>`<button class="forc" data-r="${r.id}"><i>${r.who==="dog"?"🐕":ROLE_ICON[r.role]||"🍽️"}</i><span><b>${esc(r.name)}</b><small>${esc(r.cat||"")}${r.week?" · week "+r.week:""}${r.fav?" · ★":""}</small></span></button>`).join("")||`<p class="trmin">No recipes match.</p>`}</div>`}
+ $("trs").innerHTML=head+`<div class="fobody">${body}</div></div>`;$("trfoot").innerHTML="";
+ const q=s=>R.querySelector(s);q("#tr-back").onclick=()=>closeRoom();q("#fo-set").onclick=()=>foodGoalsSheet();
+ R.querySelectorAll("[data-ft]").forEach(b=>b.onclick=()=>{RO.tab=b.dataset.ft;drawRoom();$("trs").scrollTo({top:Math.min($("trs").scrollTop,170)})});
+ R.querySelectorAll(".fogo").forEach(b=>b.onclick=()=>{const role=b.dataset.role,l=eatLog(),ex=l.findIndex(x=>x.role===role);if(ex>=0){l.splice(ex,1);save();renderFoodBar();drawRoom();return}
+  const m=todayMeals().find(x=>x.role===role);if(m)logMeal({name:m.name,kcal:m.kcal,prot:m.prot,role},b)});
+ R.querySelectorAll(".forec,.forc").forEach(b=>b.onclick=()=>openRecipe(b.dataset.r));
+ R.querySelectorAll(".folog").forEach(b=>b.onclick=()=>editMeal(b.dataset.id));const ad=q("#fo-add");if(ad)ad.onclick=()=>editMeal();
+ R.querySelectorAll(".fofeed").forEach(b=>b.onclick=()=>feedDog(b.dataset.dog,b.dataset.slot,b));
+ const fz=n=>{S.dogs.freezer=Math.max(0,(S.dogs.freezer||0)+n);save();drawRoom()};if(q("#fz-m")){q("#fz-m").onclick=()=>fz(-1);q("#fz-p").onclick=()=>fz(1);
+  q("#fz-b").onclick=()=>openSheet(`<h2>Add a batch</h2><p class="desc">How many bags went into the freezer?</p><div class="field"><label for="fz-n">Bags</label><input id="fz-n" type="number" inputmode="numeric" value="7"></div><div class="btns"><button class="action p" id="fz-save">Add bags</button></div>`,r=>{r.querySelector("#fz-save").onclick=()=>{const n=Math.round(+r.querySelector("#fz-n").value);if(!(n>0)){toast("Enter how many bags");return}closeSheet();fz(n);toast(n+" bags added to the freezer")}})}
+ if(q("#dg-check")){q("#dg-check").onclick=()=>dogCheckIn();q("#dg-rec").onclick=()=>{const r=S.food.recipes.find(x=>x.name===HUSKY_RECIPE.name);if(r)openRecipe(r.id)};q("#dg-edit").onclick=()=>dogEdit()}
+ const fq=q("#fo-q");if(fq)fq.oninput=()=>{RO.q=fq.value;const pos=fq.selectionStart;drawRoom();const n=$("fo-q");if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}};
+ R.querySelectorAll("[data-who]").forEach(b=>b.onclick=()=>{RO.who=b.dataset.who;drawRoom()});const nw=q("#fo-new");if(nw)nw.onclick=()=>{S.ui.who=RO.who==="dog"?"dog":"me";editRecipe()}}
+
 /* ================= dogs ================= */
 const dogLog=(k,id)=>(S.dogs.log[k]||{})[id];
 function dogStatus(d){const keys=Object.keys(S.dogs.log).filter(k=>dogLog(k,d.id)&&dogLog(k,d.id).stool).sort().reverse();
@@ -1620,7 +1714,7 @@ const segAll=()=>requestAnimationFrame(()=>{segPlace("acct");segPlace("tf")});
 
 /* ================= routing + dock ================= */
 const NAMES={home:"Home",today:"Today",trades:"Trades",journal:"Journal",food:"Food",smoke:"Smoke log",money:"Money"},PALOF={today:1,trades:0,journal:2,food:3,smoke:4,money:0};
-function go(v,o={}){S.view=v;if(v!=="home")layerOpen("page",()=>go("home"));else layerClosed("page");if(o.acct){S.ui.tsec=o.acct==="manual"?"pred":TSEC.some(s=>s.k===o.acct)?o.acct:"all";txHold()}if(o.book)S.ui.book=o.book;
+function go(v,o={}){if(v==="food"){if(o.instant){v="today"}else{openFood(S.ui.who==="dog"?"dogs":"me");return}}S.view=v;if(v!=="home")layerOpen("page",()=>go("home"));else layerClosed("page");if(o.acct){S.ui.tsec=o.acct==="manual"?"pred":TSEC.some(s=>s.k===o.acct)?o.acct:"all";txHold()}if(o.book)S.ui.book=o.book;
  $("v-home").classList.toggle("off",v!=="home");document.querySelectorAll(".page").forEach(p=>p.classList.toggle("on",p.id==="p-"+v));document.body.classList.toggle("page-mode",v!=="home");
  document.querySelectorAll("#dock .tb").forEach(b=>b.classList.toggle("on",b.dataset.v===v||(b.dataset.k==="more"&&!["home","today","money"].includes(v))));qlog(false);
  $("crumb").textContent=NAMES[v];setGreet();morphWeek(v==="today",!!o.instant&&weekCompact===null);
@@ -1745,10 +1839,10 @@ $("orbit").querySelectorAll(".olab").forEach(b=>b.onclick=()=>{orbit(false);cons
 function renderAll(){syncRepSelect();renderWeek();renderToday();renderWater();renderTrades();renderJournal();renderFood();renderCards();if(S.view==="home")layout()}
 tick();setInterval(tick,10000);
 rail.classList.add("still");paintCards();renderAll();layout();requestAnimationFrame(()=>requestAnimationFrame(()=>rail.classList.remove("still")));
-const start=(location.hash||"").slice(1);if(start==="dogs"){S.ui.who="dog";go("food",{instant:true})}else if(start==="calm"){go("smoke",{instant:true});setTimeout(openCalm,300)}
+const start=(location.hash||"").slice(1);if(start==="dogs"){S.ui.who="dog";go("today",{instant:true});setTimeout(()=>openFood("dogs"),500)}else if(start==="calm"){go("smoke",{instant:true});setTimeout(openCalm,300)}
 else go(NAMES[start]?start:"home",{instant:true});
 addEventListener("resize",()=>{glide();segAll()});
-setInterval(waterTick,60000);setTimeout(waterTick,4000);setInterval(taskTick,30000);setTimeout(taskTick,2000);$("alertsbtn").onclick=()=>NATIVE?nativeAlertsSheet():alertsSheet();if(NATIVE){nativeInit();document.documentElement.classList.add("native")}$("waterbtn").onclick=e=>openWater(e.currentTarget);
+setInterval(waterTick,60000);setInterval(()=>{if(S.view==="today"&&!document.hidden)renderFoodBar()},60000);setTimeout(waterTick,4000);setInterval(taskTick,30000);setTimeout(taskTick,2000);$("alertsbtn").onclick=()=>NATIVE?nativeAlertsSheet():alertsSheet();if(NATIVE){nativeInit();document.documentElement.classList.add("native")}$("waterbtn").onclick=e=>openWater(e.currentTarget);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){tick();waterTick();taskTick();scheduleSoon();if(S.settings.wallet&&Date.now()-S.sync.last>120000)sync(false)}});
 if(S.settings.wallet&&Date.now()-S.sync.last>120000)setTimeout(()=>sync(false),800);
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(()=>{});
