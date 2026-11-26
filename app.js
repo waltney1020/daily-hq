@@ -367,7 +367,7 @@ function toast(t,btn,fn){document.querySelectorAll(".toast").forEach(x=>x.remove
 function burst(el,colors=["#EFBC90","#86D3B0","#F6E3CC","#7AB8B8"]){if(RM||!el)return;const r=el.getBoundingClientRect();for(let i=0;i<18;i++){const p=document.createElement("i");p.className="burst";p.style.left=(r.left+r.width/2)+"px";p.style.top=(r.top+r.height/2)+"px";p.style.background=colors[i%colors.length];const a=Math.random()*Math.PI*2,d=50+Math.random()*90;p.style.setProperty("--bx",Math.cos(a)*d+"px");p.style.setProperty("--by",Math.sin(a)*d-30+"px");p.style.setProperty("--br",Math.random()*540+"deg");document.body.appendChild(p);setTimeout(()=>p.remove(),900)}}
 function countUp(el,to,from){if(RM||from===to){el.textContent=money(to);return}const t0=performance.now();(function f(t){const k=Math.min(1,(t-t0)/900),e=1-Math.pow(1-k,3);el.textContent=money(from+(to-from)*e);if(k<1)requestAnimationFrame(f)})(t0)}
 const level=()=>Math.floor(S.xp/1000)+1;
-function addXP(n,el){const before=level();S.xp=Math.max(0,S.xp+n);if(n>0&&level()>before){setTimeout(()=>{toast("Level up! You're level "+level());burst(el||document.body)},300)}}
+function addXP(n,el){const before=level();S.xp=Math.max(0,S.xp+n);if(n&&typeof earn==="function")earn(n,XP_LABEL[n]||(n>0?"Earned":"Undone"));if(n>0&&level()>before){setTimeout(()=>{toast("Level up! You're level "+level());burst(el||document.body)},300)}}
 
 /* ================= clock + week ================= */
 function tick(){const d=new Date(),h=d.getHours()%12||12,m=String(d.getMinutes()).padStart(2,"0");$("time").innerHTML=`${h}<i>:</i>${m}`;$("dt").textContent=d.toLocaleDateString([], {weekday:"long",month:"long",day:"numeric"});setGreet();
@@ -418,7 +418,7 @@ function closeRoom(instant){const el=$("troom");if(!el||!el.classList.contains("
  el.animate([{clipPath:"inset(0px 0px 0px 0px round 0px)"},{clipPath:roomClip(r)}],{duration:560,easing:"cubic-bezier(.32,.72,0,1)",fill:"forwards"}).onfinish=fin;
  setTimeout(fin,700)} // backup: never leave the room stuck on screen if the animation is paused
 function roomCelebrate(){roomFlash("✓","Done","+10 XP",true)}
-function drawRoom(){if(!RO)return;if(RO.kind==="water")return drawWaterRoom();if(RO.kind==="food")return drawFoodRoom();const {id,k}=RO,t=tasksFor(k).find(x=>x.id===id);if(!t){closeRoom(true);return}
+function drawRoom(){if(!RO)return;if(RO.kind==="water")return drawWaterRoom();if(RO.kind==="streak")return drawStreakRoom();if(RO.kind==="food")return drawFoodRoom();const {id,k}=RO,t=tasksFor(k).find(x=>x.id===id);if(!t){closeRoom(true);return}
  const dd=dayData(k),steps=stepList(k,t),sk=stepKey(k,t),s=(dd.steps||{})[sk]||{},n=stepsDone(k,t),total=steps.length,isDone=!!dd.done[id],pct=isDone?100:total?Math.round(n/total*100):0,RC=94.25;
  const adh=t.g==="Hair care"?{...adherence(x=>x.g==="Hair care",S.hairStart),label:"Hair routine",target:" Target 85–100%."}:isSkin(t)?{...adherence(isSkin,S.skinStart),label:"Skin routines",target:""}:t.main?{...adherence(x=>!!x.main,S.fitStart),label:"Main workouts",target:" Target: 5 a week."}:null;
  const lr=t.link&&ROLE_LABEL[t.link]?recipeFor(t.link,k):null,phase=phaseFor(t,k)||(lr?[0,0,"Week "+mealWeek(k)+" · "+MENU_THEMES[mealWeek(k)-1]+": "+lr.name]:null),minDone=dd.minDone&&dd.minDone[id];
@@ -844,7 +844,8 @@ function renderToday(just){const k=dkey(),dd=dayData(k),tl=timing(k),req=tl.filt
 function toggleTask(id,el,k=dkey()){const dd=dayData(k);dd.done[id]=!dd.done[id];if(!dd.done[id])delete dd.done[id];addXP(dd.done[id]?10:-10,el);
  dd.doneAt=dd.doneAt||{};dd.late=dd.late||{};if(dd.done[id]){dd.doneAt[id]=Date.now();if(k!==dkey())dd.late[id]="late"}else{delete dd.doneAt[id];delete dd.late[id]}
  const rt=S.routine.find(r=>r.id===id);if(rt&&rt.link==="freezer"&&S.dogs&&k===dkey()){S.dogs.freezer=Math.max(0,(S.dogs.freezer||0)+(dd.done[id]?-1:1))}
- const was=dd.complete;dd.complete=isComplete(k);const s=streak();if(s>S.best)S.best=s;save();renderToday(dd.done[id]&&k===dkey()?id:null);renderWeek();renderCards();
+ const was=dd.complete;dd.complete=isComplete(k);const s=streak();if(s>S.best)S.best=s;
+ if(dd.complete&&!was)earnOnce(50,k===dkey()?"Cleared today":"Cleared "+new Date(k+"T12:00").toLocaleDateString([], {weekday:"long"}),"day:"+k);else if(!dd.complete&&was)unearn(50,"Day no longer cleared","day:"+k);checkMilestones();save();renderToday(dd.done[id]&&k===dkey()?id:null);renderWeek();renderCards();
  if(k!==dkey()){toast(dd.complete&&!was?"That day is complete now. Streak: "+s+" days.":dd.done[id]?"Checked off (done late)":"Unchecked");return}
  if(dd.complete&&!was){toast("Day cleared. "+s+"-day streak.");burst(el)}else if(dd.done[id])toast("+10 XP")}
 function editTask(id){const k=dkey(),r=S.routine.find(x=>x.id===id),ex=dayData(k).extra.find(x=>x.id===id),t=r||ex;if(!t)return;
@@ -1048,7 +1049,7 @@ function buildNotifs(){const N=nset(),out=[],now=Date.now()+5000;
   for(const t of timed){if(t.st==="done"||t.st==="late")continue;const nx=timed.find(x=>x.T>t.T),steps=t.steps&&t.steps.length?` · ${t.steps.length} steps`:"",extra={k,id:t.id,kind:"task"};
    const start=atDate(k,t.T);
    if(N.start&&start>now&&t.st!=="pre")out.push({id:nid(k+t.id+"s"),title:"Now: "+t.t,body:`${t.time}${steps}.${nx?` Up next: ${nx.t} at ${nx.time}.`:" Last timed task today."}`,schedule:{at:start,allowWhileIdle:true},channelId:"tasks",actionTypeId:"TASK",extra});
-   if(N.pre>0){const pre=atDate(k,t.T-N.pre);if(pre>now&&t.st!=="pre")out.push({id:nid(k+t.id+"p"),title:`In ${N.pre} min: ${t.t}`,body:`Starts at ${t.time}${steps}.`,schedule:{at:pre,allowWhileIdle:true},channelId:"tasks",actionTypeId:"TASK",extra})}
+   const PRE=t.pre||N.pre;if(PRE>0){const pre=atDate(k,t.T-PRE);if(pre>now&&t.st!=="pre")out.push({id:nid(k+t.id+"p"),title:`In ${PRE} min: ${t.t}`,body:`Starts at ${t.time}${steps}.`,schedule:{at:pre,allowWhileIdle:true},channelId:"tasks",actionTypeId:"TASK",extra})}
    const dl=atDate(k,t.dl);if(N.missed&&!t.optional&&t.st!=="pre"&&dl>now)out.push({id:nid(k+t.id+"m"),title:"Missed: "+t.t,body:`Planned for ${t.time}. Tap Done if you did it, or check it off late in Today.`,schedule:{at:dl,allowWhileIdle:true},channelId:"missed",actionTypeId:"MISSED",extra})}
   if(i===0&&typeof foodNotifs==="function")out.push(...foodNotifs(now));
   if(N.water&&!(i===0&&waterToday()>=W().goal)){for(let m=tmin(W().start);m<=tmin(W().end);m+=W().every){const at=atDate(k,m);if(at>now)out.push({id:nid(k+"w"+m),title:"💧 Time for water",body:`Log ${W().step} ml. Goal ${fmtL(W().goal)} today.`,schedule:{at,allowWhileIdle:true},channelId:"water",actionTypeId:"WATER",extra:{k,kind:"water"}})}}}
@@ -1389,6 +1390,7 @@ function openFood(tab="me",from){const el=$("troom");if(!el)return;roomGen++;el.
  const d=Math.min(2,devicePixelRatio||1);paintScene($("trcv"),1,Math.round(Math.min(1800,innerWidth*d)),Math.round(340*d),23);
  drawRoom();roomShow(RO.origin())}
 function logMeal(entry,el,ts){const e={id:uid(),ts:ts||Date.now(),...entry};eatLog().push(e);
+ {const need=todayMeals().filter(m=>!m.optional);if(need.length&&need.every(m=>eatLog().some(x=>x.role===m.role)))earnOnce(20,"Ate all your meals","meals:"+dkey())}
  const t=entry.role&&tasksFor(dkey()).find(x=>x.link===entry.role);if(t&&!dayData(dkey()).done[t.id])toggleTask(t.id,el);else addXP(5,el);
  save();renderFoodBar();if(RO&&RO.kind==="food")drawRoom();toast(`Logged ${entry.name}${entry.kcal?" · "+entry.kcal+" kcal":""}`,"Undo",()=>{const l=eatLog(),i=l.findIndex(x=>x.id===e.id);if(i>=0)l.splice(i,1);save();renderFoodBar();if(RO&&RO.kind==="food")drawRoom()})}
 function editMeal(id){const l=eatLog(),x=id?l.find(e=>e.id===id):null,isNew=!x,m=x||{name:"",kcal:"",prot:"",ts:Date.now()};
@@ -1455,6 +1457,134 @@ function drawFoodRoom(){const R=$("troom"),F=FO(),tab=RO.tab||"me",k=dkey(),wk=t
  if(q("#dg-check")){q("#dg-check").onclick=()=>dogCheckIn();q("#dg-rec").onclick=()=>{const r=S.food.recipes.find(x=>x.name===HUSKY_RECIPE.name);if(r)openRecipe(r.id)};q("#dg-edit").onclick=()=>dogEdit()}
  const fq=q("#fo-q");if(fq)fq.oninput=()=>{RO.q=fq.value;const pos=fq.selectionStart;drawRoom();const n=$("fo-q");if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}};
  R.querySelectorAll("[data-who]").forEach(b=>b.onclick=()=>{RO.who=b.dataset.who;drawRoom()});const nw=q("#fo-new");if(nw)nw.onclick=()=>{S.ui.who=RO.who==="dog"?"dog":"me";editRecipe()}}
+
+/* ================= Streak · Coach · Rewards =================
+   Coins 🪙 are earned for discipline (they ride along with XP, plus bonuses for clearing a day, the water goal,
+   eating all meals and streak milestones) and spent in a Store. Streak tiers unlock bigger rewards. The Coach
+   reads the last 30 days and explains what keeps breaking your streak, with one-tap schedule fixes. */
+const RW=()=>{if(!S.rw)S.rw={coins:Math.max(0,S.xp||0),ledger:S.xp?[{ts:Date.now(),amt:S.xp,label:"Starting balance from your XP"}]:[],got:{},items:[],fixes:{}};const r=S.rw;r.ledger=r.ledger||[];r.got=r.got||{};r.items=r.items||[];r.fixes=r.fixes||{};return r};
+const TIERS=[["Diamond",100,"💎"],["Gold",30,"🥇"],["Silver",7,"🥈"],["Bronze",3,"🥉"]];
+const tierOf=s=>TIERS.find(t=>s>=t[1])||["Starter",0,"🔥"];
+const TIER_DAYS={Starter:0,Bronze:3,Silver:7,Gold:30,Diamond:100};
+const MILES=[[3,100],[7,300],[14,500],[30,1000],[60,1500],[100,2000],[180,3000],[365,5000]];
+const XP_LABEL={10:"Task done",[-10]:"Task unchecked",5:"Logged an entry",[-5]:"Entry removed",15:"Beat a smoke urge"};
+function earn(n,label){if(!n)return;const r=RW(),L=r.ledger,last=L[L.length-1];
+ if(last&&last.amt===-n&&Date.now()-last.ts<90000&&(XP_LABEL[-n]===last.label||label===XP_LABEL[n])){L.pop();r.coins=Math.max(0,r.coins+n);return} // quick undo cancels out
+ r.coins=Math.max(0,r.coins+n);L.push({ts:Date.now(),amt:n,label});if(L.length>400)L.splice(0,L.length-400);renderStreakChip()}
+function earnOnce(n,label,key){const r=RW();if(r.got[key])return;r.got[key]=1;earn(n,label)}
+function unearn(n,label,key){const r=RW();if(!r.got[key])return;delete r.got[key];earn(-n,label)}
+function checkMilestones(){const s=streak();for(const [d,bonus] of MILES)if(s>=d&&!RW().got["mile:"+d]){earnOnce(bonus,`Milestone: ${d}-day streak`,"mile:"+d);setTimeout(()=>toast(`🏆 ${d}-day streak! +${bonus} 🪙`),400)}}
+function renderStreakChip(){const l=$("streaklbl");if(l)l.textContent=streak()+(streak()===1?" day":" days")}
+// ---- store ----
+const STORE_DEFAULT=[
+ {id:"d1",c:"Do",ic:"🎮",n:"1 hour of gaming",d:"Guilt-free",p:200,t:"Bronze"},{id:"d2",c:"Do",ic:"🎬",n:"Movie night",d:"Phone off, full movie",p:250,t:"Bronze"},
+ {id:"d3",c:"Do",ic:"🍔",n:"Cheat meal",d:"One meal, anything you want",p:350,t:"Bronze"},{id:"d4",c:"Do",ic:"😴",n:"Sleep in",d:"Skip the early alarm once",p:300,t:"Silver"},
+ {id:"d5",c:"Do",ic:"🏖️",n:"Full day off",d:"No routine, no guilt",p:1500,t:"Gold"},{id:"t1",c:"Treat",ic:"🍦",n:"Dessert",d:"Any dessert you want",p:150,t:"Starter"},
+ {id:"t2",c:"Treat",ic:"☕",n:"Fancy coffee",d:"The good one",p:100,t:"Starter"}];
+const COINS_PER_DOLLAR=20;
+function storeItems(){const r=RW(),wish=(MO().wish||[]).filter(x=>+x.price>0).map(x=>({id:"w:"+x.id,c:"Buy",ic:"🛍️",n:x.title,d:`From Things to buy · ${money(+x.price)}`,p:Math.round(+x.price*COINS_PER_DOLLAR),t:+x.price<100?"Bronze":+x.price<200?"Silver":"Gold",wish:true}));
+ return[...STORE_DEFAULT.filter(x=>!(r.hidden||{})[x.id]),...r.items.map(x=>({...x,custom:true})),...wish]}
+// ---- coach ----
+function coachData(){const today=dkey(),days=[],t0=startDay();for(let i=1;i<=30;i++){const d=new Date();d.setDate(d.getDate()-i);const k=dkey(d);if(k<t0)break;const req=tasksFor(k).filter(x=>!x.optional);if(!req.length)continue;
+  const dd=S.days[k]||{done:{}},miss=req.filter(x=>!dd.done[x.id]);days.push({k,dow:dowOf(k),req,miss})}
+ const tasks={};for(const d of days)for(const t of d.miss){const e=tasks[t.id]||(tasks[t.id]={id:t.id,t:t.t,time:t.time||"",g:t.g,miss:0,only:0,wk:0,recent:0,rep:!!t.rep});e.miss++;if(d.miss.length===1)e.only++;if(d.dow===0||d.dow===6)e.wk++;if(days.indexOf(d)<14)e.recent++}
+ const cleared=days.filter(d=>!d.miss.length).length,by1=days.filter(d=>d.miss.length===1).length,by23=days.filter(d=>d.miss.length>=2&&d.miss.length<=3).length,by4=days.filter(d=>d.miss.length>=4).length;
+ const allMiss=days.flatMap(d=>d.miss),bucket={morning:0,afternoon:0,evening:0,anytime:0};for(const t of allMiss){const m=tmin(t.time);bucket[m>=9998?"anytime":m<720?"morning":m<1020?"afternoon":"evening"]++}
+ const top=Object.values(tasks).sort((a,b)=>b.only-a.only||b.miss-a.miss);
+ const safe=new Map();for(const d of days.slice(0,14))for(const t of d.req)if(!d.miss.includes(t))safe.set(t.id,(safe.get(t.id)||0)+1);
+ const working=[...new Set(days.slice(0,14).flatMap(d=>d.req).filter(t=>!Object.prototype.hasOwnProperty.call(tasks,t.id)||tasks[t.id].recent===0).map(t=>t.t))].slice(0,4);
+ return{days,cleared,missed:days.length-cleared,by1,by23,by4,bucket,total:allMiss.length,top,working}}
+function crowd(t){const T=tmin(t.time);if(T>=9998)return[];return tasksFor(dkey()).filter(x=>x.id!==t.id&&x.time&&Math.abs(tmin(x.time)-T)<=45&&!x.optional).map(x=>x.t).slice(0,2)}
+const fmtMin=m=>{m=((m%1440)+1440)%1440;const h=Math.floor(m/60),mm=m%60;return`${h%12||12}:${String(mm).padStart(2,"0")} ${h<12?"AM":"PM"}`};
+function coachInsights(){const C=coachData(),out=[];if(C.days.length<3)return{C,out};
+ for(const e of C.top.slice(0,3)){if(e.miss<2)continue;const T=tmin(e.time),near=crowd(e),why=[],fixes=[];
+  const share=C.days.length?Math.round(e.miss/Math.min(14,C.days.length)*100):0;
+  if(e.wk>=Math.max(2,e.miss*.7)){why.push(`almost all of these misses are on weekends, when your mornings start later`);fixes.push(["weekend","Optional on weekends"])}
+  if(T<9998&&T<420){why.push(`${e.time} is very early, so it's easy to sleep through or skip`);fixes.push(["anytime","Make it Anytime"])}
+  if(T>=1200){why.push(`it's late in the evening, when energy and willpower are lowest`);fixes.push(["move:"+(T-180),"Move to "+fmtMin(T-180)])}
+  if(near.length)why.push(`it shares a busy slot with ${near.join(" and ")}`);
+  if(T<9998&&T>=720&&T<1200&&!fixes.some(f=>f[0].startsWith("move")))fixes.push(["move:"+(T+120),"Move to "+fmtMin(T+120)]);
+  if(T>=9998&&!fixes.length)why.push(`it has no set time, so it keeps getting pushed to "later"`),fixes.push(["move:"+(e.g==="Evening"?1080:e.g==="Afternoon"?900:600),"Give it a time ("+fmtMin(e.g==="Evening"?1080:e.g==="Afternoon"?900:600)+")"]);
+  if(T<9998)fixes.push(["remind","Remind me 10 min before"]);
+  if(e.miss>=Math.max(4,C.days.length*.5))fixes.push(["optional","Make it optional"]);
+  out.push({key:e.id,ic:"⚠️",title:e.t+(e.time?" · "+e.time:""),sub:`Missed ${e.miss} of the last ${C.days.length} days${e.only?` · ${e.only} time${e.only>1?"s":""} it was your only miss`:""}`,
+   why:why.length?why.join(", and ")+".":"you skip it more than anything else on your list.",fix:fixes.length?"Change when or how it happens so it fits your real day.":"",fixes,id:e.id})}
+ const b=C.bucket,tot=C.total,worst=Object.entries(b).sort((x,y)=>y[1]-x[1])[0];
+ if(tot>=4&&worst[1]/tot>=.5)out.push({key:"bucket:"+worst[0],ic:"🕘",title:`${worst[0][0].toUpperCase()+worst[0].slice(1)}s are your weak spot`,sub:`${Math.round(worst[1]/tot*100)}% of your misses happen ${worst[0]==="anytime"?"on tasks without a set time":"in the "+worst[0]}`,
+  why:worst[0]==="evening"?"By the evening you've used up most of your energy, and late tasks pile up.":worst[0]==="morning"?"Mornings get rushed when you wake up late.":worst[0]==="anytime"?"Tasks without a time slide until the day is over.":"The afternoon is where meetings, food and trading crowd together.",
+  fix:worst[0]==="evening"?"Move one or two evening tasks earlier, or stack them into one short night routine.":worst[0]==="anytime"?"Give your Anytime tasks a real time slot.":"Spread these tasks out or move one to a quieter time.",fixes:[["today","Show me my day"]]});
+ if(C.working.length)out.push({key:"good",good:true,ic:"✅",title:"What's working",sub:"Not missed in the last 14 days",why:C.working.join(" · ")+". Build the rest of your day around these.",fixes:[]});
+ return{C,out}}
+function applyFix(id,kind){const r=S.routine.find(x=>x.id===id),done=m=>{RW().fixes[id+":"+kind]=1;save();renderToday();renderWeek();drawRoom();toast(m)};
+ if(kind==="today"){closeRoom(true);go("today");return}
+ if(!r){toast("That's a one-day task, so there's nothing to change in your routine");return}
+ if(kind.startsWith("move:")){const m=+kind.split(":")[1];r.time=fmtMin(m);if(m>=1020)r.g="Evening";else if(m>=720)r.g="Afternoon";else r.g="Morning";done(`${r.t} moved to ${r.time}`)}
+ else if(kind==="anytime"){r.time="";done(`${r.t} is now Anytime`)}
+ else if(kind==="weekend"){r.optionalDow=[0,6];done(`${r.t} is optional on weekends`)}
+ else if(kind==="optional"){r.optional=true;done(`${r.t} is now optional`)}
+ else if(kind==="remind"){r.pre=10;done(`You'll get a reminder 10 min before ${r.t}`)}}
+// ---- page ----
+function dayProgress(k){const t=tasksFor(k).filter(x=>!x.optional),dd=S.days[k];const done=dd?t.filter(x=>dd.done[x.id]).length:0;return{done,total:t.length,complete:!!(dd&&dd.complete)||(t.length>0&&done===t.length)}}
+function openStreak(from,tab){const el=$("troom");if(!el)return;roomGen++;el.getAnimations().forEach(a=>a.cancel());
+ const src=from&&from.getBoundingClientRect?from:$("streakbtn");RO={kind:"streak",tab:tab||"streak",sel:null,cat:"All",origin:()=>{const r=src&&src.isConnected&&src.getBoundingClientRect();return r&&r.width&&r.bottom>0&&r.top<innerHeight?r:null}};
+ el.style.setProperty("--acc","#FF9A4D");el.style.setProperty("--tbg","#0B0504");el.classList.remove("water");
+ const d=Math.min(2,devicePixelRatio||1);paintScene($("trcv"),1,Math.round(Math.min(1800,innerWidth*d)),Math.round(340*d),41);drawRoom();roomShow(RO.origin())}
+function drawStreakRoom(){const R=$("troom"),r=RW(),s=streak(),best=Math.max(S.best||0,s),k=dkey(),tier=tierOf(s),nextT=[...TIERS].reverse().find(t=>t[1]>s),tab=RO.tab||"streak";
+ const todayEarn=r.ledger.filter(x=>sameDay(x.ts)).reduce((a,x)=>a+x.amt,0);
+ let body="";
+ if(tab==="streak"){const tp=dayProgress(k),nm=MILES.find(m=>m[0]>s),prevM=[...MILES].reverse().find(m=>m[0]<=s),I=coachInsights(),topI=I.out.find(x=>!x.good);
+  const td=new Date();td.setHours(0,0,0,0);const end=new Date(td);end.setDate(end.getDate()+(6-((end.getDay()+6)%7)));const st=new Date(end);st.setDate(st.getDate()-34);
+  const cells=[...Array(35)].map((_,i)=>{const x=new Date(st);x.setDate(st.getDate()+i);const kk=dkey(x),fut=x>td,pre=kk<startDay(),p=fut||pre?null:dayProgress(kk);return{x,kk,fut,pre,p}}),sel=RO.sel&&cells.find(c=>c.kk===RO.sel);
+  const left=tasksFor(k).filter(x=>!x.optional&&!(S.days[k]&&S.days[k].done[x.id])).slice(0,4);
+  body=`${topI&&I.C.by1?`<button class="stnudge" id="st-coach"><span>🧭</span><span><b>You missed ${I.C.by1} day${I.C.by1>1?"s":""} by just 1 task</b><small>Most often "${esc(topI.title.split(" · ")[0])}". See why and how to fix it →</small></span></button>`:topI?`<button class="stnudge" id="st-coach"><span>🧭</span><span><b>Coach has ${I.out.filter(x=>!x.good).length} tip${I.out.filter(x=>!x.good).length>1?"s":""} for you</b><small>Starting with "${esc(topI.title.split(" · ")[0])}" →</small></span></button>`:""}
+   <div class="sttoday ${tp.complete?"done":""}"><div class="stth"><b>${tp.complete?"Today is cleared ✓":tp.total?`${tp.total-tp.done} left to keep the streak`:"No tasks today"}</b><span>${tp.done} of ${tp.total}${tp.complete?"":" · +50 🪙 when cleared"}</span></div><div class="stbar"><i style="width:${tp.total?Math.round(tp.done/tp.total*100):0}%"></i></div>
+    ${!tp.complete&&left.length?`<div class="stleft">${left.map(t=>`<span>${esc(t.t)}</span>`).join("")}${tp.total-tp.done>left.length?`<span>+${tp.total-tp.done-left.length} more</span>`:""}</div><button class="stgo" id="st-today">Go to Today →</button>`:""}</div>
+   <div class="sth4"><span>Milestones</span><span>${nm?`${nm[0]-s} day${nm[0]-s===1?"":"s"} to ${nm[0]} · +${nm[1]} 🪙`:"All unlocked"}</span></div>
+   <div class="stmiles">${MILES.map(([m,bn])=>{const got=best>=m,cur=nm&&m===nm[0];return`<div class="stm ${got?"got":""} ${cur?"next":""}"><b>${m}</b><small>+${bn}</small>${cur?`<i style="width:${Math.round((s-(prevM?prevM[0]:0))/(m-(prevM?prevM[0]:0))*100)}%"></i>`:""}</div>`}).join("")}</div>
+   <div class="sth4"><span>Last 5 weeks</span><span>${cells.filter(c=>c.p&&c.p.complete).length} cleared</span></div>
+   <div class="stcal">${["M","T","W","T","F","S","S"].map(d=>`<span class="h">${d}</span>`).join("")}${cells.map(c=>{const pct=c.p&&c.p.total?c.p.done/c.p.total:0,cls=c.fut?"fut":c.pre?"pre":c.p.complete?"ok":pct>0?"part":"miss";
+    return`<button class="${cls} ${c.kk===k?"today":""} ${RO.sel===c.kk?"sel":""}" data-k="${c.kk}" ${c.fut||c.pre?"disabled":""} style="--p:${Math.round(pct*100)}%" aria-label="${c.x.toLocaleDateString([], {month:"short",day:"numeric"})}${c.p?": "+(c.p.complete?"cleared":c.p.done+" of "+c.p.total):""}">${c.p&&c.p.complete?"🔥":c.x.getDate()}</button>`}).join("")}</div>
+   <div class="stlegend"><span><i class="ok"></i>Cleared</span><span><i class="part"></i>Partly</span><span><i class="miss"></i>Missed</span></div>
+   ${sel&&sel.p?`<div class="stsel"><b>${sel.x.toLocaleDateString([], {weekday:"long",month:"long",day:"numeric"})}</b><span>${sel.p.complete?"Cleared":`${sel.p.done} of ${sel.p.total} done`}</span></div>`:""}
+   <div class="sth4"><span>How you earn</span><span>today ${todayEarn>=0?"+":""}${todayEarn} 🪙</span></div>
+   <div class="stearn">${[["✓","Each task done","+10"],["🔥","Clear the whole day","+50"],["💧","Hit your water goal","+20"],["🍗","Eat all your planned meals","+20"],["🌬️","Beat a smoke urge","+15"],["📈","Log a trade, meal or journal entry","+5"],["🏆","Streak milestones","+100 to +5,000"]].map(x=>`<div><i>${x[0]}</i><span>${x[1]}</span><b>${x[2]}</b></div>`).join("")}</div>`}
+ if(tab==="coach"){const {C,out}=coachInsights();
+  body=C.days.length<3?`<div class="stempty"><b>The coach needs a few days</b>After 3 days of history it will show what keeps breaking your streak and how to fix it.</div>`
+  :`<div class="cosum"><div><b>Last ${C.days.length} days</b><small>${C.cleared} cleared · ${C.missed} missed</small></div><div class="trring sm"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="3.5"/><circle cx="18" cy="18" r="15" fill="none" stroke="var(--acc)" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="${(C.cleared/C.days.length*94.25).toFixed(1)} 94.25" transform="rotate(-90 18 18)"/></svg><b>${Math.round(C.cleared/C.days.length*100)}%</b></div></div>
+   <div class="comiss"><div><b>${C.by1}</b><small>missed by 1 task</small></div><div><b>${C.by23}</b><small>by 2–3</small></div><div><b>${C.by4}</b><small>by 4+</small></div></div>
+   <div class="sth4"><span>What keeps breaking it</span><span>most missed first</span></div>
+   ${out.length?out.map(x=>`<div class="coin ${x.good?"good":""}"><div class="coh"><span>${x.ic}</span><div><b>${esc(x.title)}</b><small>${esc(x.sub)}</small></div></div>
+    ${x.id&&Object.keys(RW().fixes).some(f=>f.startsWith(x.id+":"))?`<p class="cochg">✓ You adjusted this already. Give it a few days to see if it helps.</p>`:""}
+    <p>${x.good?"":"<b>Why:</b> "}${esc(x.why)}</p>${x.fix?`<p><b>Try:</b> ${esc(x.fix)}</p>`:""}
+    ${x.fixes.length?`<div class="coacts">${x.fixes.map((f,i)=>{const done=RW().fixes[(x.id||x.key)+":"+f[0]];return`<button class="coact ${i===0&&!done?"p":""} ${done?"done":""}" data-id="${esc(x.id||"")}" data-fix="${esc(f[0])}" ${done?"disabled":""}>${done?"✓ ":""}${esc(f[1])}</button>`}).join("")}</div>`:""}</div>`).join("")
+   :`<div class="stempty"><b>Nothing keeps breaking it</b>No task has been missed more than once lately. Keep going.</div>`}`}
+ if(tab==="store"){const items=storeItems(),cats=["All","Do","Treat","Buy"],cat=RO.cat||"All";
+  body=`<div class="tier2"><span>${tier[2]}</span><div><b>${tier[0]} tier</b><small>${nextT?`${nextT[1]-s} more streak day${nextT[1]-s===1?"":"s"} to ${nextT[0]}, which unlocks ${nextT[0]} rewards`:"Top tier. Everything is unlocked."}</small></div></div>
+   <div class="fochips">${cats.map(c=>`<button data-cat="${c}" class="${c===cat?"on":""}">${c}</button>`).join("")}</div>
+   <div class="stgrid">${items.filter(x=>cat==="All"||x.c===cat).map(x=>{const tl=TIER_DAYS[x.t]>s,short=x.p>r.coins;return`<div class="sti ${tl||short?"locked":""}">${tl?`<span class="stlock">🔒 ${x.t}</span>`:""}<span class="ic">${x.ic}</span><b>${esc(x.n)}</b><small>${esc(x.d)}</small>${!tl&&short?`<div class="stprog"><i style="width:${Math.round(r.coins/x.p*100)}%"></i></div>`:""}
+    <div class="stprice"><span>🪙 ${x.p.toLocaleString()}</span><button class="stbuy" data-id="${esc(x.id)}">${tl?"Locked":short?`${(x.p-r.coins).toLocaleString()} more`:"Buy"}</button></div>${x.custom?`<button class="stdel" data-del="${esc(x.id)}" aria-label="Remove reward">×</button>`:""}</div>`}).join("")}
+   <button class="sti add" id="st-add">+ Add your own reward</button></div>
+   <p class="trmin">Things to buy are priced at ${COINS_PER_DOLLAR} 🪙 per dollar. Buying here is the reward; you still buy it for real in Money when you do.</p>`}
+ if(tab==="hist"){const L=[...r.ledger].reverse().slice(0,150);body=L.length?`<div class="sthist">${L.map(x=>`<div><span>${esc(x.label)}<small>${whenStr(x.ts)}</small></span><b class="${x.amt>0?"p":"m"}">${x.amt>0?"+":"−"}${Math.abs(x.amt).toLocaleString()} 🪙</b></div>`).join("")}</div>`:`<div class="stempty"><b>No coins yet</b>Finish a task and your first coins land here.</div>`}
+ $("trs").innerHTML=`<div class="trbar"><button class="trib" id="tr-back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><span class="treb">Streak · Rewards</span><span class="stwallet" aria-label="${r.coins} coins">🪙 ${r.coins.toLocaleString()}</span></div>
+ <div class="trin"><div class="sthero"><div class="stflame ${s?"lit":""}" aria-hidden="true">🔥</div><div><div class="stnum">${s}<span>${s===1?"day":"days"}</span></div><div class="trsub">${s?`Best ever: ${best} day${best===1?"":"s"} · Level ${level()} · ${tier[2]} ${tier[0]}`:best?`Your best is ${best} day${best===1?"":"s"}. Start a new run today.`:"Clear today's list to start your first streak."}</div></div></div>
+ <div class="fotabs" role="tablist">${[["streak","Streak"],["coach","Coach"],["store","Store"],["hist","History"]].map(([t,n])=>`<button role="tab" data-st="${t}" class="${t===tab?"on":""}" aria-selected="${t===tab}">${n}</button>`).join("")}</div>
+ <div class="fobody">${body}</div></div>`;
+ $("trfoot").innerHTML="";const q=x=>R.querySelector(x);q("#tr-back").onclick=()=>closeRoom();
+ R.querySelectorAll("[data-st]").forEach(b=>b.onclick=()=>{RO.tab=b.dataset.st;drawRoom()});
+ const co=q("#st-coach");if(co)co.onclick=()=>{RO.tab="coach";drawRoom()};const g=q("#st-today");if(g)g.onclick=()=>{closeRoom(true);go("today")};
+ R.querySelectorAll(".stcal button[data-k]").forEach(b=>b.onclick=()=>{RO.sel=RO.sel===b.dataset.k?null:b.dataset.k;drawRoom()});
+ R.querySelectorAll(".coact").forEach(b=>b.onclick=()=>applyFix(b.dataset.id,b.dataset.fix));
+ R.querySelectorAll("[data-cat]").forEach(b=>b.onclick=()=>{RO.cat=b.dataset.cat;drawRoom()});
+ R.querySelectorAll(".stbuy").forEach(b=>b.onclick=()=>{const x=storeItems().find(i=>i.id===b.dataset.id);if(!x)return;if(TIER_DAYS[x.t]>s){toast(`Reach ${x.t} (a ${TIER_DAYS[x.t]}-day streak) to unlock this`);return}if(x.p>r.coins){toast(`${(x.p-r.coins).toLocaleString()} more 🪙 needed`);return}
+  r.coins-=x.p;r.ledger.push({ts:Date.now(),amt:-x.p,label:"Bought: "+x.n});save();burst(b,["#F3C64F","#FF9A4D","#FFE7A3"]);toast("Enjoy it: "+x.n);drawRoom()});
+ R.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{r.items=r.items.filter(i=>i.id!==b.dataset.del);save();drawRoom()});
+ const ad=q("#st-add");if(ad)ad.onclick=()=>openSheet(`<h2>Add a reward</h2><p class="desc">Something you'd enjoy that you want to earn.</p>
+  <div class="field"><label for="rw-n">Reward</label><input id="rw-n" placeholder="New video game, night out…" autocomplete="off"></div>
+  <div class="pair"><div class="field"><label for="rw-p">Price (🪙)</label><input id="rw-p" type="number" inputmode="numeric" value="500"></div><div class="field"><label for="rw-i">Emoji</label><input id="rw-i" value="🎁" maxlength="4"></div></div>
+  <div class="field"><label>Type</label>${opts("c",[["Do","Do"],["Treat","Treat"],["Buy","Buy"]],"Do")}</div><div class="field"><label>Unlocks at</label>${opts("t",[["Starter","Any streak"],["Bronze","Bronze (3)"],["Silver","Silver (7)"],["Gold","Gold (30)"]],"Bronze")}</div>
+  <div class="btns"><button class="action p" id="rw-s">Add reward</button></div>`,root=>{bindOpts(root);root.querySelector("#rw-s").onclick=()=>{const n=root.querySelector("#rw-n").value.trim();if(!n){toast("Name the reward");return}
+   r.items.push({id:"c"+uid(),c:optVal(root,"c"),ic:root.querySelector("#rw-i").value.trim()||"🎁",n,d:"Your reward",p:Math.max(10,Math.round(+root.querySelector("#rw-p").value||500)),t:optVal(root,"t")});save();closeSheet();RO.tab="store";drawRoom();toast("Reward added")}})}
 
 /* ================= dogs ================= */
 const dogLog=(k,id)=>(S.dogs.log[k]||{})[id];
@@ -1532,6 +1662,7 @@ function waterTask(){return S.routine.find(r=>r.link==="water")}
 function addWater(ml,el){if(!(ml>0))return;const k=dkey();waterAt=Date.now();if(Math.random()<.3)setTimeout(()=>waterNote(true),900);(W().log[k]=W().log[k]||[]).push({ts:Date.now(),ml:Math.round(ml)});afterWater(true,el);
  toast(`+${ml} ml · ${fmtL(waterToday())} of ${fmtL(W().goal)}`,"Undo",()=>{const l=W().log[k];if(l&&l.length){l.pop();afterWater(false)}})}
 function afterWater(added,el){const k=dkey(),t=waterTask(),dd=dayData(k),hit=waterToday(k)>=W().goal;
+ if(hit&&added)earnOnce(20,"Water goal","water:"+k);
  if(t){if(hit&&!dd.done[t.id]){toggleTask(t.id,el);if(added)setTimeout(()=>{toast("Water goal reached. "+fmtL(W().goal)+" today.");burst(el||$("wbig"),["#7AB8F0","#A9D5F5","#EFBC90"])},250)}else if(!hit&&dd.done[t.id])toggleTask(t.id)}
  save();renderWater();if(RO&&RO.kind==="water"){drawRoom();if(added&&hit&&waterToday(k)-((W().log[k]||[]).slice(-1)[0]||{ml:0}).ml<W().goal)roomFlash("💧","Goal reached",fmtL(W().goal)+" today · nice work")}}
 function renderWater(){const p=waterPace(),g=W().goal,pct=Math.min(100,Math.round(p.drunk/g*100));
@@ -1836,7 +1967,7 @@ function greeting(){const h=new Date().getHours();return (h<5?"Good night":h<12?
 function setGreet(){const g=$("greet");if(g)g.textContent=["home","today"].includes(S.view)?greeting():NAMES[S.view]||greeting()}
 document.querySelectorAll("#dock .tb[data-v]").forEach(b=>b.onclick=()=>go(b.dataset.v));
 document.querySelector('#dock [data-k="more"]').onclick=()=>moreSheet();
-$("setbtn").onclick=()=>aboutSheet();$("syncbtn").onclick=()=>sync(true);$("streakbtn").onclick=()=>go("today");$("donebtn").onclick=()=>go("today");$("levelpill").onclick=()=>go("today");
+$("setbtn").onclick=()=>aboutSheet();$("syncbtn").onclick=()=>sync(true);$("streakbtn").onclick=e=>openStreak(e.currentTarget);$("donebtn").onclick=()=>go("today");$("levelpill").onclick=()=>go("today");
 /* quick log (+) */
 const qOpen=()=>$("qlog").classList.contains("open");
 function qlog(open){const q=$("qlog"),p=$("plusbtn");if(!q)return;q.classList.toggle("open",!!open);q.setAttribute("aria-hidden",!open);p.classList.toggle("open",!!open);p.setAttribute("aria-expanded",!!open);if(open)try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}}
