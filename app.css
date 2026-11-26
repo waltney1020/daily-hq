@@ -336,6 +336,11 @@ body.roomopen{overflow:hidden}
 .fomeal .fogo{border:0;border-radius:10px;padding:9px 11px;font:700 12px var(--f);background:rgba(255,255,255,.08);color:var(--ink);cursor:pointer;flex:none}
 .fomeal .forec{border:0;background:none;color:var(--muted);font:500 11.5px var(--f);text-decoration:underline;padding:4px;cursor:pointer;flex:none}
 .fomeal.done{opacity:.65}.fomeal.done .fogo{background:rgba(134,211,176,.18);color:var(--mint)}.fomeal.next{box-shadow:inset 0 0 0 1.5px var(--acc)}.fomeal.next .fogo{background:var(--acc);color:#2A1606}
+.forem{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;margin-top:14px;padding:13px 14px;border:0;border-radius:16px;background:rgba(255,255,255,.045);color:var(--ink);text-align:left;font:600 14px var(--f);cursor:pointer}
+.forem small{display:block;font-size:11.5px;color:var(--muted);font-weight:500;margin-top:2px}
+.forem i{position:relative;width:46px;height:28px;border-radius:14px;background:rgba(255,255,255,.14);flex:none;transition:background .2s}
+.forem i::after{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .25s cubic-bezier(.32,.72,0,1)}
+.forem i.on{background:var(--acc)}.forem i.on::after{transform:translateX(18px)}
 .folog{display:flex;justify-content:space-between;align-items:center;width:100%;padding:10px 0;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);text-align:left;font:500 14px var(--f);cursor:pointer}
 .folog small{display:block;font-size:11.5px;color:var(--muted)}.folog b{color:var(--muted);font-weight:400}
 .fodog{border-radius:18px;padding:14px;background:rgba(255,255,255,.045);margin-bottom:10px}.fodog.alert{box-shadow:inset 0 0 0 1.5px rgba(238,142,134,.5)}
