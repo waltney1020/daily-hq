@@ -11,7 +11,8 @@ const sameDay=(ts,d=new Date())=>dkey(new Date(ts))===dkey(d);
 const timeStr=ts=>new Date(ts).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
 const whenStr=ts=>{const d=new Date(ts),n=new Date(),y=new Date();y.setDate(n.getDate()-1);if(sameDay(ts,n))return "Today · "+timeStr(ts);if(sameDay(ts,y))return "Yesterday · "+timeStr(ts);return d.toLocaleDateString([], {month:"short",day:"numeric"})+" · "+timeStr(ts)};
 const ago=ts=>{if(!ts)return "never";const s=(Date.now()-ts)/1000;if(s<60)return "just now";if(s<3600)return Math.round(s/60)+" min ago";if(s<86400)return Math.round(s/3600)+" h ago";return Math.round(s/86400)+" d ago"};
-const ACCTS={poly:"Polymarket",pred:"Prediction",cb:"Coinbase",fut:"Futures",spot:"Spot",bob:"Bob"};
+const ACCTS={poly:"Polymarket",pred:"Prediction",cb:"Coinbase",fut:"Futures",dman:"Derivatives (manual)",spot:"Spot",bob:"Bob"};
+const DSUBN={cb:"Coinbase",fut:"Futures",dman:"Manual"},dsubOf=()=>S.ui.dsub in DSUBN?S.ui.dsub:"cb";
 const GROUPS=["Morning","Afternoon","Evening","Hair care","Weekly","Anytime"];
 const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],DOWL=["Sundays","Mondays","Tuesdays","Wednesdays","Thursdays","Fridays","Saturdays"];
 /* the user's checklist; bump PACK when it changes so installed apps pick it up */
@@ -304,8 +305,8 @@ const KEY="dailyhq.v1";
 const BOOKS=[["dreams","Dreams","Write it before it fades"],["ideas","Business ideas","Capture the spark"],["notes","Notes","Anything worth keeping"],["emotions","Emotions","How you feel, honestly"],["gratitude","Gratitude","What went right"]];
 const MOODS=["Low","Meh","Okay","Good","Great"];
 function defaults(){return{v:1,created:Date.now(),
- settings:{wallet:"",btcOnly:true,bank:{poly:0,pred:0,cb:0,fut:0,spot:0,bob:0},stake:{poly:10,pred:10,cb:10,fut:10,spot:10,bob:10},label:{poly:"BTC Up/Down",pred:"Prediction",cb:"BTC-PERP",fut:"ES",spot:"BTC",bob:"BTC"},book5:"Gratitude"},
- trades:{poly:[],pred:[],cb:[],fut:[],spot:[],bob:[]},sync:{last:0,err:""},
+ settings:{wallet:"",btcOnly:true,bank:{poly:0,pred:0,cb:0,fut:0,dman:0,spot:0,bob:0},stake:{poly:10,pred:10,cb:10,fut:10,dman:10,spot:10,bob:10},label:{poly:"BTC Up/Down",pred:"Prediction",cb:"BTC-PERP",fut:"ES",dman:"",spot:"BTC",bob:"BTC"},book5:"Gratitude"},
+ trades:{poly:[],pred:[],cb:[],fut:[],dman:[],spot:[],bob:[]},sync:{last:0,err:""},
  routine:[],pack:0,
  days:{},journal:{dreams:[],ideas:[],notes:[],emotions:[],gratitude:[]},xp:0,best:0,food:{recipes:[],grocery:{}},weights:{},water:{...WATER_DEFAULT,log:{}},smoke:{sessions:[],urges:[],active:null},money:{items:[],budget:0,pay:"Card"},dogs:JSON.parse(JSON.stringify(DOGS_DEFAULT)),
  ui:{acct:"poly",tf:"5m",book:"dreams",card:0,shown:30,tsec:"all",dsub:"cb",trange:"Week",tview:"curve"}}}
@@ -514,12 +515,12 @@ async function sync(manual){const w=S.settings.wallet.trim();if(!w){if(manual)op
    The cards rotate on their own every 6 s; touching pauses, tapping holds a card for 20 s.
    Below: sync status, a performance card (equity curve or month calendar), stats, quick log buttons that fit the
    section (Won/Lost, Long/Short, Buy/Sell) and the trade list. */
-const TKIND={poly:"wl",pred:"wl",cb:"ls",fut:"ls",spot:"bs",bob:"ls"};
+const TKIND={poly:"wl",pred:"wl",cb:"ls",fut:"ls",dman:"ls",spot:"bs",bob:"ls"};
 const TSEC=[
  {k:"all",n:"All sections",ic:"Σ",bg:"linear-gradient(150deg,#3A4A52,#121C20)",accs:()=>Object.keys(ACCTS)},
  {k:"poly",n:"Polymarket",ic:"PM",bg:"linear-gradient(150deg,#2A4FD6,#14236B)",accs:()=>["poly"]},
  {k:"pred",n:"Prediction",ic:"◎",bg:"linear-gradient(150deg,#6E50C9,#2B1D5C)",accs:()=>["pred"]},
- {k:"deriv",n:"Derivatives",ic:"⚡",bg:"linear-gradient(150deg,#C26A22,#4A2410)",accs:()=>[S.ui.dsub==="fut"?"fut":"cb"]},
+ {k:"deriv",n:"Derivatives",ic:"⚡",bg:"linear-gradient(150deg,#C26A22,#4A2410)",accs:()=>[dsubOf()]},
  {k:"spot",n:"Spot",ic:"◐",bg:"linear-gradient(150deg,#1D8F6E,#0B3A2D)",accs:()=>["spot"]},
  {k:"bob",n:"Bob",ic:"B",bg:"linear-gradient(150deg,#B8921C,#4A3A0A)",accs:()=>["bob"]}];
 const txSec=()=>TSEC.find(s=>s.k===S.ui.tsec)||TSEC[0];
@@ -545,8 +546,8 @@ function renderSyncLine(msg){const el=$("syncline");if(!el)return;const sec=txSe
 let shownBal=null;
 function renderTrades(){if(!$("txcards"))return;const sec=txSec(),accs=sec.accs(),kind=sec.k==="all"?"all":TKIND[accs[0]],range=S.ui.trange||"Week",view=S.ui.tview||"curve",tf=sec.k==="poly"?S.ui.tf:undefined;
  const allSt=tstats(Object.keys(ACCTS),"All"),tt=$("txtoday");tt.textContent=pnlStr(allSt.today);tt.className="num "+(allSt.today>0?"up":allSt.today<0?"dn":"");
- txPaintCards(TSEC.map(s=>{const st=tstats(s.accs(),"All"),spot=s.k==="spot",bal=spot?holdings().reduce((t,h)=>t+h.cost,0):st.bal,auto=((s.k==="poly"||s.k==="all")&&!!S.settings.wallet)||(s.k==="deriv"&&S.ui.dsub!=="fut"&&!!cbKey());
-  return`<button class="txc ${s.k===sec.k?"on":""}" data-s="${s.k}" style="--bgc:${s.bg}"><span class="h"><span class="ic">${s.ic}</span><span class="lab">${s.k==="deriv"?"Derivatives · "+ACCTS[S.ui.dsub==="fut"?"fut":"cb"]:s.n}${auto?"<i>AUTO</i>":""}</span></span><span class="bal num">${money(bal)}</span><span class="pl num" style="color:${!spot&&st.today<0?"#FFC2BC":"#C8F2DE"}">${spot?"invested · "+holdings().length+" holdings":pnlStr(st.today)+" today"}</span><svg viewBox="0 0 200 52" preserveAspectRatio="none" aria-hidden="true"><path d="${txSpark(s.accs())}" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="2" vector-effect="non-scaling-stroke"/></svg></button>`}));
+ txPaintCards(TSEC.map(s=>{const st=tstats(s.accs(),"All"),spot=s.k==="spot",bal=spot?holdings().reduce((t,h)=>t+h.cost,0):st.bal,auto=((s.k==="poly"||s.k==="all")&&!!S.settings.wallet)||(s.k==="deriv"&&dsubOf()==="cb"&&!!cbKey());
+  return`<button class="txc ${s.k===sec.k?"on":""}" data-s="${s.k}" style="--bgc:${s.bg}"><span class="h"><span class="ic">${s.ic}</span><span class="lab">${s.k==="deriv"?"Derivatives · "+DSUBN[dsubOf()]:s.n}${auto?"<i>AUTO</i>":""}</span></span><span class="bal num">${money(bal)}</span><span class="pl num" style="color:${!spot&&st.today<0?"#FFC2BC":"#C8F2DE"}">${spot?"invested · "+holdings().length+" holdings":pnlStr(st.today)+" today"}</span><svg viewBox="0 0 200 52" preserveAspectRatio="none" aria-hidden="true"><path d="${txSpark(s.accs())}" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="2" vector-effect="non-scaling-stroke"/></svg></button>`}));
  $("txdots").innerHTML=TSEC.map(s=>`<i class="${s.k===sec.k?"on":""}"></i>`).join("");$("txdots").classList.toggle("held",txHeld>Date.now()||RM);
  const st=tstats(accs,range,tf),hold=kind==="bs"?holdings():null;
  // performance: curve or calendar
@@ -566,7 +567,7 @@ function renderTrades(){if(!$("txcards"))return;const sec=txSec(),accs=sec.accs(
  const gridHtml=kind==="bs"?`<div><small>Invested</small><b class="num">${money(hold.reduce((t,h)=>t+h.cost,0))}</b></div><div><small>Realized</small><b class="num ${st.pnl>0?"up":st.pnl<0?"dn":""}">${pnlStr(st.pnl)}</b></div><div><small>Holdings</small><b class="num">${hold.length}</b></div>`
   :`<div><small>Win rate</small><span class="txwr"><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="5"/><circle cx="18" cy="18" r="14" fill="none" stroke="#86D3B0" stroke-width="5" stroke-dasharray="${((st.wr||0)/100*88).toFixed(1)} 88" transform="rotate(-90 18 18)"/></svg><b class="num">${st.wr===null?"–":st.wr+"%"}</b></span></div><div><small>W–L</small><b class="num">${st.w}–${st.l}</b></div><div><small>Streak</small><b class="${/^W/.test(st.st)?"up":/^L/.test(st.st)?"dn":""}">${st.st}</b></div><div><small>Avg win</small><b class="num up">${st.w?pnlStr(st.avgW):"–"}</b></div><div><small>Avg loss</small><b class="num dn">${st.l?pnlStr(st.avgL):"–"}</b></div><div><small>${st.open.length?"Open":"Trades"}</small><b class="num">${st.open.length?st.open.length+" open":st.inR.length}</b></div>`;
  $("txbody").innerHTML=`<div class="txsync" id="syncline">${syncHtml(sec,accs)}</div>
- ${sec.k==="deriv"?`<div class="mseg txsub" role="tablist"><button data-d="cb" class="${S.ui.dsub!=="fut"?"on":""}">Coinbase</button><button data-d="fut" class="${S.ui.dsub==="fut"?"on":""}">Futures</button></div>`:""}
+ ${sec.k==="deriv"?`<div class="mseg txsub" role="tablist">${Object.entries(DSUBN).map(([k,n])=>`<button data-d="${k}" class="${dsubOf()===k?"on":""}">${n}</button>`).join("")}</div>`:""}
  ${sec.k==="poly"?`<div class="mseg txsub">${["5m","15m","1h","All"].map(x=>`<button data-tf="${x}" class="${x===S.ui.tf?"on":""}">${x==="All"?"All markets":x}</button>`).join("")}</div>`:""}
  <div class="txperf"><div class="txph"><span class="eyebrow">${view==="cal"?`${esc(sec.n)} · ${now.toLocaleDateString([], {month:"long"})}`:`${esc(sec.n)} · ${range==="All"?"All time":range==="Today"?"Today":"Last "+range.toLowerCase()}`}</span><div class="mseg" id="txview"><button data-v="curve" class="${view==="curve"?"on":""}">Curve</button><button data-v="cal" class="${view==="cal"?"on":""}">Calendar</button></div></div>
   <div class="txpnl num ${headPnl>0?"up":headPnl<0?"dn":""}">${pnlStr(headPnl)}<small>${view==="cal"?`${green} green · ${red} red days`:"P&amp;L"}</small></div>
@@ -612,7 +613,11 @@ function txSettle(){const w=$("txcards");if(!w||!txUser||txTouch||Date.now()<txP
  if("onscrollend" in w)w.addEventListener("scrollend",()=>{if(Date.now()<txProgUntil)return;clearTimeout(txScrollT);txSettle()});
  // touching anywhere on the Trades page means you're reading or about to scroll: don't rotate under your finger
  const pg=$("p-trades");if(pg)pg.addEventListener("touchstart",()=>{txHeld=Math.max(txHeld,Date.now()+8000)},{passive:true})})();
-function quickLog(win,el,a=txSec().accs()[0]){const stake=+S.settings.stake[a]||0,tf=a==="poly"?(S.ui.tf==="All"?"5m":S.ui.tf):"";
+// + menu → Log a trade: pick the account, then its own form (won/lost, long/short or buy/sell)
+function tradePicker(){const SEC_OF={poly:"poly",pred:"pred",cb:"deriv",fut:"deriv",dman:"deriv",spot:"spot",bob:"bob"},bgOf=a=>(TSEC.find(s=>s.k===SEC_OF[a])||TSEC[0]).bg;
+ const sub={poly:"Won or lost",pred:"Won or lost",cb:"Long or short",fut:"Long or short",dman:"Long or short · your market",spot:"Buy or sell",bob:"Long or short"};
+ openSheet(`<h2>Log a trade</h2><p class="desc">Which account?</p><div class="tpick">${Object.keys(ACCTS).map(a=>`<button class="tpk" data-a="${a}" style="--bgc:${bgOf(a)}"><b>${esc(a==="dman"?"Derivatives · Manual":a==="cb"?"Derivatives · Coinbase":a==="fut"?"Derivatives · Futures":ACCTS[a])}</b><small>${sub[a]}</small></button>`).join("")}</div>`,
+ root=>root.querySelectorAll(".tpk").forEach(b=>b.onclick=()=>{const a=b.dataset.a;S.ui.tsec=SEC_OF[a];if(SEC_OF[a]==="deriv")S.ui.dsub=a;save();if(S.view!=="trades")go("trades");else renderTrades();editTrade(a)}))}function quickLog(win,el,a=txSec().accs()[0]){const stake=+S.settings.stake[a]||0,tf=a==="poly"?(S.ui.tf==="All"?"5m":S.ui.tf):"";
  const t={id:uid(),src:"manual",ts:Date.now(),title:S.settings.label[a]||ACCTS[a],tf,side:"",cost:stake,pnl:win?stake:-stake,res:win?"win":"loss",note:""};S.trades[a].push(t);addXP(5,el);save();renderTrades();renderCards();
  if(win)burst(el,["#86D3B0","#EFBC90","#F6E3CC"]);toast((win?"Win":"Loss")+" logged · "+pnlStr(t.pnl),"Edit",()=>editTrade(a,t.id))}
 
@@ -748,6 +753,7 @@ function editTrade(a,id,preset={}){const k=TKIND[a]||"wl",isNew=!id,stake=+S.set
   <div class="field"><label for="f-title">Market</label><input id="f-title" value="${v(t.title)}" placeholder="${a==="pred"?"Fed cuts in December":"BTC Up/Down"}" autocomplete="off"></div>`;
  if(k==="ls")body=`<div class="field"><label>Side</label>${opts("side",[["Long","Long"],["Short","Short"]],t.side||"Long","wl")}</div>
   ${a==="fut"?`<div class="field"><label>Market</label>${opts("venue",[["Liquid Brokers","Liquid Brokers"],["THTrader","THTrader"],["Other","Other"]],t.venue||"Liquid Brokers")}</div>`:""}
+  ${a==="dman"?`<div class="field"><label for="f-venue">Market or exchange</label><input id="f-venue" value="${v(t.venue)}" placeholder="Bybit, Kraken, your broker…" autocomplete="off"></div>`:""}
   <div class="field"><label for="f-title">${a==="fut"?"Contract":"Instrument"}</label><input id="f-title" value="${v(t.title)}" placeholder="${a==="fut"?"ES, NQ, CL…":"BTC-PERP"}" autocomplete="off"></div>
   <div class="pair">${num("f-entry","Entry price",t.entry)}${num("f-exit","Exit price",t.exit,"Still open")}</div>
   <div class="pair">${num("f-size",a==="fut"?"Contracts":"Size",t.size,a==="fut"?"1":"0.01")}${num("f-lev","Leverage (x)",t.lev,"optional")}</div>
@@ -770,7 +776,7 @@ function editTrade(a,id,preset={}){const k=TKIND[a]||"wl",isNew=!id,stake=+S.set
    if(k==="ls"){const side=optVal(root,"side"),entry=nv("#f-entry"),exit=nv("#f-exit"),size=nv("#f-size");let pnl=nv("#f-pnl");
     if(pnl===null&&entry!==null&&exit!==null&&size!==null)pnl=(side==="Short"?entry-exit:exit-entry)*size;const closed=exit!==null||pnl!==null;
     if(!q("#f-title").value.trim()){toast("Add the instrument, like BTC-PERP");return}
-    Object.assign(t,common,{side,venue:a==="fut"?optVal(root,"venue"):a==="cb"?"Coinbase":a==="bob"?"Pionex":"",title:q("#f-title").value.trim().toUpperCase(),entry,exit,size,lev:nv("#f-lev"),cost:nv("#f-cost")||0,
+    Object.assign(t,common,{side,venue:a==="fut"?optVal(root,"venue"):a==="dman"?q("#f-venue").value.trim():a==="cb"?"Coinbase":a==="bob"?"Pionex":"",title:q("#f-title").value.trim().toUpperCase(),entry,exit,size,lev:nv("#f-lev"),cost:nv("#f-cost")||0,
      pnl:closed?Math.round((pnl||0)*100)/100:0,res:closed?((pnl||0)>=0?"win":"loss"):"open"})}
    if(k==="bs"){const side=optVal(root,"side"),qty=nv("#f-qty"),price=nv("#f-price"),pnl=side==="Sell"?nv("#f-pnl"):null;
     if(!q("#f-title").value.trim()||!qty){toast("Add the asset and quantity");return}
@@ -1418,7 +1424,7 @@ function renderWater(){const p=waterPace(),g=W().goal,pct=Math.min(100,Math.roun
  const n=Math.max(1,Math.min(12,Math.round(g/W().step))),per=g/n,full=p.drunk/per,exp=p.expected/per,justI=Date.now()-waterAt<900?Math.ceil(full)-1:-1;
  c.innerHTML=`<div class="gl">${[...Array(n)].map((_,i)=>{const f=Math.max(0,Math.min(1,full-i));return`<button class="gls ${f>=1?"f":""} ${i===justI?"just":""} ${full<exp&&i===Math.ceil(exp)-1?"pace":""}" data-i="${i}" aria-label="${f>=1?"Full glass, open water log":"Log "+W().step+" ml"}"><i style="height:${Math.round(f*82)}%"></i></button>`}).join("")}</div>
  <div class="glinfo"><span id="wbig"><b>${fmtL(p.drunk)}</b> of ${fmtL(g)}</span><span class="${p.behind>=500&&p.drunk<g?"behind":""}">${p.drunk>=g?"Goal reached. Nice work.":p.behind>=500?`${fmtL(p.behind)} behind pace`:`On pace · ${fmtL(Math.max(0,g-p.drunk))} to go`}</span><button class="link" id="wdetail">Log or remind</button></div>`;
- c.querySelectorAll(".gls").forEach(b=>b.onclick=()=>{if(+b.dataset.i>=Math.floor(full+1e-9))addWater(W().step,b);else openWater($("watercard"))});$("wdetail").onclick=()=>openWater($("watercard"))}
+ c.onclick=()=>openWater(c);c.setAttribute("role","button");c.setAttribute("aria-label","Open water log");c.tabIndex=0;c.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openWater(c)}}}
 var waterAt=0;
 // Hydration tips on a sticky note that pops up now and then on the Today page. Tap it for another, × to close.
 const WATER_TIPS=["Squeeze in some lemon or lime. A little flavor makes it easier to keep sipping.","Add a tiny pinch of salt after a workout or a sweaty day. It helps your body hold on to the water.","Drink a full glass right when you wake up. You've gone all night without any.","Keep a bottle where you can see it. Out of sight really is out of mind.","Cold water goes down easier. Throw some ice in.","Drop in cucumber, mint or a few berries for flavor without the sugar.","Have a glass before every meal. Easy 1.5 L right there.","Sip during training. Roughly 500 ml for every hour you work out.","Pale yellow means you're doing well. Dark yellow means drink up.","Feeling snacky? You might just be thirsty. Try a glass first.","Coffee counts a little, but match each cup with a glass of water.","Hot day or heavy sweat? Add electrolytes, not just water.","Use a straw. Most people drink more without noticing.","Tie it to a habit: a glass after every trade review or every bathroom break.","Eat your water too: watermelon, oranges and cucumber are mostly water.","Front-load it. Aim for half your goal by early afternoon so you're not chugging at night.","Big gulps feel like a chore. Small, steady sips add up faster than you think.","A warm mug of water with lemon counts. Not everything has to be ice cold."];
@@ -1562,9 +1568,9 @@ const CARDS=[
   i:()=>`${1000-S.xp%1000} XP to level ${level()+1}. Tasks give 10 XP, trades and journal entries give 5.`,
   f:()=>[["XP",S.xp],["Best streak",Math.max(S.best,streak())+" days"],["Level",level()]],b:()=>"See today"},
  {pal:4,go:["trades",{acct:"bob"}],k:()=>"Bob",s:()=>"Compared with yours",
-  h:()=>{const b=tstats(["bob"],"All"),m=tstats(["poly","pred","cb","fut"],"All");if(!b.items.length&&!m.items.length)return "Log Bob's trades and your own";return `Bob is ${b.w}–${b.l}, you're ${m.w}–${m.l}`},
+  h:()=>{const b=tstats(["bob"],"All"),m=tstats(["poly","pred","cb","fut","dman"],"All");if(!b.items.length&&!m.items.length)return "Log Bob's trades and your own";return `Bob is ${b.w}–${b.l}, you're ${m.w}–${m.l}`},
   i:()=>"Bob's trades next to yours across Polymarket, Prediction and Derivatives.",
-  f:()=>{const b=tstats(["bob"],"All"),m=tstats(["poly","pred","cb","fut"],"All");return[["Bob P&L",pnlStr(b.pnl)],["Your P&L",pnlStr(m.pnl)],["Today",pnlStr(b.today+m.today)]]},b:()=>"See Bob's trades"}];
+  f:()=>{const b=tstats(["bob"],"All"),m=tstats(["poly","pred","cb","fut","dman"],"All");return[["Bob P&L",pnlStr(b.pnl)],["Your P&L",pnlStr(m.pnl)],["Today",pnlStr(b.today+m.today)]]},b:()=>"See Bob's trades"}];
 const rail=$("rail");
 CARDS.forEach((cd,i)=>{const el=document.createElement("article");el.className="card";el.tabIndex=0;
  el.innerHTML=`<div class="surf"><canvas></canvas><div class="shade"></div><div class="glare"></div><div class="meta"><span>Op-Lock In / Feed</span><span>${String(i+1).padStart(2,"0")} / ${String(CARDS.length).padStart(2,"0")}</span></div>
@@ -1585,7 +1591,7 @@ let ambFront="ambA";
 function setAmbient(pal){const cd=CARDS.find(c=>c.pal===pal)||CARDS[0],back=ambFront==="ambA"?"ambB":"ambA";if(!cd.amb)return;$(back).style.backgroundImage=`url(${cd.amb})`;$(back).classList.remove("b");$(ambFront).classList.add("b");ambFront=back;
  const P=PAL[pal%PAL.length];
  // + ring menu follows the scene: 60% the scene's main tones (outer two rings), 30% its lighter tone, 10% its accent (inner ring).
- const rs=document.documentElement.style;[P.L[2],P.L[1],P.L[0],P.road[0]].forEach((c,i)=>rs.setProperty("--q"+i,c));rs.setProperty("--qink",P.sky[0]);
+ const rs=document.documentElement.style;[P.L[3],P.L[2],P.L[1],P.L[0],P.road[0]].forEach((c,i)=>rs.setProperty("--q"+i,c));rs.setProperty("--qink",P.sky[0]);
  document.documentElement.style.setProperty("--glow",P.glow);document.documentElement.style.setProperty("--glow2",P.glow2);document.querySelector('meta[name=theme-color]').content=P.sky[0]}
 function layout(){const n=CARDS.length;CARDS.forEach((cd,i)=>{let d=i-S.ui.card;if(d>n/2)d-=n;if(d<-n/2)d+=n;cd.el.className="card "+(d===0?"c":Math.abs(d)<=2?"s"+d:"far");cd.el.setAttribute("aria-current",d===0)});setAmbient(CARDS[S.ui.card].pal);renderDots()}
 function renderDots(){let d=$("tdots");if(!d){d=document.createElement("div");d.id="tdots";d.className="tdots";$("theatre").appendChild(d)}d.innerHTML=CARDS.map((_,i)=>`<button aria-label="Card ${i+1}" class="${i===S.ui.card?"on":""}"><i></i></button>`).join("");d.querySelectorAll("button").forEach((b,i)=>b.onclick=()=>{pauseAuto(4000);S.ui.card=i;save();layout()})}
@@ -1634,21 +1640,25 @@ function glide(){}
  const blocked=t=>t&&t.closest&&t.closest("#sheetwrap,#calm,#qlog,.tabbar,input,textarea,select");
  const kick=()=>{if(!running&&!document.hidden){running=true;requestAnimationFrame(frame)}};
  const at=(x,y)=>{T.x=x/innerWidth;T.y=y/innerHeight};
- function unlit(){if(!litEl)return;litEl.classList.remove("lit");const sf=litEl.querySelector(".surf");if(sf&&!document.body.classList.contains("hover")){sf.style.setProperty("--rx","0deg");sf.style.setProperty("--ry","0deg")}litEl=null}
- function frame(){const now=Date.now(),tiltLive=!HOVER&&now-tilt.t<1500&&S.view==="home"&&$("sheetwrap").hidden;
+ function unlit(){if(!litEl)return;litEl.classList.remove("lit","hot");hot=false;const sf=litEl.querySelector(".surf");if(sf&&!document.body.classList.contains("hover")){sf.style.setProperty("--rx","0deg");sf.style.setProperty("--ry","0deg")}litEl=null}
+ // Smooth and cheap: frame-rate independent easing, and only transforms/opacity change per frame (no gradient repaints).
+ let lastT=0,rc=null,rcEl=null,rcT=0,hot=false;
+ const ease=(rate,dt)=>1-Math.pow(1-rate,dt/16.7);
+ function frame(ts){const now=Date.now(),dt=Math.min(64,lastT?ts-lastT:16.7);lastT=ts;const tiltLive=!HOVER&&now-tilt.t<1500&&S.view==="home"&&$("sheetwrap").hidden;
   if(!touching&&!mouseOn&&now-lastTouch>700){if(tiltLive){T.x=tilt.x;T.y=tilt.y;T.i=.5}else T.i=0}
   Rm.t=touching||mouseOn?T.i:0;
-  const k=touching?.25:.08;C.x+=(T.x-C.x)*k;C.y+=(T.y-C.y)*k;C.i+=(T.i-C.i)*(T.i>C.i?.2:.05);Rm.c+=(Rm.t-Rm.c)*(Rm.t>Rm.c?.2:.05);
-  const px=C.x*innerWidth,py=C.y*innerHeight;room.style.setProperty("--sx",px.toFixed(0)+"px");room.style.setProperty("--sy",py.toFixed(0)+"px");room.style.opacity=Rm.c.toFixed(3);
+  const k=ease(touching?.5:mouseOn?.35:.12,dt);C.x+=(T.x-C.x)*k;C.y+=(T.y-C.y)*k;C.i+=(T.i-C.i)*ease(T.i>C.i?.3:.07,dt);Rm.c+=(Rm.t-Rm.c)*ease(Rm.t>Rm.c?.3:.07,dt);
+  const px=C.x*innerWidth,py=C.y*innerHeight;room.style.transform=`translate3d(${px.toFixed(1)}px,${py.toFixed(1)}px,0)`;room.style.opacity=Rm.c.toFixed(3);
   // the card part is for touch and tilt only; desktop hover already has its own card effect
   const cd=S.view==="home"&&!HOVER&&CARDS[S.ui.card],el=cd&&cd.el;
   if(litEl&&litEl!==el)unlit();
-  if(el&&C.i>.01){const r=el.getBoundingClientRect(),gx=Math.max(0,Math.min(1,(px-r.left)/r.width)),gy=Math.max(0,Math.min(1,(py-r.top)/r.height)),sf=el.querySelector(".surf");
-   litEl=el;el.classList.add("lit");el.style.setProperty("--gi",C.i.toFixed(3));
-   if(sf){sf.style.setProperty("--gx",(gx*100).toFixed(1)+"%");sf.style.setProperty("--gy",(gy*100).toFixed(1)+"%");const m=drag.moved?0:C.i;sf.style.setProperty("--rx",((.5-gy)*5*m).toFixed(2)+"deg");sf.style.setProperty("--ry",((gx-.5)*7*m).toFixed(2)+"deg")}}
+  if(el&&C.i>.01){if(rcEl!==el||now-rcT>300){rc=el.getBoundingClientRect();rcEl=el;rcT=now}
+   const gx=Math.max(0,Math.min(1,(px-rc.left)/rc.width)),gy=Math.max(0,Math.min(1,(py-rc.top)/rc.height)),sf=el.querySelector(".surf");
+   if(litEl!==el){litEl=el;el.classList.add("lit")}el.style.setProperty("--gi",C.i.toFixed(2));
+   const h=C.i>.45;if(h!==hot){hot=h;el.classList.toggle("hot",h)}
+   if(sf){sf.style.setProperty("--glx",(gx*rc.width-rc.width).toFixed(1)+"px");sf.style.setProperty("--gly",(gy*rc.height-rc.height).toFixed(1)+"px");const m=drag.moved?0:C.i;sf.style.setProperty("--rx",((.5-gy)*5*m).toFixed(2)+"deg");sf.style.setProperty("--ry",((gx-.5)*7*m).toFixed(2)+"deg")}}
   else if(litEl&&C.i<=.01)unlit();
-  if(!touching&&!mouseOn&&!tiltLive&&C.i<.004&&Rm.c<.004){running=false;room.style.opacity=0;unlit();return}
-  requestAnimationFrame(frame)}
+  if(!touching&&!mouseOn&&!tiltLive&&C.i<.004&&Rm.c<.004){running=false;lastT=0;room.style.opacity=0;unlit();return}  requestAnimationFrame(frame)}
  // touch: use touch events so the light keeps following while the page scrolls
  addEventListener("touchstart",e=>{if(blocked(e.target))return;const t=e.touches[0];touching=true;at(t.clientX,t.clientY);T.i=1;C.x=T.x;C.y=T.y;kick()},{passive:true});
  addEventListener("touchmove",e=>{if(!touching)return;const t=e.touches[0];at(t.clientX,t.clientY);kick()},{passive:true});
@@ -1704,6 +1714,7 @@ function qlog(open){const q=$("qlog"),p=$("plusbtn");if(!q)return;q.classList.to
 $("plusbtn").onclick=e=>{e.stopPropagation();qlog(!qOpen())};
 $("qscrim").onclick=()=>qlog(false);addEventListener("keydown",e=>{if(e.key==="Escape")qlog(false)});
 $("qlog").querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{const q=b.dataset.q;qlog(false);
+ if(q==="trade"){setTimeout(tradePicker,260);return}
  if(q==="purchase"){go("money");mTab("log");setTimeout(()=>$("m-amt")&&$("m-amt").focus(),350)}
  if(q==="water")addWater(W().step,b);
  if(q==="task"){go("today");setTimeout(()=>{$("nt").scrollIntoView({block:"center"});$("nt").focus()},350)}
