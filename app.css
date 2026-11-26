@@ -302,23 +302,29 @@ body.roomopen{overflow:hidden}
 .txtag.l{background:rgba(134,211,176,.15);color:var(--mint)}.txtag.s{background:rgba(238,142,134,.15);color:var(--rose)}.txtag.o{background:rgba(255,255,255,.08);color:var(--soft)}
 @media (prefers-reduced-motion:reduce){.txc,.txdots i{transition:none}.txdots i.on::after{animation:none;transform:none}}
 /* Food bar on Today (pixel game bar or clean tracker) */
-.foodbar{margin:14px 0 2px;padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.025);cursor:pointer;transition:background .15s}
-.foodbar:active{background:rgba(255,255,255,.06)}
+.foodbar{margin:8px 0 0;padding:6px 2px;border-radius:12px;cursor:pointer;transition:background .15s;-webkit-tap-highlight-color:transparent}
+.foodbar:active{background:rgba(255,255,255,.04)}
+.fbline{display:flex;align-items:center;justify-content:space-between;gap:8px}.fbline .fbpx{margin-top:0}
 .fbtop{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
-.fbswap{width:30px;height:30px;border-radius:9px;border:1px solid var(--line2);background:rgba(0,0,0,.25);display:grid;place-items:center;font-size:14px;color:var(--soft);cursor:pointer}
+.fbswap{width:28px;height:28px;flex:none;border-radius:8px;border:0;background:rgba(255,255,255,.06);display:grid;place-items:center;font-size:13px;color:var(--soft);cursor:pointer}
 .fbpx{display:flex;gap:3px;margin-top:7px}.fbpx svg{width:clamp(22px,7vw,30px);height:clamp(22px,7vw,30px);image-rendering:pixelated;shape-rendering:crispEdges;flex:none}
 .fbpx.hungry svg{animation:fbshake .5s steps(2) infinite}.fbpx.hungry svg:nth-child(odd){animation-delay:.12s}
 @keyframes fbshake{50%{transform:translateY(-2px)}}
-.fbfoot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:7px}
+.fbfoot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:5px}
 .fbmono{font-family:ui-monospace,"Courier New",monospace;font-size:11.5px;color:#E9D4A8;text-shadow:2px 2px 0 rgba(0,0,0,.55);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fbdogs{display:flex;gap:5px;flex:none}.fbdogs span{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.06);font-size:11px;font-weight:600;color:var(--soft)}
 .fbdogs i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.18)}.fbdogs i.f{background:var(--mint)}
-.fbclean{margin-top:6px}.fbrow{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.fbclean{margin-top:0}.fbrow .fbswap{margin-left:8px}.fbrow{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .fbbig{font-size:22px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}.fbbig span{font-size:12px;color:var(--muted);font-weight:500;margin-left:5px;letter-spacing:0}
 .fbwarn{font-size:12.5px;font-weight:600;color:var(--peach);white-space:nowrap}.fbok{font-size:12px;color:var(--muted);white-space:nowrap}
 .fbsegs{display:flex;gap:5px;margin-top:8px}.fbsegs i{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,.08)}.fbsegs i.f{background:#E9A25E}
 .fblab{font-size:11px;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.fbpx.hungry svg{animation:none}}
+.fnote{margin-top:10px}
+.foall{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.foallb{border:1.5px solid var(--acc);background:rgba(233,162,94,.12);border-radius:16px;padding:13px 14px;text-align:left;color:var(--ink);cursor:pointer;transition:background .2s,border-color .2s,transform .12s}
+.foallb:active{transform:scale(.97)}.foallb b{display:block;font-size:15px;font-weight:700;color:var(--acc)}.foallb small{display:block;font-size:11.5px;color:var(--muted);margin-top:3px}
+.foallb.f{background:rgba(134,211,176,.15);border-color:rgba(134,211,176,.55)}.foallb.f b{color:var(--mint)}
 /* Food page (room shell) */
 .fotitle{margin-top:96px;font-size:clamp(34px,9vw,44px);font-weight:600;letter-spacing:-.04em;text-shadow:0 2px 20px rgba(0,0,0,.5)}
 .fotabs{position:sticky;top:-12px;z-index:3;display:flex;gap:3px;padding:4px;border-radius:14px;background:rgba(28,16,10,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);margin:12px 0 14px}
