@@ -11,11 +11,11 @@ const sameDay=(ts,d=new Date())=>dkey(new Date(ts))===dkey(d);
 const timeStr=ts=>new Date(ts).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
 const whenStr=ts=>{const d=new Date(ts),n=new Date(),y=new Date();y.setDate(n.getDate()-1);if(sameDay(ts,n))return "Today · "+timeStr(ts);if(sameDay(ts,y))return "Yesterday · "+timeStr(ts);return d.toLocaleDateString([], {month:"short",day:"numeric"})+" · "+timeStr(ts)};
 const ago=ts=>{if(!ts)return "never";const s=(Date.now()-ts)/1000;if(s<60)return "just now";if(s<3600)return Math.round(s/60)+" min ago";if(s<86400)return Math.round(s/3600)+" h ago";return Math.round(s/86400)+" d ago"};
-const ACCTS={poly:"Polymarket",manual:"Manual",bob:"Bob"};
+const ACCTS={poly:"Polymarket",pred:"Prediction",cb:"Coinbase",fut:"Futures",spot:"Spot",bob:"Bob"};
 const GROUPS=["Morning","Afternoon","Evening","Hair care","Weekly","Anytime"];
 const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],DOWL=["Sundays","Mondays","Tuesdays","Wednesdays","Thursdays","Fridays","Saturdays"];
 /* the user's checklist; bump PACK when it changes so installed apps pick it up */
-const PACK=11;
+const PACK=12;
 const ONE_OFFS=[["2026-11-24",{t:"Patch the holes in the room",time:"7:45 PM",g:"Evening",steps:["Gather spackle, putty knife, sandpaper and touch-up paint","Clean loose bits and dust out of each hole","Fill each hole slightly overfilled","Let it dry (check the spackle label)","Sand smooth and wipe the dust","Touch up with paint once fully dry"],note:"Bigger holes may need a second thin coat after the first one dries."}],
  ["2026-11-24",{t:"Finish the room development",time:"8:00 PM",g:"Evening",note:"Finish the remaining room setup and workspace improvements. If it's a big job, write down the last few pieces left so tomorrow knows exactly where to pick up."}]];
 /* portions: RER = 70 × kg^0.75, daily = RER × activity factor. Fresh mix ≈ 1.3 kcal/g, ≈ 230 kcal/cup; one batch ≈ 2,650 kcal (no eggs). */
@@ -304,11 +304,11 @@ const KEY="dailyhq.v1";
 const BOOKS=[["dreams","Dreams","Write it before it fades"],["ideas","Business ideas","Capture the spark"],["notes","Notes","Anything worth keeping"],["emotions","Emotions","How you feel, honestly"],["gratitude","Gratitude","What went right"]];
 const MOODS=["Low","Meh","Okay","Good","Great"];
 function defaults(){return{v:1,created:Date.now(),
- settings:{wallet:"",btcOnly:true,bank:{poly:0,manual:0,bob:0},stake:{poly:10,manual:10,bob:10},label:{poly:"BTC Up/Down",manual:"BTC",bob:"BTC"},book5:"Gratitude"},
- trades:{poly:[],manual:[],bob:[]},sync:{last:0,err:""},
+ settings:{wallet:"",btcOnly:true,bank:{poly:0,pred:0,cb:0,fut:0,spot:0,bob:0},stake:{poly:10,pred:10,cb:10,fut:10,spot:10,bob:10},label:{poly:"BTC Up/Down",pred:"Prediction",cb:"BTC-PERP",fut:"ES",spot:"BTC",bob:"BTC"},book5:"Gratitude"},
+ trades:{poly:[],pred:[],cb:[],fut:[],spot:[],bob:[]},sync:{last:0,err:""},
  routine:[],pack:0,
  days:{},journal:{dreams:[],ideas:[],notes:[],emotions:[],gratitude:[]},xp:0,best:0,food:{recipes:[],grocery:{}},weights:{},water:{...WATER_DEFAULT,log:{}},smoke:{sessions:[],urges:[],active:null},money:{items:[],budget:0,pay:"Card"},dogs:JSON.parse(JSON.stringify(DOGS_DEFAULT)),
- ui:{acct:"poly",tf:"5m",book:"dreams",card:0,shown:30}}}
+ ui:{acct:"poly",tf:"5m",book:"dreams",card:0,shown:30,tsec:"all",dsub:"cb",trange:"Week",tview:"curve"}}}
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){S=null}
 if(!S||S.v!==1)S=defaults();
@@ -353,6 +353,9 @@ if(!S||S.v!==1)S=defaults();
   if(!S.routine.some(r=>r.link==="dogweigh"))S.routine.push({id:uid(),t:"Weigh the dogs",time:"",g:"Weekly",dow:[0],link:"dogweigh",note:"Weekly weigh-in for the weight-loss plan. Enter the numbers under Names and weights; the app shows whether she's on pace (0.5–1 lb a week)."})}
  if(pack0<11){const fin=S.routine.find(r=>r.t==="Weekly finance update");if(fin&&!fin.link)Object.assign(fin,{link:"money",note:"Review this month in Money: total vs budget, top categories, anything to cut."});S.money=S.money||{items:[],budget:0,pay:"Card"}}
  if(pack0<10){for(const [k,x] of ONE_OFFS){if(k<dkey())continue;const dd=S.days[k]||(S.days[k]={done:{},extra:[]});if(!dd.extra.some(e=>e.t===x.t))dd.extra.push({id:uid(),...x})}}
+ if(S.trades.manual){const m=S.trades.manual;S.trades.pred=[...(S.trades.pred||[]),...m];for(const f of ["bank","stake","label"])if(S.settings[f]&&S.settings[f].manual!==undefined){if(f==="bank")S.settings.bank.pred=(+S.settings.bank.pred||0)+(+S.settings.bank.manual||0);else if(S.settings[f].pred===undefined)S.settings[f].pred=S.settings[f].manual;delete S.settings[f].manual}delete S.trades.manual}
+ for(const a of Object.keys(ACCTS)){S.trades[a]=S.trades[a]||[];for(const f of ["bank","stake","label"]){S.settings[f]=S.settings[f]||{};if(S.settings[f][a]===undefined)S.settings[f][a]=f==="label"?d.settings.label[a]:f==="stake"?10:0}}
+ if(S.ui.acct==="manual")S.ui.acct="pred";
  S.pack=PACK})();
 let saveT;function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Couldn't save. Your phone storage may be full.")}if(typeof scheduleSoon==="function")scheduleSoon()},150)}
 addEventListener("pagehide",()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}});
@@ -470,6 +473,19 @@ function stats(a,tf){const all=tradesOf(a,tf),res=all.filter(t=>t.res!=="open");
  const allRes=tradesOf(a,"All").filter(t=>t.res!=="open");const bal=(+S.settings.bank[a]||0)+allRes.reduce((s,t)=>s+(+t.pnl||0),0);
  return{all,res,w,l,pnl,today,st,open,openCost:open.reduce((s,t)=>s+(+t.cost||0),0),bal,wr:res.length?Math.round(w/res.length*100):null,sorted}}
 
+// stats across one or more ledgers, for a time range (Today / Week / Month / All); Polymarket can also filter by market timeframe
+function tstats(accs,range="All",tf){const now=Date.now(),cut=range==="Today"?new Date().setHours(0,0,0,0):range==="Week"?now-7*864e5:range==="Month"?now-30*864e5:0;
+ const items=accs.flatMap(a=>(S.trades[a]||[]).filter(t=>!t.hidden&&(a!=="poly"||!tf||tf==="All"||t.tf===tf)).map(t=>({...t,_a:a})));
+ const inR=items.filter(t=>t.ts>=cut),closed=inR.filter(t=>t.res==="win"||t.res==="loss"),sorted=[...closed].sort((x,y)=>y.ts-x.ts);
+ const wins=closed.filter(t=>t.res==="win"),losses=closed.filter(t=>t.res==="loss"),sum=l=>l.reduce((s,t)=>s+(+t.pnl||0),0),allClosed=items.filter(t=>t.res==="win"||t.res==="loss");
+ let st="–";if(sorted.length){let n=0;const r0=sorted[0].res;for(const t of sorted){if(t.res===r0)n++;else break}st=(r0==="win"?"W":"L")+n}
+ return{items,inR,closed,w:wins.length,l:losses.length,wr:closed.length?Math.round(wins.length/closed.length*100):null,st,pnl:sum(closed),today:sum(allClosed.filter(t=>sameDay(t.ts))),
+  avgW:wins.length?sum(wins)/wins.length:0,avgL:losses.length?sum(losses)/losses.length:0,bal:accs.reduce((s,a)=>s+(+S.settings.bank[a]||0),0)+sum(allClosed),open:inR.filter(t=>t.res==="open")}}
+// spot holdings from buys and sells (average cost)
+function holdings(){const h={};(S.trades.spot||[]).filter(t=>!t.hidden).sort((a,b)=>a.ts-b.ts).forEach(t=>{const k=(t.title||"?").trim().toUpperCase(),q=+t.qty||0,p=+t.price||0,x=h[k]||(h[k]={asset:k,qty:0,cost:0});
+  if(t.side==="Sell"){const avg=x.qty?x.cost/x.qty:0;x.cost=Math.max(0,x.cost-avg*Math.min(q,x.qty));x.qty=Math.max(0,x.qty-q)}else{x.qty+=q;x.cost+=t.cost!=null&&t.cost!==""?+t.cost:q*p}});
+ return Object.values(h).filter(x=>x.qty>1e-9)}
+
 /* ================= Polymarket sync ================= */
 const API="https://data-api.polymarket.com/v2";
 function tfOf(slug,title){let m=/updown-(\d+)(m|h)\b/.exec(slug||"");if(m)return m[2]==="h"?m[1]+"h":m[1]+"m";
@@ -493,36 +509,96 @@ async function sync(manual){const w=S.settings.wallet.trim();if(!w){if(manual)op
   if(manual||added)toast(added?`Synced · ${added} new trade${added>1?"s":""}`:updated?`Synced · ${updated} updated`:"Synced · no new trades")}
  catch(e){S.sync.err=navigator.onLine===false?"You're offline":"Couldn't reach Polymarket";save();if(manual)toast(S.sync.err+". Try again in a minute.")}
  finally{syncing=false;$("syncbtn").classList.remove("spin");renderSyncLine()}}
-function renderSyncLine(msg){const el=$("syncline");if(!el)return;const w=S.settings.wallet;$("syncdot").hidden=!!w;
- if(S.ui.acct!=="poly"){el.innerHTML=`<span class="pdot off"></span>Logged by hand`;return}
- if(!w){el.innerHTML=`<span class="pdot off"></span><button class="link" id="connect" style="color:#F1C39D">Connect your wallet to sync</button>`;$("connect").onclick=()=>openSettings("wallet");return}
- el.innerHTML=`<span class="pdot ${S.sync.err?"err":""}"></span>${esc(msg||(S.sync.err?S.sync.err:"Synced "+ago(S.sync.last)))}<button class="link" id="syncnow">Sync now</button>`;$("syncnow").onclick=()=>sync(true)}
-
-/* ================= trades: render ================= */
+/* ================= trades: page (v2) =================
+   Five sections as swipeable account cards: All · Polymarket · Prediction · Derivatives (Coinbase / Futures) · Spot · Bob.
+   The cards rotate on their own every 6 s; touching pauses, tapping holds a card for 20 s.
+   Below: sync status, a performance card (equity curve or month calendar), stats, quick log buttons that fit the
+   section (Won/Lost, Long/Short, Buy/Sell) and the trade list. */
+const TKIND={poly:"wl",pred:"wl",cb:"ls",fut:"ls",spot:"bs",bob:"ls"};
+const TSEC=[
+ {k:"all",n:"All sections",ic:"Σ",bg:"linear-gradient(150deg,#3A4A52,#121C20)",accs:()=>Object.keys(ACCTS)},
+ {k:"poly",n:"Polymarket",ic:"PM",bg:"linear-gradient(150deg,#2A4FD6,#14236B)",accs:()=>["poly"]},
+ {k:"pred",n:"Prediction",ic:"◎",bg:"linear-gradient(150deg,#6E50C9,#2B1D5C)",accs:()=>["pred"]},
+ {k:"deriv",n:"Derivatives",ic:"⚡",bg:"linear-gradient(150deg,#C26A22,#4A2410)",accs:()=>[S.ui.dsub==="fut"?"fut":"cb"]},
+ {k:"spot",n:"Spot",ic:"◐",bg:"linear-gradient(150deg,#1D8F6E,#0B3A2D)",accs:()=>["spot"]},
+ {k:"bob",n:"Bob",ic:"B",bg:"linear-gradient(150deg,#B8921C,#4A3A0A)",accs:()=>["bob"]}];
+const txSec=()=>TSEC.find(s=>s.k===S.ui.tsec)||TSEC[0];
+const fmtP=n=>(+n).toLocaleString(undefined,{maximumFractionDigits:6});
+let txTimer=null,txHeld=0,txTouch=false,txDay=null,txScrollT=null;
+function txSpark(accs){const c=accs.flatMap(a=>(S.trades[a]||[]).filter(t=>!t.hidden&&(t.res==="win"||t.res==="loss"))).sort((x,y)=>x.ts-y.ts).slice(-30);let v=0;const ys=[0,...c.map(t=>v+=(+t.pnl||0))];
+ if(ys.length<3)return"M0 40 L200 40";const mn=Math.min(...ys),mx=Math.max(...ys),sp=mx-mn||1;return ys.map((y,i)=>`${i?"L":"M"}${(i/(ys.length-1)*200).toFixed(1)} ${(46-(y-mn)/sp*38).toFixed(1)}`).join(" ")}
+function txRow(x,showAcct){const k=TKIND[x._a],sd=(x.side||"").toLowerCase();let tag,tc;
+ if(["long","short","buy","sell"].includes(sd)){tag=x.side.toUpperCase();tc=sd==="long"||sd==="buy"?"l":"s"}else{tag=x.res==="win"?"WON":x.res==="loss"?"LOST":"OPEN";tc=x.res==="win"?"l":x.res==="loss"?"s":"o"}
+ const det=k==="ls"?[x.entry?`${fmtP(x.entry)} → ${x.exit?fmtP(x.exit):"open"}`:"",x.size?"size "+fmtP(x.size):"",x.lev?x.lev+"x":"",x.venue||""]
+  :k==="bs"?[x.qty?`${fmtP(x.qty)} @ ${fmtP(x.price||0)}`:""]:[x.side||"",x.tf||"",x.cost?"$"+(+x.cost).toFixed(2)+" in":""];
+ const right=x.res==="open"?(k==="bs"?money(+x.cost||0):"open"):pnlStr(+x.pnl||0),rc=x.res==="open"?"":x.pnl>0?"up":x.pnl<0?"dn":"";
+ return`<button class="txrow" data-a="${x._a}" data-id="${x.id}"><span class="txtag ${tc}">${tag}</span><span class="m"><span class="t">${esc(x.title||ACCTS[x._a])}</span><small>${esc([showAcct?ACCTS[x._a]:"",...det,whenStr(x.ts),x.src==="sync"?"synced":"",x.edited?"edited":""].filter(Boolean).join(" · "))}</small></span><b class="num ${rc}">${right}</b></button>`}
+function syncHtml(sec,accs){if(sec.k==="poly"||sec.k==="all"){const w=S.settings.wallet;
+  if(!w)return`<span class="pdot off"></span><button class="link" id="connect" style="color:#F1C39D;padding:0">Connect your Polymarket wallet to auto-sync</button>`;
+  return`<span class="pdot ${S.sync.err?"err":""}"></span><span>${esc(S.sync.err||"Polymarket synced "+ago(S.sync.last))}</span><button class="txpill" id="syncnow">Sync now</button>`}
+ if(accs[0]==="cb"||accs[0]==="bob")return`<span class="pdot off"></span><span>Auto-sync from ${accs[0]==="cb"?"Coinbase":"Pionex.US"} is coming next. Log by hand for now.</span>`;
+ return`<span class="pdot off"></span><span>Logged by hand</span>`}
+function renderSyncLine(msg){const el=$("syncline");if(!el)return;const sec=txSec();el.innerHTML=msg?`<span class="pdot"></span><span>${esc(msg)}</span>`:syncHtml(sec,sec.accs());$("syncdot").hidden=!!S.settings.wallet;
+ const c=$("connect");if(c)c.onclick=()=>openSettings("wallet");const sn=$("syncnow");if(sn)sn.onclick=()=>sync(true)}
 let shownBal=null;
-function renderTrades(){const a=S.ui.acct,tf=S.ui.tf,st=stats(a,tf);
- document.querySelectorAll("#acct button").forEach(b=>b.classList.toggle("on",b.dataset.a===a));document.querySelectorAll("#tf button").forEach(b=>b.classList.toggle("on",b.dataset.t===tf));segAll();
- const balEl=$("bal");if(shownBal===null||S.view!=="trades")balEl.textContent=money(st.bal);else countUp(balEl,st.bal,shownBal);shownBal=st.bal;
- const tp=$("todaypnl");tp.textContent=(st.today>=0?"▲ ":"▼ ")+pnlStr(st.today)+" today";tp.className="chip "+(st.today>0?"up":st.today<0?"dn":"");
- const ap=$("allpnl");ap.textContent=pnlStr(st.pnl)+(tf==="All"?" all time":" on "+tf);ap.className="chip "+(st.pnl>0?"up":st.pnl<0?"dn":"");
- $("openchip").hidden=!st.open.length;$("openchip").textContent=st.open.length+" open · $"+st.openCost.toFixed(2)+" in play";
- $("wr").textContent=st.wr===null?"–":st.wr+"%";$("wr").className=st.wr===null?"":st.wr>=50?"up":"dn";$("rec").textContent=st.w+"–"+st.l;$("tstreak").textContent=st.st;$("tstreak").className=/^W/.test(st.st)?"up":/^L/.test(st.st)?"dn":"";$("tcount").textContent=st.all.length;
- $("quicklabel").textContent="Quick log · $"+(+S.settings.stake[a]||0)+" "+(a==="poly"?(tf==="All"?"5m":tf):"");
- drawSpark(st);
- const list=[...st.all].sort((x,y)=>y.ts-x.ts),n=S.ui.shown;
- $("log").innerHTML=list.length?list.slice(0,n).map(t=>`<button class="tr" data-id="${t.id}"><span class="res ${t.res==="win"?"w":t.res==="loss"?"l":"o"}">${t.res==="win"?"WON":t.res==="loss"?"LOST":"OPEN"}</span><span class="ti"><div>${esc(t.title||S.settings.label[a])}${t.side?" · "+esc(t.side):""}</div><small>${esc(t.tf)} · ${whenStr(t.ts)}${t.cost?" · $"+(+t.cost).toFixed(2)+" in":""}${t.src==="sync"?" · synced":""}${t.edited?" · edited":""}</small></span><span class="amt ${t.pnl>0?"up":t.pnl<0?"dn":""}">${t.res==="open"?"open":pnlStr(+t.pnl||0)}</span><span class="pen" aria-hidden="true">✎</span></button>`).join("")+(list.length>n?`<button class="action more" id="moretr">Show more</button>`:"")
-  :`<div class="empty"><b>${a==="poly"&&!S.settings.wallet?"Connect your wallet or log your first trade":"No trades here yet"}</b>${a==="poly"?"Synced trades show up here automatically. You can also tap + Won or + Lost.":"Tap + Won or + Lost after each trade. Tap any trade to fix it."}</div>`;
- $("log").querySelectorAll(".tr").forEach(b=>b.onclick=()=>editTrade(a,b.dataset.id));
- $("moretr")&&($("moretr").onclick=()=>{S.ui.shown+=30;renderTrades()});renderSyncLine()}
-function drawSpark(st){const sv=$("spark"),pts=[...st.res].sort((x,y)=>x.ts-y.ts).slice(-80);let acc=0;const ys=[0,...pts.map(t=>acc+=(+t.pnl||0))];
- if(ys.length<3){sv.innerHTML=`<text x="300" y="66" text-anchor="middle" fill="#A9BBB9" font-size="14" font-family="Work Sans,sans-serif">Your P&amp;L line appears after a few trades</text><line x1="0" x2="600" y1="96" y2="96" stroke="rgba(226,241,238,.18)" stroke-dasharray="4 6"/>`;return}
- const mn=Math.min(...ys),mx=Math.max(...ys),span=mx-mn||1,X=i=>i/(ys.length-1)*600,Y=v=>108-(v-mn)/span*96;
- const line=ys.map((v,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(v).toFixed(1)).join(" "),up=ys[ys.length-1]>=0,col=up?"#EFBC90":"#EE8E86";
- sv.innerHTML=`<defs><linearGradient id="gf" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".32"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>
- ${mn<0&&mx>0?`<line x1="0" x2="600" y1="${Y(0)}" y2="${Y(0)}" stroke="rgba(226,241,238,.2)" stroke-dasharray="4 6"/>`:""}
- <path d="${line} L600 120 L0 120Z" fill="url(#gf)"/><path class="line" d="${line}" fill="none" stroke="${col}" stroke-width="2.5" vector-effect="non-scaling-stroke"/><circle cx="600" cy="${Y(ys[ys.length-1])}" r="4.5" fill="${col}"/>`}
-function quickLog(win,el){const a=S.ui.acct,stake=+S.settings.stake[a]||0,tf=a==="poly"?(S.ui.tf==="All"?"5m":S.ui.tf):(S.ui.tf==="All"?"5m":S.ui.tf);
- const t={id:uid(),src:"manual",ts:Date.now(),title:S.settings.label[a],tf,side:"",cost:stake,pnl:win?stake:-stake,res:win?"win":"loss",note:""};S.trades[a].push(t);addXP(5,el);save();renderTrades();renderCards();
+function renderTrades(){if(!$("txcards"))return;const sec=txSec(),accs=sec.accs(),kind=sec.k==="all"?"all":TKIND[accs[0]],range=S.ui.trange||"Week",view=S.ui.tview||"curve",tf=sec.k==="poly"?S.ui.tf:undefined;
+ const allSt=tstats(Object.keys(ACCTS),"All"),tt=$("txtoday");tt.textContent=pnlStr(allSt.today);tt.className="num "+(allSt.today>0?"up":allSt.today<0?"dn":"");
+ $("txcards").innerHTML=TSEC.map(s=>{const st=tstats(s.accs(),"All"),spot=s.k==="spot",bal=spot?holdings().reduce((t,h)=>t+h.cost,0):st.bal,auto=(s.k==="poly"||s.k==="all")&&!!S.settings.wallet;
+  return`<button class="txc ${s.k===sec.k?"on":""}" data-s="${s.k}" style="--bgc:${s.bg}"><span class="h"><span class="ic">${s.ic}</span><span class="lab">${s.k==="deriv"?"Derivatives · "+ACCTS[S.ui.dsub==="fut"?"fut":"cb"]:s.n}${auto?"<i>AUTO</i>":""}</span></span><span class="bal num">${money(bal)}</span><span class="pl num" style="color:${!spot&&st.today<0?"#FFC2BC":"#C8F2DE"}">${spot?"invested · "+holdings().length+" holdings":pnlStr(st.today)+" today"}</span><svg viewBox="0 0 200 52" preserveAspectRatio="none" aria-hidden="true"><path d="${txSpark(s.accs())}" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="2" vector-effect="non-scaling-stroke"/></svg></button>`}).join("");
+ $("txdots").innerHTML=TSEC.map(s=>`<i class="${s.k===sec.k?"on":""}"></i>`).join("");$("txdots").classList.toggle("held",txHeld>Date.now()||RM);
+ const st=tstats(accs,range,tf),hold=kind==="bs"?holdings():null;
+ // performance: curve or calendar
+ const pts=[...st.closed].sort((a,b)=>a.ts-b.ts);let acc=0;const ys=[0,...pts.map(t=>acc+=(+t.pnl||0))],up=acc>=0,lc=up?"#86D3B0":"#EE8E86";
+ let curve;if(ys.length<3)curve=`<div class="txempty">Your P&amp;L line appears after a few closed trades${range!=="All"?" in this range":""}.</div>`;
+ else{const mn=Math.min(...ys),mx=Math.max(...ys),sp=mx-mn||1,X=i=>i/(ys.length-1)*600,Y=v=>132-(v-mn)/sp*120,line=ys.map((v,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(v).toFixed(1)).join(" ");
+  curve=`<svg class="txcurve" viewBox="0 0 600 140" preserveAspectRatio="none" aria-label="P&L over time"><defs><linearGradient id="txg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${lc}" stop-opacity=".28"/><stop offset="1" stop-color="${lc}" stop-opacity="0"/></linearGradient></defs>${[0,1,2,3].map(i=>`<line x1="0" x2="600" y1="${12+i*40}" y2="${12+i*40}" stroke="rgba(255,255,255,.06)" vector-effect="non-scaling-stroke"/>`).join("")}${mn<0&&mx>0?`<line x1="0" x2="600" y1="${Y(0)}" y2="${Y(0)}" stroke="rgba(255,255,255,.22)" stroke-dasharray="4 6" vector-effect="non-scaling-stroke"/>`:""}<path d="${line} L600 140 L0 140Z" fill="url(#txg)"/><path d="${line}" fill="none" stroke="${lc}" stroke-width="2.2" vector-effect="non-scaling-stroke"/></svg>`}
+ const now=new Date(),Y0=now.getFullYear(),M0=now.getMonth(),dim=new Date(Y0,M0+1,0).getDate(),off=(new Date(Y0,M0,1).getDay()+6)%7,daySum=Array(dim).fill(null);
+ st.items.filter(t=>(t.res==="win"||t.res==="loss")&&new Date(t.ts).getFullYear()===Y0&&new Date(t.ts).getMonth()===M0).forEach(t=>{const d=new Date(t.ts).getDate()-1;daySum[d]=(daySum[d]||0)+(+t.pnl||0)});
+ const dmx=Math.max(1,...daySum.filter(v=>v!==null).map(Math.abs)),dcol=v=>v===null?"":v>0?`background:rgba(134,211,176,${(.2+.6*v/dmx).toFixed(2)})`:v<0?`background:rgba(238,142,134,${(.2+.6*-v/dmx).toFixed(2)})`:"background:rgba(255,255,255,.08)";
+ const green=daySum.filter(v=>v>0).length,red=daySum.filter(v=>v<0).length,monthPnl=daySum.reduce((t,v)=>t+(v||0),0);
+ const cal=`<div class="txcal">${["M","T","W","T","F","S","S"].map(d=>`<span class="h">${d}</span>`).join("")}${"<span class='h'></span>".repeat(off)}${daySum.map((v,i)=>`<button class="${i+1===txDay?"sel":""} ${i+1===now.getDate()?"today":""}" data-d="${i+1}" style="${dcol(v)}" aria-label="${now.toLocaleDateString([], {month:"short"})} ${i+1}${v!==null?": "+pnlStr(v):""}">${i+1}</button>`).join("")}</div><div class="txlegend"><span>● Loss</span><span>Tap a day</span><span>Profit ●</span></div>`;
+ const headPnl=view==="cal"?monthPnl:st.pnl;
+ // list
+ let list=view==="cal"&&txDay?st.items.filter(t=>{const d=new Date(t.ts);return d.getFullYear()===Y0&&d.getMonth()===M0&&d.getDate()===txDay}):st.inR;list=[...list].sort((a,b)=>b.ts-a.ts);const n=S.ui.shown||30;
+ const quick=kind==="wl"?[["won","+ Won","w"],["lost","+ Lost","x"]]:kind==="ls"?[["long","+ Long","w"],["short","+ Short","x"]]:kind==="bs"?[["buy","+ Buy","w"],["sell","− Sell","x"]]:null;
+ const gridHtml=kind==="bs"?`<div><small>Invested</small><b class="num">${money(hold.reduce((t,h)=>t+h.cost,0))}</b></div><div><small>Realized</small><b class="num ${st.pnl>0?"up":st.pnl<0?"dn":""}">${pnlStr(st.pnl)}</b></div><div><small>Holdings</small><b class="num">${hold.length}</b></div>`
+  :`<div><small>Win rate</small><span class="txwr"><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="5"/><circle cx="18" cy="18" r="14" fill="none" stroke="#86D3B0" stroke-width="5" stroke-dasharray="${((st.wr||0)/100*88).toFixed(1)} 88" transform="rotate(-90 18 18)"/></svg><b class="num">${st.wr===null?"–":st.wr+"%"}</b></span></div><div><small>W–L</small><b class="num">${st.w}–${st.l}</b></div><div><small>Streak</small><b class="${/^W/.test(st.st)?"up":/^L/.test(st.st)?"dn":""}">${st.st}</b></div><div><small>Avg win</small><b class="num up">${st.w?pnlStr(st.avgW):"–"}</b></div><div><small>Avg loss</small><b class="num dn">${st.l?pnlStr(st.avgL):"–"}</b></div><div><small>${st.open.length?"Open":"Trades"}</small><b class="num">${st.open.length?st.open.length+" open":st.inR.length}</b></div>`;
+ $("txbody").innerHTML=`<div class="txsync" id="syncline">${syncHtml(sec,accs)}</div>
+ ${sec.k==="deriv"?`<div class="mseg txsub" role="tablist"><button data-d="cb" class="${S.ui.dsub!=="fut"?"on":""}">Coinbase</button><button data-d="fut" class="${S.ui.dsub==="fut"?"on":""}">Futures</button></div>`:""}
+ ${sec.k==="poly"?`<div class="mseg txsub">${["5m","15m","1h","All"].map(x=>`<button data-tf="${x}" class="${x===S.ui.tf?"on":""}">${x==="All"?"All markets":x}</button>`).join("")}</div>`:""}
+ <div class="txperf"><div class="txph"><span class="eyebrow">${view==="cal"?`${esc(sec.n)} · ${now.toLocaleDateString([], {month:"long"})}`:`${esc(sec.n)} · ${range==="All"?"All time":range==="Today"?"Today":"Last "+range.toLowerCase()}`}</span><div class="mseg" id="txview"><button data-v="curve" class="${view==="curve"?"on":""}">Curve</button><button data-v="cal" class="${view==="cal"?"on":""}">Calendar</button></div></div>
+  <div class="txpnl num ${headPnl>0?"up":headPnl<0?"dn":""}">${pnlStr(headPnl)}<small>${view==="cal"?`${green} green · ${red} red days`:"P&amp;L"}</small></div>
+  ${view==="curve"?`<div class="mseg txrange">${["Today","Week","Month","All"].map(r=>`<button data-r="${r}" class="${r===range?"on":""}">${r}</button>`).join("")}</div>${curve}`:cal}</div>
+ <div class="txgrid">${gridHtml}</div>
+ ${quick?`<div class="txqa">${quick.map(q=>`<button class="${q[2]}" data-q="${q[0]}">${q[1]}</button>`).join("")}</div>`:""}
+ ${hold&&hold.length?`<div class="txh4"><span>Holdings</span><span>avg cost</span></div>${hold.map(h=>`<div class="txrow static"><span class="txtag l">HOLD</span><span class="m"><span class="t">${esc(h.asset)}</span><small>${fmtP(h.qty)} · ${money(h.cost)} invested</small></span><b class="num">${money(h.qty?h.cost/h.qty:0)}</b></div>`).join("")}`:""}
+ <div class="txh4"><span>${view==="cal"&&txDay?now.toLocaleDateString([], {month:"long"})+" "+txDay:kind==="bs"?"Buys and sells":"Recent"}</span>${kind!=="all"?`<button class="link" id="addtrade">+ Add with details</button>`:""}</div>
+ <div id="log">${list.length?list.slice(0,n).map(x=>txRow(x,sec.k==="all")).join("")+(list.length>n?`<button class="action more" id="moretr">Show more</button>`:""):`<div class="empty"><b>${view==="cal"&&txDay?"No trades that day":sec.k==="poly"&&!S.settings.wallet?"Connect your wallet or log your first trade":"Nothing here yet"}</b>${kind==="all"?"Pick a section and log your first trade.":kind==="wl"?"Tap + Won or + Lost after each trade.":kind==="ls"?"Tap + Long or + Short to log a position.":kind==="bs"?"Tap + Buy when you buy, − Sell when you sell.":""}</div>`}</div>`;
+ const B=$("txbody");renderSyncLine();
+ $("txcards").querySelectorAll(".txc").forEach(b=>b.onclick=()=>{S.ui.tsec=b.dataset.s;S.ui.shown=30;txDay=null;txHold();save();renderTrades();txCenter()});
+ B.querySelectorAll("[data-d]").forEach(b=>{if(b.closest(".txsub"))b.onclick=()=>{S.ui.dsub=b.dataset.d;txHold();save();renderTrades()};else b.onclick=()=>{const d=+b.dataset.d;txDay=txDay===d?null:d;txHold();renderTrades()}});
+ B.querySelectorAll("[data-tf]").forEach(b=>b.onclick=()=>{S.ui.tf=b.dataset.tf;S.ui.shown=30;txHold();save();renderTrades();renderCards()});
+ B.querySelectorAll("#txview button").forEach(b=>b.onclick=()=>{S.ui.tview=b.dataset.v;txDay=null;txHold();save();renderTrades()});
+ B.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{S.ui.trange=b.dataset.r;txHold();save();renderTrades()});
+ B.querySelectorAll("[data-q]").forEach(b=>b.onclick=e=>{const a=accs[0],q=b.dataset.q;txHold();if(q==="won"||q==="lost")quickLog(q==="won",e.currentTarget,a);else editTrade(a,null,{side:{long:"Long",short:"Short",buy:"Buy",sell:"Sell"}[q]})});
+ const ad=$("addtrade");if(ad)ad.onclick=()=>{txHold();editTrade(accs[0])};
+ B.querySelectorAll(".txrow[data-id]").forEach(b=>b.onclick=()=>{txHold();editTrade(b.dataset.a,b.dataset.id)});
+ const mt=$("moretr");if(mt)mt.onclick=()=>{S.ui.shown=(S.ui.shown||30)+30;txHold();renderTrades()}}
+function txCenter(smooth=true){const w=$("txcards"),c=w&&w.querySelector(".txc.on");if(c&&w.clientWidth)w.scrollTo({left:c.offsetLeft-(w.clientWidth-c.offsetWidth)/2,behavior:smooth&&!RM?"smooth":"auto"})}
+function txHold(){txHeld=Date.now()+20000;const d=$("txdots");if(d)d.classList.add("held");txSchedule()}
+function txSchedule(){clearTimeout(txTimer);if(RM)return;txTimer=setTimeout(txStep,Math.max(6000,txHeld-Date.now()))}
+function txStep(){if(S.view!=="trades")return;
+ if(txTouch||txHeld>Date.now()||document.hidden||!$("sheetwrap").hidden||RO||scrollY>160){txSchedule();return}
+ const i=TSEC.findIndex(s=>s.k===S.ui.tsec);S.ui.tsec=TSEC[(i+1)%TSEC.length].k;txDay=null;S.ui.shown=30;const b=$("txbody");b.classList.add("swap");
+ setTimeout(()=>{renderTrades();txCenter();const c=$("txcards").querySelector(".txc.on");if(c)c.classList.add("draw");b.classList.remove("swap")},200);txSchedule()}
+(function(){const w=$("txcards");if(!w)return;
+ w.addEventListener("pointerdown",()=>{txTouch=true;$("txdots").classList.add("paused")});
+ addEventListener("pointerup",()=>{if(!txTouch)return;txTouch=false;$("txdots").classList.remove("paused")});
+ // after you swipe the strip yourself, the card that lands in the middle becomes the selected section
+ w.addEventListener("scroll",()=>{if(!txTouch&&!w.dataset.swiping)return;w.dataset.swiping=1;clearTimeout(txScrollT);txScrollT=setTimeout(()=>{delete w.dataset.swiping;const mid=w.scrollLeft+w.clientWidth/2;let best=null,bd=1e9;
+  w.querySelectorAll(".txc").forEach(c=>{const d=Math.abs(c.offsetLeft+c.offsetWidth/2-mid);if(d<bd){bd=d;best=c}});if(best&&best.dataset.s!==S.ui.tsec){S.ui.tsec=best.dataset.s;txDay=null;S.ui.shown=30;txHold();save();renderTrades();txCenter()}},160)},{passive:true})})();
+function quickLog(win,el,a=txSec().accs()[0]){const stake=+S.settings.stake[a]||0,tf=a==="poly"?(S.ui.tf==="All"?"5m":S.ui.tf):"";
+ const t={id:uid(),src:"manual",ts:Date.now(),title:S.settings.label[a]||ACCTS[a],tf,side:"",cost:stake,pnl:win?stake:-stake,res:win?"win":"loss",note:""};S.trades[a].push(t);addXP(5,el);save();renderTrades();renderCards();
  if(win)burst(el,["#86D3B0","#EFBC90","#F6E3CC"]);toast((win?"Win":"Loss")+" logged · "+pnlStr(t.pnl),"Edit",()=>editTrade(a,t.id))}
 
 /* ================= sheet ================= */
@@ -564,22 +640,49 @@ function bindOpts(root,onChange){root.querySelectorAll(".opts").forEach(g=>g.que
 const optVal=(root,name)=>root.querySelector(`.opts[data-name="${name}"] .on`)?.dataset.v;
 const toLocalInput=ts=>{const d=new Date(ts);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)};
 
-function editTrade(a,id){const isNew=!id;const t=isNew?{id:uid(),src:"manual",ts:Date.now(),title:S.settings.label[a],tf:S.ui.tf==="All"?"5m":S.ui.tf,side:"",cost:+S.settings.stake[a]||0,pnl:+S.settings.stake[a]||0,res:"win",note:""}:S.trades[a].find(x=>x.id===id);if(!t)return;
- openSheet(`<h2>${isNew?"Add a trade":"Edit trade"}</h2><p class="desc">${ACCTS[a]}${t.src==="sync"?" · synced from Polymarket. Your changes stay even after the next sync.":""}</p>
- <div class="field"><label>Result</label>${opts("res",[["win","Won"],["loss","Lost"],["open","Still open"]],t.res,"wl")}</div>
- <div class="pair"><div class="field"><label for="f-cost">Amount in ($)</label><input id="f-cost" type="number" inputmode="decimal" step="0.01" value="${+t.cost||0}"></div>
- <div class="field"><label for="f-pnl">Profit or loss ($)</label><input id="f-pnl" type="number" inputmode="decimal" step="0.01" value="${+t.pnl||0}"></div></div>
- <div class="field"><label>Timeframe</label>${opts("tf",[["5m","5m"],["15m","15m"],["1h","1h"],["Other","Other"]],["5m","15m","1h"].includes(t.tf)?t.tf:"Other")}</div>
- <div class="field"><label>Side</label>${opts("side",[["Up","Up"],["Down","Down"],["","None"]],t.side||"")}</div>
- <div class="field"><label for="f-title">Market</label><input id="f-title" value="${esc(t.title)}" autocomplete="off"></div>
- <div class="field"><label for="f-ts">When</label><input id="f-ts" type="datetime-local" value="${toLocalInput(t.ts)}"></div>
- <div class="field"><label for="f-note">Note</label><textarea id="f-note" style="min-height:80px" placeholder="Why you took it, what you learned">${esc(t.note||"")}</textarea></div>
- <div class="btns"><button class="action p" id="f-save">${isNew?"Add trade":"Save changes"}</button>${isNew?"":`<button class="action danger" id="f-del">Delete</button>`}</div><div id="f-conf"></div>`,
- root=>{bindOpts(root,(n,v)=>{if(n==="res"){const p=root.querySelector("#f-pnl"),c=+root.querySelector("#f-cost").value||0;let x=+p.value||0;if(v==="win"&&x<=0)x=Math.abs(x)||c;if(v==="loss"&&x>=0)x=-(Math.abs(x)||c);if(v==="open")x=0;p.value=x}});
-  root.querySelector("#f-save").onclick=()=>{const res=optVal(root,"res");let pnl=+root.querySelector("#f-pnl").value||0;if(res==="loss"&&pnl>0)pnl=-pnl;if(res==="win"&&pnl<0)pnl=-pnl;
-   Object.assign(t,{res,pnl:Math.round(pnl*100)/100,cost:+root.querySelector("#f-cost").value||0,tf:optVal(root,"tf"),side:optVal(root,"side"),title:root.querySelector("#f-title").value.trim()||S.settings.label[a],ts:new Date(root.querySelector("#f-ts").value).getTime()||t.ts,note:root.querySelector("#f-note").value.trim()});
-   if(t.src==="sync")t.edited=true;if(isNew){S.trades[a].push(t);addXP(5)}save();closeSheet();renderTrades();renderCards();toast(isNew?"Trade added":"Trade updated")};
-  const del=root.querySelector("#f-del");if(del)del.onclick=()=>{if(!del.dataset.sure){del.dataset.sure=1;del.textContent="Tap again to delete";root.querySelector("#f-conf").innerHTML=`<div class="confirm">${t.src==="sync"?"This hides the trade. It won't come back on the next sync. You can restore hidden trades in Settings.":"This removes the trade for good."}</div>`;return}
+// one form per kind of ledger: won/lost (Polymarket, Prediction), long/short (Coinbase, Futures, Bob), buy/sell (Spot)
+function editTrade(a,id,preset={}){const k=TKIND[a]||"wl",isNew=!id,stake=+S.settings.stake[a]||0;
+ const base={id:uid(),src:"manual",ts:Date.now(),title:k==="wl"?(S.settings.label[a]||ACCTS[a]):"",tf:a==="poly"?(S.ui.tf==="All"?"5m":S.ui.tf):"",side:"",cost:k==="wl"?stake:"",pnl:k==="wl"?stake:"",res:k==="wl"?"win":"open",note:""};
+ const t=isNew?{...base,...preset}:(S.trades[a]||[]).find(x=>x.id===id);if(!t)return;
+ const v=x=>x===undefined||x===null?"":esc(String(x)),num=(id,lab,val,ph="")=>`<div class="field"><label for="${id}">${lab}</label><input id="${id}" type="number" inputmode="decimal" step="any" value="${v(val)}" placeholder="${ph}"></div>`;
+ const title=isNew?(k==="bs"?(t.side==="Sell"?"Log a sale":"Log a buy"):k==="ls"?`New ${(t.side||"").toLowerCase()} position`.replace("  "," "):"Add a trade"):"Edit trade";
+ let body="";
+ if(k==="wl")body=`<div class="field"><label>Result</label>${opts("res",[["win","Won"],["loss","Lost"],["open","Still open"]],t.res,"wl")}</div>
+  <div class="pair">${num("f-cost","Amount in ($)",+t.cost||0)}${num("f-pnl","Profit or loss ($)",+t.pnl||0)}</div>
+  ${a==="poly"?`<div class="field"><label>Timeframe</label>${opts("tf",[["5m","5m"],["15m","15m"],["1h","1h"],["Other","Other"]],["5m","15m","1h"].includes(t.tf)?t.tf:"Other")}</div>`:""}
+  <div class="field"><label>Side</label>${opts("side",a==="poly"?[["Up","Up"],["Down","Down"],["","None"]]:[["Yes","Yes"],["No","No"],["","None"]],t.side||"")}</div>
+  <div class="field"><label for="f-title">Market</label><input id="f-title" value="${v(t.title)}" placeholder="${a==="pred"?"Fed cuts in December":"BTC Up/Down"}" autocomplete="off"></div>`;
+ if(k==="ls")body=`<div class="field"><label>Side</label>${opts("side",[["Long","Long"],["Short","Short"]],t.side||"Long","wl")}</div>
+  ${a==="fut"?`<div class="field"><label>Market</label>${opts("venue",[["Liquid Brokers","Liquid Brokers"],["THTrader","THTrader"],["Other","Other"]],t.venue||"Liquid Brokers")}</div>`:""}
+  <div class="field"><label for="f-title">${a==="fut"?"Contract":"Instrument"}</label><input id="f-title" value="${v(t.title)}" placeholder="${a==="fut"?"ES, NQ, CL…":"BTC-PERP"}" autocomplete="off"></div>
+  <div class="pair">${num("f-entry","Entry price",t.entry)}${num("f-exit","Exit price",t.exit,"Still open")}</div>
+  <div class="pair">${num("f-size",a==="fut"?"Contracts":"Size",t.size,a==="fut"?"1":"0.01")}${num("f-lev","Leverage (x)",t.lev,"optional")}</div>
+  <div class="pair">${num("f-pnl","Profit or loss ($)",t.res==="open"?"":t.pnl,"auto from prices")}${num("f-cost","Margin ($)",t.cost,"optional")}</div>
+  <p class="desc">Leave profit or loss empty and it's worked out from entry, exit and size${a==="fut"?" (for futures, enter it yourself so the contract multiplier is right)":""}. No exit means the position is still open.</p>`;
+ if(k==="bs")body=`<div class="field"><label>Side</label>${opts("side",[["Buy","Buy"],["Sell","Sell"]],t.side||"Buy","wl")}</div>
+  <div class="field"><label for="f-title">Asset</label><input id="f-title" value="${v(t.title)}" placeholder="BTC" autocomplete="off" style="text-transform:uppercase"></div>
+  <div class="pair">${num("f-qty","Quantity",t.qty,"0.05")}${num("f-price","Price ($)",t.price,"81,200")}</div>
+  <div class="field" id="f-pnlwrap" ${t.side==="Sell"?"":"hidden"}>${num("f-pnl","Profit or loss on this sale ($)",t.res==="open"?"":t.pnl,"optional")}</div>`;
+ openSheet(`<h2>${title}</h2><p class="desc">${ACCTS[a]}${t.src==="sync"?" · synced. Your changes stay after the next sync.":""}</p>${body}
+  <div class="field"><label for="f-ts">When</label><input id="f-ts" type="datetime-local" value="${toLocalInput(t.ts)}"></div>
+  <div class="field"><label for="f-note">Note</label><textarea id="f-note" style="min-height:80px" placeholder="Why you took it, what you learned">${esc(t.note||"")}</textarea></div>
+  <div class="btns"><button class="action p" id="f-save">${isNew?"Save trade":"Save changes"}</button>${isNew?"":`<button class="action danger" id="f-del">Delete</button>`}</div><div id="f-conf"></div>`,
+ root=>{const q=s=>root.querySelector(s),nv=s=>{const x=q(s);return x&&x.value!==""?+x.value:null};
+  bindOpts(root,(n,val)=>{if(k==="wl"&&n==="res"){const p=q("#f-pnl"),c=+q("#f-cost").value||0;let x=+p.value||0;if(val==="win"&&x<=0)x=Math.abs(x)||c;if(val==="loss"&&x>=0)x=-(Math.abs(x)||c);if(val==="open")x=0;p.value=x}
+   if(k==="bs"&&n==="side")q("#f-pnlwrap").hidden=val!=="Sell"});
+  q("#f-save").onclick=()=>{const common={ts:new Date(q("#f-ts").value).getTime()||t.ts,note:q("#f-note").value.trim()};
+   if(k==="wl"){const res=optVal(root,"res");let pnl=+q("#f-pnl").value||0;if(res==="loss"&&pnl>0)pnl=-pnl;if(res==="win"&&pnl<0)pnl=-pnl;
+    Object.assign(t,common,{res,pnl:Math.round(pnl*100)/100,cost:+q("#f-cost").value||0,tf:a==="poly"?optVal(root,"tf"):(t.tf||""),side:optVal(root,"side"),title:q("#f-title").value.trim()||S.settings.label[a]||ACCTS[a]})}
+   if(k==="ls"){const side=optVal(root,"side"),entry=nv("#f-entry"),exit=nv("#f-exit"),size=nv("#f-size");let pnl=nv("#f-pnl");
+    if(pnl===null&&entry!==null&&exit!==null&&size!==null)pnl=(side==="Short"?entry-exit:exit-entry)*size;const closed=exit!==null||pnl!==null;
+    if(!q("#f-title").value.trim()){toast("Add the instrument, like BTC-PERP");return}
+    Object.assign(t,common,{side,venue:a==="fut"?optVal(root,"venue"):a==="cb"?"Coinbase":a==="bob"?"Pionex":"",title:q("#f-title").value.trim().toUpperCase(),entry,exit,size,lev:nv("#f-lev"),cost:nv("#f-cost")||0,
+     pnl:closed?Math.round((pnl||0)*100)/100:0,res:closed?((pnl||0)>=0?"win":"loss"):"open"})}
+   if(k==="bs"){const side=optVal(root,"side"),qty=nv("#f-qty"),price=nv("#f-price"),pnl=side==="Sell"?nv("#f-pnl"):null;
+    if(!q("#f-title").value.trim()||!qty){toast("Add the asset and quantity");return}
+    Object.assign(t,common,{side,title:q("#f-title").value.trim().toUpperCase(),qty,price:price||0,cost:Math.round(qty*(price||0)*100)/100,pnl:pnl===null?0:Math.round(pnl*100)/100,res:pnl===null?"open":pnl>=0?"win":"loss"})}
+   if(t.src==="sync")t.edited=true;if(isNew){S.trades[a].push(t);addXP(5)}save();closeSheet();renderTrades();renderCards();toast(isNew?"Trade saved":"Trade updated")};
+  const del=q("#f-del");if(del)del.onclick=()=>{if(!del.dataset.sure){del.dataset.sure=1;del.textContent="Tap again to delete";q("#f-conf").innerHTML=`<div class="confirm">${t.src==="sync"?"This hides the trade. It won't come back on the next sync. You can restore hidden trades in Settings.":"This removes the trade for good."}</div>`;return}
    if(t.src==="sync")t.hidden=true;else S.trades[a]=S.trades[a].filter(x=>x.id!==t.id);save();closeSheet();renderTrades();renderCards();toast("Trade deleted")}})}
 
 /* ================= today ================= */
@@ -1320,7 +1423,7 @@ function aboutSheet(){openSheet(`<div class="about"><img src="icon-192.png" alt=
  <p class="made">Made for <b>${APP_OWNER}</b></p>
  <blockquote>Thank you for trying my app. I hope it can help you organize your life like it has done for me.</blockquote></div>
  <div class="btns" style="justify-content:center"><button class="link" id="ab-setup">App setup</button></div>`,root=>{root.querySelector("#ab-setup").onclick=()=>{closeSheet();openSettings()}})}
-function openSettings(focus){const s=S.settings,hidden=S.trades.poly.filter(t=>t.hidden).length+S.trades.manual.filter(t=>t.hidden).length+S.trades.bob.filter(t=>t.hidden).length;
+function openSettings(focus){const s=S.settings,hidden=Object.keys(ACCTS).reduce((n,a)=>n+(S.trades[a]||[]).filter(t=>t.hidden).length,0);
  openSheet(`<h2>App setup</h2><p class="desc">Everything is saved on this phone. Make a backup now and then.</p>
  <div class="sec" style="margin-top:6px;border-top:0;padding-top:0"><h3>Polymarket sync</h3><p class="desc">Paste your Polymarket wallet address. On Polymarket, open your profile and copy the address that starts with 0x. It only lets this app read your public trades. It can't trade or move money.</p>
   <div class="field"><label for="s-w">Wallet address</label><input id="s-w" value="${esc(s.wallet)}" placeholder="0x…" autocomplete="off" autocapitalize="off" spellcheck="false"><span class="hint" id="s-werr"></span></div>
@@ -1364,10 +1467,10 @@ const CARDS=[
   h:()=>{const s=streak();return s?`${s}-day streak. Keep it going`:"Clear today's list to start a streak"},
   i:()=>`${1000-S.xp%1000} XP to level ${level()+1}. Tasks give 10 XP, trades and journal entries give 5.`,
   f:()=>[["XP",S.xp],["Best streak",Math.max(S.best,streak())+" days"],["Level",level()]],b:()=>"See today"},
- {pal:4,go:["trades",{acct:"bob"}],k:()=>"Manual and Bob",s:()=>"Hand-logged",
-  h:()=>{const b=stats("bob","All"),m=stats("manual","All");if(!b.all.length&&!m.all.length)return "Log Bob's trades and your own";return `Bob is ${b.w}–${b.l}, you're ${m.w}–${m.l}`},
-  i:()=>"Two separate journals so you can compare Bob's trades with your manual ones.",
-  f:()=>{const b=stats("bob","All"),m=stats("manual","All");return[["Bob P&L",pnlStr(b.pnl)],["Manual P&L",pnlStr(m.pnl)],["Today",pnlStr(b.today+m.today)]]},b:()=>"See Bob's trades"}];
+ {pal:4,go:["trades",{acct:"bob"}],k:()=>"Bob",s:()=>"Compared with yours",
+  h:()=>{const b=tstats(["bob"],"All"),m=tstats(["poly","pred","cb","fut"],"All");if(!b.items.length&&!m.items.length)return "Log Bob's trades and your own";return `Bob is ${b.w}–${b.l}, you're ${m.w}–${m.l}`},
+  i:()=>"Bob's trades next to yours across Polymarket, Prediction and Derivatives.",
+  f:()=>{const b=tstats(["bob"],"All"),m=tstats(["poly","pred","cb","fut"],"All");return[["Bob P&L",pnlStr(b.pnl)],["Your P&L",pnlStr(m.pnl)],["Today",pnlStr(b.today+m.today)]]},b:()=>"See Bob's trades"}];
 const rail=$("rail");
 CARDS.forEach((cd,i)=>{const el=document.createElement("article");el.className="card";el.tabIndex=0;
  el.innerHTML=`<div class="surf"><canvas></canvas><div class="shade"></div><div class="glare"></div><div class="meta"><span>Op-Lock In / Feed</span><span>${String(i+1).padStart(2,"0")} / ${String(CARDS.length).padStart(2,"0")}</span></div>
@@ -1408,23 +1511,23 @@ function openCard(i){const cd=CARDS[i],el=cd.el;el.classList.remove("peek");if(c
 document.addEventListener("click",e=>{if(!e.target.closest(".card"))CARDS.forEach(c=>c.el.classList.remove("peek"))});
 
 /* ================= segmented controls ================= */
-function segPlace(id){const s=$(id),hl=s.querySelector(".hl"),b=s.querySelector("button.on");if(b&&b.offsetWidth){hl.style.left=b.offsetLeft+"px";hl.style.width=b.offsetWidth+"px"}}
+function segPlace(id){const s=$(id);if(!s)return;const hl=s.querySelector(".hl"),b=s.querySelector("button.on");if(b&&b.offsetWidth){hl.style.left=b.offsetLeft+"px";hl.style.width=b.offsetWidth+"px"}}
 const segAll=()=>requestAnimationFrame(()=>{segPlace("acct");segPlace("tf")});
-document.querySelectorAll("#acct button").forEach(b=>b.onclick=()=>{S.ui.acct=b.dataset.a;S.ui.shown=30;shownBal=null;save();renderTrades()});
-document.querySelectorAll("#tf button").forEach(b=>b.onclick=()=>{S.ui.tf=b.dataset.t;S.ui.shown=30;save();renderTrades();renderCards()});
-$("won").onclick=e=>quickLog(true,e.currentTarget);$("lost").onclick=e=>quickLog(false,e.currentTarget);
-$("addtrade").onclick=()=>editTrade(S.ui.acct);
+
+
+
+
 
 /* ================= routing + dock ================= */
 const NAMES={home:"Home",today:"Today",trades:"Trades",journal:"Journal",food:"Food",smoke:"Smoke log",money:"Money"},PALOF={today:1,trades:0,journal:2,food:3,smoke:4,money:0};
-function go(v,o={}){S.view=v;if(v!=="home")layerOpen("page",()=>go("home"));else layerClosed("page");if(o.acct)S.ui.acct=o.acct;if(o.book)S.ui.book=o.book;
+function go(v,o={}){S.view=v;if(v!=="home")layerOpen("page",()=>go("home"));else layerClosed("page");if(o.acct){S.ui.tsec=o.acct==="manual"?"pred":TSEC.some(s=>s.k===o.acct)?o.acct:"all";txHold()}if(o.book)S.ui.book=o.book;
  $("v-home").classList.toggle("off",v!=="home");document.querySelectorAll(".page").forEach(p=>p.classList.toggle("on",p.id==="p-"+v));document.body.classList.toggle("page-mode",v!=="home");
  document.querySelectorAll("#dock .tb").forEach(b=>b.classList.toggle("on",b.dataset.v===v||(b.dataset.k==="more"&&!["home","today","money"].includes(v))));qlog(false);
  $("crumb").textContent=NAMES[v];setGreet();morphWeek(v==="today",!!o.instant&&weekCompact===null);
  if(v==="home"){renderCards();layout();requestAnimationFrame(fitHome)}else{setAmbient(PALOF[v]);fitHome()}
  if(v==="today")setTimeout(()=>waterNote(),1200);else hideNote();
  if(v==="today")setTimeout(()=>{const d=$("donext");if(!d||!$("p-today").classList.contains("on"))return;const r=d.getBoundingClientRect();if(r.bottom>innerHeight-90)d.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"})},450);
- if(v==="trades"){shownBal=null;renderTrades();const l=$("spark").querySelector(".line");if(l){l.style.animation="none";void l.offsetWidth;l.style.animation=""}if(S.ui.acct==="poly"&&S.settings.wallet&&Date.now()-S.sync.last>60000)sync(false)}
+ if(v==="trades"){renderTrades();requestAnimationFrame(()=>txCenter(false));txSchedule();if(S.settings.wallet&&Date.now()-S.sync.last>60000)sync(false)}
  if(v==="journal")renderJournal();if(v==="today")renderToday();if(v==="food")renderFood();if(v==="smoke")renderSmoke();if(v==="money")renderMoney();
  save();scrollTo({top:0,behavior:o.instant?"auto":"smooth"});history.replaceState(null,"","#"+v)}
 function glide(){}
