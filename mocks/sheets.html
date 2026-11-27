@@ -1,0 +1,143 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sheet Redesign</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+:root{--ink:#F6EFE9;--muted:#A99C92;--soft:#D6CBC2;--line:rgba(255,236,220,.11);--line2:rgba(255,236,220,.22);--peach:#EFBC90;--mint:#86D3B0;--rose:#EE8E86;--sky:#9FD4F7;--sheet:linear-gradient(180deg,#22160F 0%,#170F0B 40%,#120C09 100%);--f:"Work Sans",system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:#0A0706;color:var(--ink);font:400 14px var(--f);padding:28px 16px 60px}
+button{font:inherit;color:inherit;cursor:pointer}
+h1{text-align:center;font-size:20px;font-weight:600;margin:0 0 4px}.lead{text-align:center;color:var(--muted);font-size:13px;margin:0 auto 22px;max-width:760px;line-height:1.5}
+h2.sect{max-width:1180px;margin:34px auto 12px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--peach)}
+.row{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+.col{width:min(380px,100%)}.cap{font-size:13px;font-weight:700;margin:0 0 8px;display:flex;gap:8px;align-items:center}.cap span{font-weight:500;color:var(--muted)}
+.tag{font-size:10.5px;font-weight:800;letter-spacing:.08em;background:var(--peach);color:#2A1606;border-radius:6px;padding:2px 7px}
+.phone{border-radius:30px;background:#0D0907;padding:10px;box-shadow:0 30px 70px rgba(0,0,0,.5),inset 0 0 0 1px var(--line)}
+.sheet{background:var(--sheet);box-shadow:inset 0 1px 0 rgba(255,236,220,.12);border-radius:22px;padding:10px 18px 18px;max-height:760px;overflow:auto;scrollbar-width:none;position:relative}
+.grab{width:40px;height:4px;border-radius:4px;background:var(--line2);margin:0 auto 12px}
+.sh{font-size:23px;font-weight:600;margin:0}.sd{color:var(--muted);font-size:13px;margin:4px 0 0}
+/* ---------- shared new controls ---------- */
+.lab{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px;display:flex;justify-content:space-between}.lab b{letter-spacing:0;text-transform:none;font-size:12px;color:var(--soft);font-weight:600}
+.seg{position:relative;display:flex;padding:4px;border-radius:14px;background:rgba(0,0,0,.28);box-shadow:inset 0 0 0 1px var(--line)}
+.seg button{flex:1;position:relative;z-index:1;border:0;background:none;padding:10px 4px;border-radius:10px;font-weight:600;font-size:13px;color:var(--muted);transition:color .2s}
+.seg button.on{color:#2A1606}.seg .pill{position:absolute;top:4px;bottom:4px;border-radius:10px;background:var(--peach);transition:left .3s cubic-bezier(.3,.8,.2,1),width .3s cubic-bezier(.3,.8,.2,1),background .25s;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.tiles{display:grid;gap:6px}.tile{border:0;border-radius:14px;padding:10px 4px 9px;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px var(--line);text-align:center;transition:transform .12s,background .2s,box-shadow .2s}
+.tile:active{transform:scale(.95)}.tile i{display:block;font-style:normal;font-size:20px;line-height:1.1}.tile small{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-top:4px}
+.tile.on{background:rgba(239,188,144,.16);box-shadow:inset 0 0 0 1.5px var(--peach)}.tile.on small{color:var(--peach)}
+.save{width:100%;border:0;border-radius:14px;padding:15px;font-weight:700;font-size:15px;background:var(--peach);color:#2A1606;margin-top:18px}
+.ghost{border:0;background:none;color:var(--peach);font-weight:600;font-size:13px;padding:6px 0}
+/* ---------- check-in specific ---------- */
+.dogs{display:flex;gap:8px;margin-top:14px}
+.dog{flex:1;display:flex;align-items:center;gap:10px;border:0;border-radius:16px;padding:10px 12px;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px var(--line);text-align:left}
+.dog.on{background:rgba(239,188,144,.12);box-shadow:inset 0 0 0 1.5px var(--peach)}
+.av{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:19px;background:#3A2618;flex:none}.dog b{display:block;font-size:14px}.dog small{font-size:11px;color:var(--muted)}.dog small.ok{color:var(--mint)}
+.allok{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;border:0;border-radius:16px;padding:14px 16px;margin-top:12px;background:linear-gradient(135deg,rgba(134,211,176,.2),rgba(134,211,176,.07));box-shadow:inset 0 0 0 1px rgba(134,211,176,.4);text-align:left}
+.allok b{font-size:15px;color:var(--mint)}.allok small{display:block;font-size:11.5px;color:var(--soft);margin-top:2px}.allok em{font-style:normal;font-size:22px}
+.allok.done{background:rgba(134,211,176,.25)}
+/* bowl */
+.bowls{grid-template-columns:repeat(5,1fr)}.bowl svg{width:34px;height:22px;display:block;margin:2px auto 0}
+/* stool scale */
+.scale{grid-template-columns:repeat(5,1fr);position:relative}.scale .tile i{width:22px;height:22px;border-radius:50%;margin:0 auto;font-size:0}
+.zone{position:relative;margin-top:6px;height:16px;font-size:10.5px;color:var(--mint);font-weight:600}.zone:before{content:"";position:absolute;left:20%;width:40%;top:0;height:3px;border-radius:3px;background:var(--mint);opacity:.7}.zone span{position:absolute;left:20%;width:40%;text-align:center;top:5px}
+.sw{grid-template-columns:1fr 1fr}.sw .tile{display:flex;align-items:center;gap:10px;padding:11px 12px;text-align:left}.sw .tile i{width:22px;height:22px;border-radius:7px;font-size:0;margin:0}.sw .tile small{margin:0;font-size:12.5px}
+.batt{display:flex;gap:5px}.batt button{flex:1;border:0;height:34px;border-radius:9px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px var(--line);font-weight:700;font-size:12px;color:var(--muted);transition:background .2s,color .2s}
+.batt button.f{color:#0B3324}.battl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:5px}
+.water{grid-template-columns:repeat(3,1fr)}
+.note{width:100%;margin-top:6px;background:rgba(0,0,0,.28);border:1px solid var(--line);border-radius:12px;padding:12px;color:var(--ink);font:500 14px var(--f)}
+.sum{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}.sum span{font-size:11.5px;padding:4px 9px;border-radius:999px;background:rgba(255,255,255,.06);color:var(--soft)}.sum span.w{background:rgba(238,142,134,.15);color:var(--rose)}
+/* option B: per-dog stacked cards, compact rows */
+.dcard{margin-top:14px;border-radius:18px;padding:14px;background:rgba(0,0,0,.22);box-shadow:inset 0 0 0 1px var(--line)}
+.dhead{display:flex;align-items:center;gap:10px}.dhead b{font-size:16px;flex:1}.mini{border:0;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700;background:rgba(134,211,176,.16);color:var(--mint)}.mini.done{background:var(--mint);color:#0B3324}
+.qrow{display:grid;grid-template-columns:74px 1fr;align-items:center;gap:10px;margin-top:10px}.qrow>span{font-size:12px;font-weight:600;color:var(--muted)}
+.chips{display:flex;gap:4px}.chips button{flex:1;border:0;border-radius:10px;padding:8px 0;font-size:15px;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px var(--line);transition:background .2s}
+.chips button.on{background:rgba(239,188,144,.2);box-shadow:inset 0 0 0 1.5px var(--peach)}
+.hint{font-size:11px;color:var(--muted);margin-top:4px;text-align:right;min-height:14px}
+/* inventory */
+.inv{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.it{border-radius:16px;padding:13px 14px;background:#17100C;box-shadow:inset 0 0 0 1px var(--line)}
+.it b{display:block;font-size:14px}.it small{display:block;color:var(--muted);font-size:12px;margin-top:3px;line-height:1.4}.it em{display:inline-block;font-style:normal;font-size:10.5px;font-weight:700;margin-top:8px;padding:2px 8px;border-radius:999px;background:rgba(239,188,144,.14);color:var(--peach)}
+.it em.m{background:rgba(134,211,176,.14);color:var(--mint)}
+/* before/after */
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:12px}.ba>div{border-radius:16px;padding:12px;background:var(--sheet)}.ba h6{margin:0 0 8px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.old{display:flex;gap:6px}.old button{flex:1;min-height:40px;border-radius:10px;border:1px solid var(--line2);background:rgba(0,0,0,.22);font-size:12.5px;font-weight:600;color:var(--soft)}.old button.on{background:var(--peach);border-color:var(--peach);color:#2A1606}
+.fld{margin-top:10px}.fld label{display:block;font-size:12px;font-weight:600;color:var(--soft);margin-bottom:6px}
+@media (max-width:640px){.ba{grid-template-columns:1fr}}
+</style></head><body>
+<h1>Sheets · dog check-in first, then the same look everywhere</h1>
+<p class="lead"><b>Now in the app's warm dark brown</b> instead of teal, so sheets match the pages behind them. Both phones are interactive. Tap the answers, the dogs, and <b>All normal</b>. Under them are the 13 other sheets that use the same plain grid of boxed buttons. They'd all get the new controls: a sliding pill instead of boxes, icon tiles where a picture says it faster, and small-caps labels.</p>
+
+<div class="row">
+ <div class="col"><p class="cap"><span class="tag">A</span>One dog at a time <span>· icon tiles</span></p>
+  <div class="phone"><div class="sheet" id="A"></div></div></div>
+ <div class="col"><p class="cap"><span class="tag">B</span>Both dogs on one screen <span>· compact rows</span></p>
+  <div class="phone"><div class="sheet" id="B"></div></div></div>
+</div>
+
+<h2 class="sect">The same treatment for every other sheet</h2>
+<div class="row"><div style="width:min(780px,100%)"><div class="ba">
+ <div><h6>Now</h6><div class="fld"><label>Food bar on Today</label><div class="old"><button class="on">Game (pixel)</button><button>Clean tracker</button></div></div><div class="fld"><label>If I haven't logged food for</label><div class="old"><button>3 hours</button><button class="on">4 hours</button><button>5 hours</button></div></div><div class="fld"><label>Result</label><div class="old"><button class="on">Win</button><button>Loss</button><button>Push</button></div></div></div>
+ <div><h6>New</h6><div class="lab">Food bar on Today</div><div class="seg" data-seg><button class="on">🍗 Game</button><button>▤ Clean</button></div><div class="lab">If I haven't logged food for</div><div class="seg" data-seg><button>3 h</button><button class="on">4 h</button><button>5 h</button></div><div class="lab">Result</div><div class="seg" data-seg data-wl><button class="on">Win</button><button>Loss</button><button>Push</button></div></div>
+</div></div></div>
+
+<h2 class="sect">Every sheet built like the check-in (13 + the check-in)</h2>
+<div class="inv">
+ <div class="it"><b>Dog check-in</b><small>Food → Dogs · the 9 PM task. Food %, water, stool 1–5, urine, energy 1–5, note, for each dog.</small><em>Redesign above</em></div>
+ <div class="it"><b>Log a trade / Edit trade</b><small>Trades and the + button. Result (win/loss/push), side, market type, stake.</small><em>Pill + win/loss colours</em></div>
+ <div class="it"><b>Edit task</b><small>Today and the task room. Time of day group, which days, optional.</small><em>Pill + day dots</em></div>
+ <div class="it"><b>Journal entry</b><small>Journal. Mood picker.</small><em class="m">Mood as emoji tiles</em></div>
+ <div class="it"><b>New / Edit recipe</b><small>Recipes. For you or the dogs, category.</small><em>Pill</em></div>
+ <div class="it"><b>Notifications</b><small>Settings. How many minutes before a task.</small><em>Pill</em></div>
+ <div class="it"><b>Monthly budget</b><small>Money. Pay schedule.</small><em>Pill</em></div>
+ <div class="it"><b>Thing to buy</b><small>Money → To buy. Priority and category.</small><em class="m">Category as icon tiles</em></div>
+ <div class="it"><b>Edit purchase</b><small>Money. Category and need/want.</small><em class="m">Category as icon tiles</em></div>
+ <div class="it"><b>Log a session / limit</b><small>Smoke log. Daily limit.</small><em>Pill</em></div>
+ <div class="it"><b>Food settings</b><small>Food page ⚙. Bar style, reminders on/off, hours.</small><em>Pill</em></div>
+ <div class="it"><b>Add a reward</b><small>Streak → Store. Cost and tier.</small><em>Pill</em></div>
+ <div class="it"><b>Names and weights</b><small>Food → Dogs. Goal per dog (keep/lose), sensitive stomach.</small><em>Pill</em></div>
+ <div class="it"><b>Water reminders</b><small>Water page. Remind every 60/90/120 min.</small><em>Pill</em></div>
+</div>
+
+<script>
+const DOGS=[{id:"b",name:"Boy",av:"🐺"},{id:"g",name:"Girl",av:"🐕"}];
+const NORMAL={food:100,water:"normal",stool:3,urine:"yellow",energy:4};
+const st={A:{cur:"b",b:{},g:{}},B:{b:{},g:{}}};
+const STOOL=[["#4A2E1C","Hard"],["#7A4A26","Firm"],["#9A6332","Normal"],["#B98A55","Soft"],["#D2B48A","Watery"]];
+const bowl=p=>`<svg viewBox="0 0 34 22"><path d="M2 8h30a15 13 0 0 1-30 0z" fill="#2E1F16" stroke="#7A5E4A" stroke-width="1.2"/>${p?`<clipPath id="c${p}"><path d="M2 8h30a15 13 0 0 1-30 0z"/></clipPath><rect x="0" y="${8+14*(1-p/100)}" width="34" height="14" fill="#C9874F" clip-path="url(#c${p})"/>`:""}</svg>`;
+const done=d=>Object.keys(d).length>=5;
+const flags=d=>{const w=[];if(d.food===0)w.push("Ate nothing");if(d.stool===5)w.push("Watery stool");if(d.energy===1)w.push("Very low energy");if(d.urine==="dark")w.push("Dark urine");if(d.water==="low")w.push("Drinking less");return w};
+function batt(d){return`<div class="batt">${[1,2,3,4,5].map(n=>`<button data-k="energy" data-v="${n}" class="${d.energy>=n?"f":""}" style="${d.energy>=n?`background:${["#EE8E86","#EFA98A","#EFBC90","#B8D7A0","#86D3B0"][d.energy-1]}`:""}">${n}</button>`).join("")}</div><div class="battl"><span>Very low</span><span>Full energy</span></div>`}
+function drawA(){const S=st.A,d=S[S.cur],dog=DOGS.find(x=>x.id===S.cur);
+ A.innerHTML=`<div class="grab"></div><p class="sh">Tonight's check-in</p><p class="sd">Friday, November 27 · about 10 seconds</p>
+ <div class="dogs">${DOGS.map(x=>`<button class="dog ${x.id===S.cur?"on":""}" data-dog="${x.id}"><span class="av">${x.av}</span><span><b>${x.name}</b><small class="${done(S[x.id])?"ok":""}">${done(S[x.id])?"✓ Done":Object.keys(S[x.id]).length?"In progress":"Not yet"}</small></span></button>`).join("")}</div>
+ <button class="allok ${done(d)&&JSON.stringify(d)===JSON.stringify(NORMAL)?"done":""}" id="aok"><span><b>${dog.name} was normal today</b><small>Ate it all · normal water · firm stool · good energy</small></span><em>${done(d)&&JSON.stringify(d)===JSON.stringify(NORMAL)?"✓":"👍"}</em></button>
+ <div class="lab">Food eaten <b>${d.food!=null?d.food+"%":""}</b></div><div class="tiles bowls">${[0,25,50,75,100].map(p=>`<button class="tile bowl ${d.food===p?"on":""}" data-k="food" data-v="${p}">${bowl(p)}<small>${p}%</small></button>`).join("")}</div>
+ <div class="lab">Water</div><div class="tiles water">${[["low","💧","Less"],["normal","💧💧","Normal"],["high","💧💧💧","More"]].map(([v,i,l])=>`<button class="tile ${d.water===v?"on":""}" data-k="water" data-v="${v}"><i style="font-size:15px">${i}</i><small>${l}</small></button>`).join("")}</div>
+ <div class="lab">Stool</div><div class="tiles scale">${STOOL.map(([c,l],i)=>`<button class="tile ${d.stool===i+1?"on":""}" data-k="stool" data-v="${i+1}"><i style="background:${c}"></i><small>${l}</small></button>`).join("")}</div><div class="zone"><span>healthy</span></div>
+ <div class="lab">Urine</div><div class="tiles sw">${[["yellow","#F2D46B","Pale yellow"],["dark","#C9822E","Dark"]].map(([v,c,l])=>`<button class="tile ${d.urine===v?"on":""}" data-k="urine" data-v="${v}"><i style="background:${c}"></i><small>${l}</small></button>`).join("")}</div>
+ <div class="lab">Energy</div>${batt(d)}
+ ${d.noteOpen?`<input class="note" placeholder="Anything unusual about ${dog.name}?">`:`<button class="ghost" data-note>+ Add a note</button>`}
+ ${flags(d).length?`<div class="sum">${flags(d).map(f=>`<span class="w">⚠ ${f}</span>`).join("")}</div>`:""}
+ <button class="save">${DOGS.every(x=>done(S[x.id]))?"Save check-in":S.cur==="b"&&done(d)?"Next: Girl →":"Save check-in"}</button>`;
+ bindA()}
+function bindA(){const S=st.A;A.querySelectorAll("[data-dog]").forEach(b=>b.onclick=()=>{S.cur=b.dataset.dog;drawA()});
+ A.querySelector("#aok").onclick=()=>{S[S.cur]={...NORMAL};const nx=DOGS.find(x=>!done(S[x.id]));drawA();if(nx&&nx.id!==S.cur)setTimeout(()=>{S.cur=nx.id;drawA()},450)};
+ A.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{const v=b.dataset.v;S[S.cur][b.dataset.k]=isNaN(+v)?v:+v;drawA()});
+ const n=A.querySelector("[data-note]");if(n)n.onclick=()=>{S[S.cur].noteOpen=1;drawA()};
+ A.querySelector(".save").onclick=()=>{const nx=DOGS.find(x=>!done(S[x.id]));if(nx&&nx.id!==S.cur){S.cur=nx.id;drawA()}}}
+function drawB(){const S=st.B;
+ B.innerHTML=`<div class="grab"></div><p class="sh">Tonight's check-in</p><p class="sd">Friday, November 27 · tap 👍 if they were fine</p>
+ ${DOGS.map(x=>{const d=S[x.id],ok=done(d)&&JSON.stringify(d)===JSON.stringify(NORMAL);const row=(k,lab,opts,hint)=>`<div class="qrow"><span>${lab}</span><div class="chips">${opts.map(([v,i])=>`<button data-dog="${x.id}" data-k="${k}" data-v="${v}" class="${String(d[k])===String(v)?"on":""}" title="${v}">${i}</button>`).join("")}</div></div>`;
+  return`<div class="dcard"><div class="dhead"><span class="av">${x.av}</span><b>${x.name}</b><button class="mini ${ok?"done":""}" data-ok="${x.id}">${ok?"✓ All normal":"👍 All normal"}</button></div>
+  ${row("food","Ate",[[0,"0"],[25,"¼"],[50,"½"],[75,"¾"],[100,"🥣"]])}
+  ${row("water","Water",[["low","💧"],["normal","💧💧"],["high","🌊"]])}
+  ${row("stool","Stool",STOOL.map(([c],i)=>[i+1,`<i style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${c};vertical-align:-2px"></i>`]))}
+  ${row("urine","Urine",[["yellow",`<i style="display:inline-block;width:14px;height:14px;border-radius:4px;background:#F2D46B;vertical-align:-2px"></i>`],["dark",`<i style="display:inline-block;width:14px;height:14px;border-radius:4px;background:#C9822E;vertical-align:-2px"></i>`]])}
+  ${row("energy","Energy",[[1,"😴"],[2,"🥱"],[3,"🙂"],[4,"😊"],[5,"⚡"]])}
+  <div class="hint">${d.stool?STOOL[d.stool-1][1]+" stool":""}${flags(d).length?` · <span style="color:var(--rose)">⚠ ${flags(d).join(", ")}</span>`:""}</div></div>`}).join("")}
+ <button class="save">Save check-in</button>`;
+ B.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{const v=b.dataset.v;S[b.dataset.dog][b.dataset.k]=isNaN(+v)?v:+v;drawB()});
+ B.querySelectorAll("[data-ok]").forEach(b=>b.onclick=()=>{S[b.dataset.ok]={...NORMAL};drawB()})}
+drawA();drawB();
+// sliding pill segmented controls
+document.querySelectorAll("[data-seg]").forEach(s=>{const p=document.createElement("i");p.className="pill";s.prepend(p);
+ const place=()=>{const on=s.querySelector("button.on");p.style.left=on.offsetLeft+"px";p.style.width=on.offsetWidth+"px";if(s.hasAttribute("data-wl"))p.style.background={Win:"#86D3B0",Loss:"#EE8E86",Push:"#EFBC90"}[on.textContent]};
+ s.querySelectorAll("button").forEach(b=>b.onclick=()=>{s.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));place()});requestAnimationFrame(place);addEventListener("resize",place)});
+</script></body></html>
