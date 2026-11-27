@@ -388,7 +388,7 @@ const isSkin=t=>/^Skin (AM|PM):/.test(t.t);
    task's color, a progress ring, the rule, step tiles and a 7-day strip. Finishing celebrates, then the page
    shrinks back into the row. (Replaces the old steps sheet; same data and actions.) ===== */
 const STEP_ICONS=[[/bonnet|night|sleep|bed\b/i,"🌙"],[/mist|spray|water/i,"💧"],[/reshape|scrunch|define|curls? with/i,"🌀"],[/peptide|serum|minoxidil|drops?\b/i,"🧪"],[/shampoo|wash|cleans|rinse/i,"🫧"],
- [/condition|cream|moistur|lotion|oil\b|butter|balm/i,"🧴"],[/spf|sunscreen|\bsun\b/i,"☀️"],[/vitamin c|brighten/i,"🍋"],[/retin|tret|exfoli|\baha\b|\bbha\b|acid/i,"⚗️"],[/towel|t-shirt|diffus|air.?dry/i,"🌬️"],
+ [/condition|cream|moistur|lotion|oil\b|butter|balm|jelly|\bgel\b|leave.?in|mousse|custard/i,"🧴"],[/spf|sunscreen|\bsun\b/i,"☀️"],[/vitamin c|brighten/i,"🍋"],[/retin|tret|exfoli|\baha\b|\bbha\b|acid/i,"⚗️"],[/towel|t-shirt|diffus|air.?dry/i,"🌬️"],
  [/comb|brush|detangl/i,"🪮"],[/walk|cardio|\brun\b|bike|treadmill|steps\b/i,"🚶"],[/stretch|mobility|yoga|foam/i,"🧘"],[/\brow\b|pull|\blat\b|deadlift/i,"🏋️"],[/curl|bicep|hammer/i,"💪"],
  [/press|bench|push|chest|\bdip/i,"🏋️"],[/squat|lunge|\bleg|calf|glute/i,"🦵"],[/plank|core|\babs?\b|crunch/i,"🎯"],[/\bfly\b|delt|shoulder|raise/i,"🪽"],
  [/\beat\b|meal|cook|prep|protein|breakfast|lunch|dinner|snack/i,"🍽️"],[/read|review|journal|write|plan\b/i,"📝"]];
@@ -701,7 +701,16 @@ function cbConnectSheet(){const k=cbKey();
    localStorage.removeItem(CBK);closeSheet();renderTrades();toast("Coinbase disconnected. Synced trades stay; delete the key on Coinbase too if you like.")}})}
 
 /* ================= sheet ================= */
-function closeSheet(){const w=$("sheetwrap");if(w.hidden)return;w.hidden=true;$("sheet").innerHTML="";$("sheet").style.transform="";delete $("sheet").dataset.kind}
+// Inside a full page (Food, Water, Streak, a task), sheets open as their own full page that grows out of whatever you tapped,
+// and shrink back into it when closed: same feel as the pages themselves. Elsewhere they stay bottom sheets.
+let sheetGen=0,sheetSrc=null,lastTap=null,lastTapT=0;
+document.addEventListener("pointerdown",e=>{const t=e.target.closest&&e.target.closest("button,a,[role=button],[data-r],[data-id],.tr,.fomeal,.folog,label");if(t){lastTap=t;lastTapT=Date.now()}},true);
+const sheetOrigin=()=>{const s=sheetSrc;const r=s&&s.isConnected&&s.offsetParent!==null&&s.getBoundingClientRect();return r&&r.width&&r.bottom>0&&r.top<innerHeight?r:null};
+function closeSheet(){const w=$("sheetwrap");if(w.hidden||w.dataset.closing)return;const s=$("sheet"),gen=++sheetGen;
+ const fin=()=>{if(gen!==sheetGen)return;delete w.dataset.closing;w.hidden=true;s.innerHTML="";s.style.transform="";s.getAnimations().forEach(a=>a.cancel());delete s.dataset.kind;w.classList.remove("pg")};
+ if(!w.classList.contains("pg")||RM||document.hidden){fin();return}
+ w.dataset.closing="1";s.getAnimations().forEach(a=>a.cancel());
+ s.animate([{clipPath:"inset(0px 0px 0px 0px round 0px)",opacity:1},{clipPath:roomClip(sheetOrigin()),opacity:.6}],{duration:420,easing:"cubic-bezier(.32,.72,0,1)",fill:"forwards"}).onfinish=fin;setTimeout(fin,560)}
 /* ===== Getting out of things: one stack of open layers (page, sheet, + menu, calm mode).
    Each open layer adds a browser history entry, so Android's back gesture, the browser back button
    and Esc all close the top layer first, then return to Home. Layers are detected by watching the DOM,
@@ -723,17 +732,24 @@ new MutationObserver(()=>{if($("sheetwrap").hidden&&RO)drawRoom()}).observe($("s
  A.addListener("backButton",()=>{if(LAYERS.length)closeTopLayer();else if(S.view!=="home")go("home");else A.minimizeApp?A.minimizeApp():A.exitApp()})})();
 // Tap the dark area around a sheet to close it (only if the press started there too, so drags and text selection don't close it by accident).
 let sheetDown=null;$("sheetwrap").addEventListener("pointerdown",e=>{sheetDown=e.target===$("sheetwrap")});
-$("sheetwrap").addEventListener("click",e=>{if(e.target===$("sheetwrap")&&sheetDown!==false)closeSheet();sheetDown=null});
+$("sheetwrap").addEventListener("click",e=>{if(e.target===$("sheetwrap")&&sheetDown!==false&&!$("sheetwrap").classList.contains("pg"))closeSheet();sheetDown=null});
 addEventListener("keydown",e=>{if(e.key!=="Escape")return;if(!$("calm").hidden)return closeCalm(null);if(!$("sheetwrap").hidden)return closeSheet();if($("troom").classList.contains("on"))return closeRoom();qlog(false);orbit(false);if(typeof hideNote==="function")hideNote();if(typeof mHideTip==="function")mHideTip()});
 // Every sheet gets an × in the corner, however it was opened.
-new MutationObserver(()=>{const s=$("sheet");if(!s.firstElementChild||s.querySelector(":scope>.sheetx"))return;const b=document.createElement("button");b.className="sheetx";b.type="button";b.setAttribute("aria-label","Close");b.innerHTML='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';b.onclick=closeSheet;s.prepend(b)}).observe($("sheet"),{childList:true});
+new MutationObserver(()=>{const s=$("sheet");if(!s.firstElementChild||s.querySelector(":scope>.sheetx"))return;const b=document.createElement("button");b.className="sheetx";b.type="button";b.setAttribute("aria-label","Close");b.innerHTML='<svg class="sx" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg><svg class="sb" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>';b.onclick=closeSheet;s.prepend(b)}).observe($("sheet"),{childList:true});
 // Swipe a sheet down by its top edge to close it.
 (function(){const s=$("sheet");let y0=null,dy=0;
- s.addEventListener("pointerdown",e=>{if(e.target.closest("input,textarea,select,button,a,[contenteditable]"))return;const r=s.getBoundingClientRect();if(e.clientY-r.top>56||s.scrollTop>0)return;y0=e.clientY;dy=0;s.style.transition="none";try{s.setPointerCapture(e.pointerId)}catch(_){}});
+ s.addEventListener("pointerdown",e=>{if($("sheetwrap").classList.contains("pg")||e.target.closest("input,textarea,select,button,a,[contenteditable]"))return;const r=s.getBoundingClientRect();if(e.clientY-r.top>56||s.scrollTop>0)return;y0=e.clientY;dy=0;s.style.transition="none";try{s.setPointerCapture(e.pointerId)}catch(_){}});
  s.addEventListener("pointermove",e=>{if(y0===null)return;dy=Math.max(0,e.clientY-y0);s.style.transform=`translateY(${dy}px)`});
  const end=()=>{if(y0===null)return;y0=null;s.style.transition="transform .3s cubic-bezier(.32,.72,0,1)";if(dy>90){s.style.transform="translateY(110%)";setTimeout(closeSheet,220)}else s.style.transform="";dy=0};
  s.addEventListener("pointerup",end);s.addEventListener("pointercancel",end)})();
-function openSheet(html,bind){delete $("sheet").dataset.kind;$("sheet").innerHTML=`<div class="grab"></div>`+html;$("sheetwrap").hidden=false;bind($("sheet"));const f=$("sheet").querySelector("input:not([type=checkbox]),textarea");if(f&&matchMedia("(hover:hover)").matches)f.focus()}
+function openSheet(html,bind){const w=$("sheetwrap"),s=$("sheet"),was=!w.hidden&&!w.dataset.closing;sheetGen++;delete w.dataset.closing;s.getAnimations().forEach(a=>a.cancel());
+ const pg=$("troom").classList.contains("on");w.classList.toggle("pg",pg);if(!was)sheetSrc=Date.now()-lastTapT<1500?lastTap:null;
+ delete s.dataset.kind;s.innerHTML=`<div class="grab"></div>`+html;s.style.transform="";w.hidden=false;s.scrollTop=0;
+ if(pg&&!was){const rc=$("trcv");let u="none";try{if(rc&&rc.width)u=`url(${rc.toDataURL("image/jpeg",.82)})`}catch(e){}s.style.setProperty("--pgbg",u)}
+ bind(s);
+ if(pg&&!was&&!RM){s.animate([{clipPath:roomClip(sheetOrigin())},{clipPath:"inset(0px 0px 0px 0px round 0px)"}],{duration:620,easing:"cubic-bezier(.32,.72,0,1)"});
+  [...s.children].filter(c=>!c.classList.contains("grab")&&!c.classList.contains("sheetx")).slice(0,7).forEach((c,i)=>c.animate([{opacity:0,transform:"translateY(14px)"},{opacity:1,transform:"none"}],{duration:420,delay:180+i*35,easing:"cubic-bezier(.2,.8,.2,1)",fill:"backwards"}))}
+ const f=$("sheet").querySelector("input:not([type=checkbox]),textarea");if(f&&matchMedia("(hover:hover)").matches)f.focus()}
 function opts(name,list,val,cls=""){return `<div class="opts ${cls}" data-name="${name}">${list.map(([v,l,ic])=>`<button type="button" data-v="${esc(v)}" class="${v===val?"on":""}">${ic?`<i aria-hidden="true">${ic}</i>`:""}${esc(l)}</button>`).join("")}</div>`}
 function bindOpts(root,onChange){root.querySelectorAll(".opts").forEach(g=>g.querySelectorAll("button").forEach(b=>b.onclick=()=>{g.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));onChange&&onChange(g.dataset.name,b.dataset.v)}))}
 const optVal=(root,name)=>root.querySelector(`.opts[data-name="${name}"] .on`)?.dataset.v;
@@ -968,7 +984,7 @@ function openRecipe(id){const r=S.food.recipes.find(x=>x.id===id);if(!r)return;c
   root.querySelector("#r-today").onclick=()=>{const dd=dayData(dkey());if(dd.extra.some(e=>e.recipe===r.id)){toast("Already on today's list");return}
    dd.extra.push({id:uid(),t:(r.who==="dog"?"Make for the dogs: ":"Cook: ")+r.name,time:"",g:"Anytime",recipe:r.id,steps:[...(r.steps||[])],note:(r.ingredients||[]).length?"Ingredients: "+r.ingredients.join(", "):""});
    dd.complete=isComplete(dkey());save();renderToday();renderWeek();toast("Added to today","Open Today",()=>{closeSheet();go("today")})}};
- $("sheet").innerHTML="";$("sheetwrap").hidden=false;draw($("sheet"))}
+ openSheet("",draw)}
 function editRecipe(id){const isNew=!id,r=isNew?{id:uid(),who:S.ui.who||"me",name:"",cat:FOOD_CATS[S.ui.who||"me"][0],time:"",serves:"",protein:"",ingredients:[],steps:[],notes:"",fav:false,ts:Date.now()}:S.food.recipes.find(x=>x.id===id);if(!r)return;
  const catOpts=w=>opts("cat",FOOD_CATS[w].map(c=>[c,c]),FOOD_CATS[w].includes(r.cat)?r.cat:FOOD_CATS[w][0]);
  openSheet(`<h2>${isNew?"New recipe":"Edit recipe"}</h2>${r.week?`<p class="desc">Part of your Week ${r.week} meal plan.</p>`:""}
@@ -1013,7 +1029,7 @@ function grocerySheet(){const k=dkey(),nextWeek=dowOf(k)===0,ref=new Date(k+"T12
   <div class="btns"><button class="action" id="g-clear">Clear ticks</button></div>`;
   root.querySelectorAll(".step").forEach(b=>b.onclick=()=>{const x=b.dataset.x;ticks[x]=!ticks[x];if(!ticks[x])delete ticks[x];save();draw(root)});
   root.querySelector("#g-clear").onclick=()=>{for(const x in ticks)delete ticks[x];save();draw(root)}};
- $("sheet").innerHTML="";$("sheetwrap").hidden=false;draw($("sheet"))}
+ openSheet("",draw)}
 function linkLabel(link){if(link==="money")return "Open Money";if(link==="dogweigh")return "Enter weights";if(link==="dogs")return "Check in";if(link==="freezer")return "Freezer count";if(link==="dogbatch")return "Open recipe";if(link==="water")return "Log water";if(link==="weigh")return "Log weight";if(link==="grocery")return "Grocery list";if(link==="menu")return "This week's menu";const r=recipeFor(link);return r?"Open recipe":"Open Food"}
 function followLink(link,id){closeSheet();if(link==="money")return go("money");if(link==="dogweigh")return dogEdit();if(link==="dogs")return dogCheckIn();if(link==="freezer"){S.ui.who="dog";return go("food")}if(link==="dogbatch"){const r=S.food.recipes.find(x=>x.name===HUSKY_RECIPE.name);return r?openRecipe(r.id):(S.ui.who="dog",go("food"))}if(link==="water")return openWater();if(link==="weigh")return weighSheet(id);if(link==="grocery")return grocerySheet();if(link==="menu"){S.ui.who="me";return go("food")}
  const r=recipeFor(link);if(r)openRecipe(r.id);else{S.ui.who="me";go("food")}}
