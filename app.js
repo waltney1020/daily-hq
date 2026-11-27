@@ -848,23 +848,34 @@ function toggleTask(id,el,k=dkey()){const dd=dayData(k);dd.done[id]=!dd.done[id]
  if(dd.complete&&!was)earnOnce(50,k===dkey()?"Cleared today":"Cleared "+new Date(k+"T12:00").toLocaleDateString([], {weekday:"long"}),"day:"+k);else if(!dd.complete&&was)unearn(50,"Day no longer cleared","day:"+k);checkMilestones();save();renderToday(dd.done[id]&&k===dkey()?id:null);renderWeek();renderCards();
  if(k!==dkey()){toast(dd.complete&&!was?"That day is complete now. Streak: "+s+" days.":dd.done[id]?"Checked off (done late)":"Unchecked");return}
  if(dd.complete&&!was){toast("Day cleared. "+s+"-day streak.");burst(el)}else if(dd.done[id])toast("+10 XP")}
+const GICON={Morning:"🌅",Afternoon:"☀️",Evening:"🌙","Hair care":"💈",Weekly:"📅",Anytime:"⏳"};
+// a row of quick times around the current one (or sensible defaults), plus "None"; the text box below still takes any time
+function timeChips(cur){const m=tmin(cur||"");const list=m<9998?[m-30,m,m+30].map(fmtMin):["7:00 AM","12:00 PM","6:00 PM"];
+ return`<div class="opts tchips" data-name="tq">${[...list,""].map(v=>`<button type="button" data-v="${esc(v)}" class="${(cur||"")===v?"on":""}">${v?esc(v.replace(":00 "," ")):"None"}</button>`).join("")}</div>`}
+function bindTimeChips(root,sel){const inp=root.querySelector(sel),g=root.querySelector(".tchips");if(!g||!inp)return;
+ g.querySelectorAll("button").forEach(b=>b.onclick=()=>{g.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));inp.value=b.dataset.v});
+ inp.addEventListener("input",()=>g.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x.dataset.v===inp.value.trim())))}
 function editTask(id){const k=dkey(),r=S.routine.find(x=>x.id===id),ex=dayData(k).extra.find(x=>x.id===id),t=r||ex;if(!t)return;
  const weekly=!!(r&&r.dow&&r.dow.length&&r.dow.length<7),sel=new Set(weekly?r.dow:[dowOf(k)]);
  openSheet(`<h2>Edit task</h2><p class="desc">${r?(weekly?"Repeats on "+esc(repLabel(r))+".":"Part of your daily routine."):"Today only."}</p>
  <div class="field"><label for="t-t">Task</label><input id="t-t" value="${esc(t.t)}" autocomplete="off"></div>
- <div class="field"><label for="t-time">Time (optional)</label><input id="t-time" value="${esc(t.time||"")}" placeholder="6:30 AM"></div>
+ <div class="field"><label>Part of the day</label>${opts("g",GROUPS.map(x=>[x,x,GICON[x]||"•"]),t.g||"Anytime","tiles g3")}</div>
+ <div class="field"><label for="t-time">Time</label>${timeChips(t.time)}<input id="t-time" value="${esc(t.time||"")}" placeholder="Or type a time, like 6:30 AM" autocomplete="off"></div>
  <div class="field"><label>Repeat</label>${opts("rep",[["daily","Every day"],["weekly","Certain days"],["once","Today only"]],r?(weekly?"weekly":"daily"):"once")}</div>
- <div class="field" id="t-days" ${weekly?"":"hidden"}><label>On these days</label><div class="opts days">${DOW.map((d,i)=>`<button type="button" data-d="${i}" class="${sel.has(i)?"on":""}">${d}</button>`).join("")}</div></div>
- <div class="field"><label>Part of the day</label>${opts("g",GROUPS.map(x=>[x,x]),t.g||"Anytime")}</div>
- <div class="field"><label for="t-steps">Checklist steps (one per line, optional)</label><textarea id="t-steps" style="min-height:110px" placeholder="Wash with shampoo&#10;Apply conditioner">${esc((t.steps||[]).join("\n"))}</textarea></div>
- <div class="field"><label for="t-note">Note (optional)</label><textarea id="t-note" style="min-height:70px">${esc(t.note||"")}</textarea></div>
- <div class="field"><label><input type="checkbox" id="t-opt" ${t.optional?"checked":""} style="width:auto;margin-right:8px">Optional (doesn't count toward your streak)</label></div>
+ <div class="field" id="t-days" ${weekly?"":"hidden"}><div class="opts days dots">${DOW.map((d,i)=>`<button type="button" data-d="${i}" class="${sel.has(i)?"on":""}" aria-label="${d}">${d[0]}</button>`).join("")}</div><span class="hint" id="t-dayh"></span></div>
+ <button type="button" class="tog ${t.optional?"on":""}" id="t-opt" aria-pressed="${!!t.optional}"><span>Optional<small>Doesn't count toward your streak</small></span><i></i></button>
+ <div class="field" id="t-stepsf" ${(t.steps||[]).length?"":"hidden"}><label for="t-steps">Checklist steps · one per line</label><textarea id="t-steps" style="min-height:110px" placeholder="Wash with shampoo&#10;Apply conditioner">${esc((t.steps||[]).join("\n"))}</textarea></div>
+ <div class="field" id="t-notef" ${t.note?"":"hidden"}><label for="t-note">Note</label><textarea id="t-note" style="min-height:70px">${esc(t.note||"")}</textarea></div>
+ <div class="addrow">${(t.steps||[]).length?"":`<button type="button" class="addl" data-show="t-stepsf">+ Checklist steps</button>`}${t.note?"":`<button type="button" class="addl" data-show="t-notef">+ Note</button>`}</div>
  <div class="btns"><button class="action p" id="t-save">Save</button><button class="action danger" id="t-del">${r?"Remove from routine":"Delete"}</button></div>`,
  root=>{bindOpts(root,(n,v)=>{if(n==="rep")root.querySelector("#t-days").hidden=v!=="weekly"});
-  root.querySelectorAll(".days button").forEach(b=>b.onclick=()=>b.classList.toggle("on"));
+  const dayH=()=>{const on=[...root.querySelectorAll(".days button.on")].map(b=>+b.dataset.d),h=root.querySelector("#t-dayh");h.textContent=on.length===7?"Every day":on.length===5&&!on.includes(0)&&!on.includes(6)?"Weekdays":on.length===2&&on.includes(0)&&on.includes(6)?"Weekends":on.length?on.length+(on.length===1?" day":" days")+" a week":"Pick at least one day"};dayH();
+  root.querySelectorAll(".days button").forEach(b=>b.onclick=()=>{b.classList.toggle("on");dayH()});
+  bindTimeChips(root,"#t-time");const og=root.querySelector("#t-opt");og.onclick=()=>{og.classList.toggle("on");og.setAttribute("aria-pressed",og.classList.contains("on"))};
+  root.querySelectorAll("[data-show]").forEach(b=>b.onclick=()=>{const f=root.querySelector("#"+b.dataset.show);f.hidden=false;b.remove();const ta=f.querySelector("textarea");if(ta)ta.focus()});
   root.querySelector("#t-save").onclick=()=>{const nt={...t,id:t.id,t:root.querySelector("#t-t").value.trim()||t.t,time:root.querySelector("#t-time").value.trim(),g:optVal(root,"g")};const rep=optVal(root,"rep");
    for(const f of ["dow","steps","note","optional","rep"])delete nt[f];
-   const steps=root.querySelector("#t-steps").value.split("\n").map(x=>x.trim()).filter(Boolean),note=root.querySelector("#t-note").value.trim();if(steps.length)nt.steps=steps;if(note)nt.note=note;if(root.querySelector("#t-opt").checked)nt.optional=true;
+   const steps=root.querySelector("#t-steps").value.split("\n").map(x=>x.trim()).filter(Boolean),note=root.querySelector("#t-note").value.trim();if(steps.length)nt.steps=steps;if(note)nt.note=note;if(root.querySelector("#t-opt").classList.contains("on"))nt.optional=true;
    const days=[...root.querySelectorAll(".days button.on")].map(b=>+b.dataset.d);if(rep==="weekly"){if(!days.length){toast("Pick at least one day");return}if(days.length<7)nt.dow=days}
    S.routine=S.routine.filter(x=>x.id!==id);const dd=dayData(k);dd.extra=dd.extra.filter(x=>x.id!==id);if(rep==="once")dd.extra.push(nt);else S.routine.push(nt);save();closeSheet();renderToday();renderWeek();renderCards();toast("Task saved")};
   root.querySelector("#t-del").onclick=()=>{S.routine=S.routine.filter(x=>x.id!==id);const dd=dayData(k);dd.extra=dd.extra.filter(x=>x.id!==id);delete dd.done[id];save();closeSheet();renderToday();renderWeek();renderCards();toast("Task removed")}})}
@@ -976,11 +987,24 @@ function editRecipe(id){const isNew=!id,r=isNew?{id:uid(),who:S.ui.who||"me",nam
    if(isNew)S.food.recipes.push(r);S.ui.who=r.who;save();closeSheet();renderFood();toast(isNew?"Recipe added":"Recipe saved")};
   const d=root.querySelector("#r-del");if(d)d.onclick=()=>{if(!d.dataset.sure){d.dataset.sure=1;d.textContent="Tap again to delete";return}S.food.recipes=S.food.recipes.filter(x=>x.id!==r.id);save();closeSheet();renderFood();toast("Recipe deleted")}})}
 function weighSheet(taskId){const st=weightStats(),k=dkey(),cur=S.weights[k];
- openSheet(`<h2>Morning weigh-in</h2><p class="desc">After the bathroom, before food or water. Goal: +0.25–0.75 lb a week.</p>
- <div class="field"><label for="wt">Weight (lb)</label><input id="wt" type="number" inputmode="decimal" step="0.1" value="${cur??(st?st.last[1]:148)}"></div>
- ${st?`<p class="sub ${st.tone}" style="margin-top:10px">${esc(st.msg)}</p>`:""}
- <div class="btns"><button class="action p" id="wt-save">Save weight</button></div>`,
- root=>{root.querySelector("#wt-save").onclick=()=>{const v=+root.querySelector("#wt").value;if(!(v>50&&v<500)){toast("Enter your weight in pounds");return}S.weights[k]=Math.round(v*10)/10;
+ const hist=Object.entries(S.weights||{}).filter(([d])=>d<k).sort((a,b)=>a[0]<b[0]?-1:1).slice(-7),prev=hist.length?hist[hist.length-1][1]:null;
+ let val=+(cur??prev??148);
+ const spark=()=>{const pts=[...hist.map(([d,v])=>[d,v]),[k,val]];if(pts.length<2)return`<p class="hint" style="text-align:center">Your 7-day chart starts after a couple of weigh-ins.</p>`;
+  const vs=pts.map(p=>p[1]),mn=Math.min(...vs)-.3,mx=Math.max(...vs)+.3,X=i=>8+i*(284/Math.max(1,pts.length-1)),Y=v=>62-(v-mn)/(mx-mn)*54;
+  return`<svg viewBox="0 0 300 70" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts.map((p,i)=>X(i)+","+Y(p[1])).join(" ")}" fill="none" stroke="rgba(239,188,144,.5)" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>${pts.map((p,i)=>`<circle cx="${X(i)}" cy="${Y(p[1])}" r="${i===pts.length-1?4.5:2.5}" fill="${i===pts.length-1?"#EFBC90":"#7A5E4A"}"/>`).join("")}</svg>
+  <div class="wsrow">${pts.map(([d],i)=>`<span>${i===pts.length-1?"Today":new Date(d+"T12:00:00").toLocaleDateString([], {weekday:"short"})}</span>`).join("")}</div>`};
+ const delta=()=>{if(prev===null)return`<div class="wsd flat">First weigh-in. Nice.</div>`;const d=Math.round((val-prev)*10)/10;return`<div class="wsd ${d>0?"up":d<0?"dn":"flat"}">${d>0?"▲ +"+d+" lb":d<0?"▼ "+d+" lb":"Same as"} ${d?"from last time":"last time"}</div>`};
+ openSheet(`<h2>Morning weigh-in</h2><p class="desc">After the bathroom, before food or water.</p>
+ <div class="wsbig"><input id="wt" type="number" inputmode="decimal" step="0.1" value="${val.toFixed(1)}" aria-label="Weight in pounds"><span>lb</span></div><div id="wt-d">${delta()}</div>
+ <div class="wsst">${[-1,-.1,.1,1].map(n=>`<button type="button" data-w="${n}" class="${Math.abs(n)<1?"s":""}">${n>0?"+":"−"}${Math.abs(n)}</button>`).join("")}</div>
+ <div class="wsspark" id="wt-sp">${spark()}</div>
+ ${st?`<p class="wsmsg ${st.tone}">${esc(st.msg)}</p>`:`<p class="wsmsg">Goal: +0.25–0.75 lb a week.</p>`}
+ <div class="btns"><button class="action p" id="wt-save">Save ${val.toFixed(1)} lb</button></div>`,
+ root=>{const inp=root.querySelector("#wt"),sv=root.querySelector("#wt-save");
+  const upd=(fromInput)=>{if(!fromInput)inp.value=val.toFixed(1);root.querySelector("#wt-d").innerHTML=delta();root.querySelector("#wt-sp").innerHTML=spark();sv.textContent=`Save ${(+val).toFixed(1)} lb`};
+  root.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>{val=Math.round((val+ +b.dataset.w)*10)/10;try{navigator.vibrate&&navigator.vibrate(6)}catch(e){}upd()});
+  inp.oninput=()=>{const v=+inp.value;if(v>50&&v<500){val=v;upd(true)}};
+  sv.onclick=()=>{const v=+root.querySelector("#wt").value;if(!(v>50&&v<500)){toast("Enter your weight in pounds");return}S.weights[k]=Math.round(v*10)/10;
    const t=taskId||(S.routine.find(r=>r.link==="weigh")||{}).id;const dd=dayData(k);save();closeSheet();if(t&&!dd.done[t])toggleTask(t);else toast("Weight saved");renderFood()}})}
 function grocerySheet(){const k=dkey(),nextWeek=dowOf(k)===0,ref=new Date(k+"T12:00:00");if(nextWeek)ref.setDate(ref.getDate()+1);const rk=dkey(ref),wk=mealWeek(rk),ws=weekStartOf(rk);
  const ticks=S.food.grocery[ws]=S.food.grocery[ws]||{};const draw=root=>{root.innerHTML=`<div class="grab"></div><h2>Grocery list</h2><p class="desc">${nextWeek?"For next week":"For this week"}: Week ${wk}, ${esc(MENU_THEMES[wk-1])}. Tick what you've got.</p>
@@ -1279,12 +1303,31 @@ function startSmoke(limit,moods=[]){const X=SM();if(X.active)return;X.active={st
   if(LN)LN.schedule({notifications:[{id:SMOKE_NOTIF_ID,title:`⏱ ${limit} minutes are up`,body:"End your session in Op-Lock In when you're done.",channelId:"tasks",smallIcon:"ic_stat_dailyhq",iconColor:"#EFBC90",extra:{kind:"smoke"},schedule:{at:new Date(Date.now()+limit*60000),allowWhileIdle:true}}]}).catch(()=>{})}}
 function endSmoke(){const X=SM(),a=X.active;if(!a)return;clearTimeout(smokeLimitT);if(LN)LN.cancel({notifications:[{id:SMOKE_NOTIF_ID}]}).catch(()=>{});
  X.sessions.push({id:uid(),start:a.start,end:Date.now(),puffs:a.puffs,moods:a.moods,notes:(a.notes||"").trim()});X.active=null;save();renderSmoke();toast(`Logged · ${a.puffs} puff${a.puffs===1?"":"s"}`)}
+const SMOKE_ICON={Boredom:"🥱",Stress:"😰",Anxiety:"😟",Habit:"🔁",Craving:"🧲","After eating":"🍽️","With friends":"🍻",Tired:"😴","Bad mood":"😤","Work break":"☕","Waking up":"🌅",Celebrating:"🎉"};
 function editSmoke(id){const X=SM(),isNew=!id,s=isNew?{id:uid(),start:Date.now()-10*60000,end:Date.now()-5*60000,puffs:3,moods:[],notes:""}:X.sessions.find(x=>x.id===id);if(!s)return;const moods=[...(s.moods||[])];
- openSheet(`<h2>${isNew?"Log a session":"Edit session"}</h2><div class="pair"><div class="field"><label for="se-t">When</label><input id="se-t" type="datetime-local" value="${toLocalInput(s.start)}"></div><div class="field"><label for="se-p">Puffs</label><input id="se-p" type="number" inputmode="numeric" value="${s.puffs}"></div></div>
- <div class="field"><label for="se-m">Length (minutes)</label><input id="se-m" type="number" inputmode="decimal" value="${Math.max(0,Math.round(((s.end||s.start)-s.start)/60000))}"></div>
- <div class="field"><label>Why</label>${chipPicker(moods,MOODS_SMOKE)}</div><div class="field"><label for="se-n">Notes</label><textarea id="se-n" style="min-height:70px">${esc(s.notes||"")}</textarea></div>
- <div class="btns"><button class="action p" id="se-save">${isNew?"Add":"Save"}</button>${isNew?"":`<button class="action danger" id="se-del">Delete</button>`}</div>`,root=>{bindChips(root,moods);
-  root.querySelector("#se-save").onclick=()=>{const st=new Date(root.querySelector("#se-t").value).getTime()||s.start;Object.assign(s,{start:st,end:st+(+root.querySelector("#se-m").value||0)*60000,puffs:Math.max(0,Math.round(+root.querySelector("#se-p").value||0)),moods,notes:root.querySelector("#se-n").value.trim()});if(isNew)X.sessions.push(s);save();closeSheet();renderSmoke();toast(isNew?"Logged":"Saved")};
+ const LENS=[3,5,10,15],lim=S.ui.smokeLimit??5,st=smokeStats();let puffs=s.puffs||0,len=Math.max(0,Math.round(((s.end||s.start)-s.start)/60000)),when=isNew?1:-1;
+ const WH=[["Now",0],["15 m ago",15],["1 h ago",60],["Pick",-1]];
+ const puffRow=()=>`${[...Array(Math.max(10,puffs+1))].map((_,i)=>`<button type="button" class="smpf ${i<puffs?"f":""}" data-pf="${i}" aria-label="${i+1} puff${i?"s":""}">${i<puffs?"💨":""}</button>`).join("")}`;
+ const lenLab=()=>`${len} min${lim&&len>lim?` · over your ${lim} min timer`:""}`;
+ openSheet(`<h2>${isNew?"Log a session":"Edit session"}</h2><p class="desc">${isNew?"For one that already happened. No judgment.":"Fix anything that's off."}</p>
+ ${isNew?`<div class="smnow"><button type="button" class="smlive" id="se-live"><span><b>Smoking right now?</b><small>Use the live timer instead</small></span><em>Start →</em></button>
+  <button type="button" class="smcalm" id="se-calm"><span><b>I'm about to smoke</b><small>but I don't want to · 2 minutes of calm first</small></span><em>🧘</em></button></div>`:""}
+ <div class="field"><label>When</label>${isNew?`<div class="opts" data-name="wh">${WH.map(([l],i)=>`<button type="button" data-v="${i}" class="${when===i?"on":""}">${l}</button>`).join("")}</div>`:""}<input id="se-t" type="datetime-local" value="${toLocalInput(s.start)}" ${isNew?"hidden":""}></div>
+ <div class="field"><label>Puffs <b class="smn" id="se-pn">${puffs}</b></label><div class="smpuffs" id="se-pr">${puffRow()}</div></div>
+ <div class="field"><label>How long <b class="smn" id="se-ln">${lenLab()}</b></label><div class="opts" data-name="len">${LENS.map(m=>`<button type="button" data-v="${m}" class="${len===m||(m===15&&len>15)?"on":""}">${m===15?"15+":m} min</button>`).join("")}</div></div>
+ <div class="field"><label>What led to it? <b class="smn">optional</b></label><div class="opts tiles sm4" data-name="why">${MOODS_SMOKE.map(m=>`<button type="button" data-m="${esc(m)}" class="${moods.includes(m)?"on":""}" aria-pressed="${moods.includes(m)}"><i aria-hidden="true">${SMOKE_ICON[m]||"•"}</i>${esc(m)}</button>`).join("")}</div></div>
+ <div class="field" id="se-nf" ${s.notes?"":"hidden"}><label for="se-n">Note</label><textarea id="se-n" style="min-height:70px">${esc(s.notes||"")}</textarea></div>${s.notes?"":`<button type="button" class="addl" data-show="se-nf">+ Note</button>`}
+ ${isNew?`<p class="hint" style="margin-top:12px">Today so far: ${st.today.n} session${st.today.n===1?"":"s"} · ${st.today.p} puff${st.today.p===1?"":"s"}.</p>`:""}
+ <div class="btns"><button class="action p" id="se-save">${isNew?"Log session":"Save"}</button>${isNew?"":`<button class="action danger" id="se-del">Delete</button>`}</div>`,root=>{
+  const q=x=>root.querySelector(x);
+  if(isNew){q("#se-live").onclick=()=>{closeSheet();go("smoke");startSmoke(lim)};q("#se-calm").onclick=()=>{closeSheet();openCalm()};
+   root.querySelectorAll('.opts[data-name="wh"] button').forEach(b=>b.onclick=()=>{root.querySelectorAll('.opts[data-name="wh"] button').forEach(x=>x.classList.toggle("on",x===b));when=+b.dataset.v;q("#se-t").hidden=when!==3})}
+  const bindP=()=>root.querySelectorAll("[data-pf]").forEach(b=>b.onclick=()=>{const i=+b.dataset.pf;puffs=puffs===i+1?i:i+1;q("#se-pr").innerHTML=puffRow();q("#se-pn").textContent=puffs;bindP();try{navigator.vibrate&&navigator.vibrate(6)}catch(e){}});bindP();
+  root.querySelectorAll('.opts[data-name="len"] button').forEach(b=>b.onclick=()=>{root.querySelectorAll('.opts[data-name="len"] button').forEach(x=>x.classList.toggle("on",x===b));len=+b.dataset.v;q("#se-ln").textContent=lenLab()});
+  root.querySelectorAll('.opts[data-name="why"] button').forEach(b=>b.onclick=()=>{const m=b.dataset.m,i=moods.indexOf(m);if(i>=0)moods.splice(i,1);else moods.push(m);b.classList.toggle("on",i<0);b.setAttribute("aria-pressed",i<0)});
+  root.querySelectorAll("[data-show]").forEach(b=>b.onclick=()=>{const f=q("#"+b.dataset.show);f.hidden=false;b.remove();f.querySelector("textarea").focus()});
+  q("#se-save").onclick=()=>{let start;if(isNew&&when>=0&&when<3)start=Date.now()-WH[when][1]*60000-len*60000;else start=new Date(q("#se-t").value).getTime()||s.start;
+   Object.assign(s,{start,end:start+len*60000,puffs,moods,notes:q("#se-n").value.trim()});if(isNew)X.sessions.push(s);save();closeSheet();renderSmoke();toast(isNew?`Logged · ${puffs} puff${puffs===1?"":"s"}`:"Saved")};
   const d=root.querySelector("#se-del");if(d)d.onclick=()=>{if(!d.dataset.sure){d.dataset.sure=1;d.textContent="Tap again to delete";return}X.sessions=X.sessions.filter(x=>x.id!==s.id);save();closeSheet();renderSmoke();toast("Deleted")}})}
 
 /* ================= calm mode ================= */
@@ -1412,7 +1455,41 @@ function logMeal(entry,el,ts){const e={id:uid(),ts:ts||Date.now(),...entry};eatL
  {const need=todayMeals().filter(m=>!m.optional);if(need.length&&need.every(m=>eatLog().some(x=>x.role===m.role)))earnOnce(20,"Ate all your meals","meals:"+dkey())}
  const t=entry.role&&tasksFor(dkey()).find(x=>x.link===entry.role);if(t&&!dayData(dkey()).done[t.id])toggleTask(t.id,el);else addXP(5,el);
  save();renderFoodBar();if(RO&&RO.kind==="food")drawRoom();toast(`Logged ${entry.name}${entry.kcal?" · "+entry.kcal+" kcal":""}`,"Undo",()=>{const l=eatLog(),i=l.findIndex(x=>x.id===e.id);if(i>=0)l.splice(i,1);save();renderFoodBar();if(RO&&RO.kind==="food")drawRoom()})}
-function editMeal(id){const l=eatLog(),x=id?l.find(e=>e.id===id):null,isNew=!x,m=x||{name:"",kcal:"",prot:"",ts:Date.now()};
+// New food: tap from today's meal plan, your Food-page presets or recent meals (one or more), or describe something else.
+function logFoodSheet(){const log=eatLog(),plan=todayMeals(),pre=PRESETS();
+ const seen=new Set([...plan.map(m=>m.name.toLowerCase()),...pre.map(p=>p.name.toLowerCase())]),recent=[];
+ for(let i=0;i<8&&recent.length<4;i++){const d=new Date();d.setDate(d.getDate()-i);[...(FO().eat[dkey(d)]||[])].sort((a,b)=>b.ts-a.ts).forEach(e=>{const n=(e.name||"").toLowerCase();if(n&&!seen.has(n)&&recent.length<4){seen.add(n);recent.push({...e,ago:i})}})}
+ const sel={plan:new Set(),pre:new Set(),rec:new Set()},SZ=[["Snack",.5],["Meal",1],["Big meal",1.6]];let other=false,size=1,base=600,when=0;
+ const kc=()=>Math.round(base*SZ[size][1]/10)*10,pr=()=>Math.round(kc()/20);
+ const tot=()=>{let k=0,p=0;sel.plan.forEach(i=>{k+=plan[i].kcal;p+=plan[i].prot});sel.pre.forEach(i=>{k+=pre[i].kcal;p+=pre[i].prot});sel.rec.forEach(i=>{k+=+recent[i].kcal||0;p+=+recent[i].prot||0});if(other){k+=kc();p+=pr()}return{k,p}};
+ const tip=(grp,i,on,icon,name,sub,dis)=>`<button type="button" class="lftile ${on?"on":""}" data-g="${grp}" data-i="${i}" ${dis?"disabled":""} aria-pressed="${on}"><i aria-hidden="true">${icon}</i><b>${esc(name)}</b><small>${sub}</small></button>`;
+ const body=()=>{const t=tot();return`${plan.length?`<div class="lflab">Today's plan<b>ticks the task too</b></div><div class="lfgrid">${plan.map((m,i)=>{const ate=log.some(x=>x.role===m.role);return tip("plan",i,sel.plan.has(i),ROLE_ICON[m.role]||"🍽️",m.label.replace(/^Meal \d · /,""),ate?"✓ Ate":(m.time?m.time.replace(":00 "," ")+" · ":"")+(m.kcal||"?")+" kcal",ate)}).join("")}</div>`:""}
+  <div class="lflab">Quick picks<button type="button" class="link" id="lf-pre">Edit</button></div><div class="lfgrid">${pre.map((p,i)=>tip("pre",i,sel.pre.has(i),esc(p.e||"🍽️"),p.name,p.kcal+" kcal")).join("")}</div>
+  ${recent.length?`<div class="lflab">Recent</div><div class="lfgrid two">${recent.map((r,i)=>`<button type="button" class="lfrec ${sel.rec.has(i)?"on":""}" data-g="rec" data-i="${i}" aria-pressed="${sel.rec.has(i)}"><b>${esc(r.name)}</b><small>${r.kcal?r.kcal+" kcal · ":""}${r.ago===0?"today":r.ago===1?"yesterday":new Date(r.ts).toLocaleDateString([], {weekday:"short"})}</small></button>`).join("")}</div>`:""}
+  ${other?`<div class="lflab">Something else</div><input class="lfin" id="lf-n" placeholder="Chicken wrap, burrito…" autocomplete="off">
+   <div class="opts" data-name="sz" style="margin-top:8px">${SZ.map(([l],i)=>`<button type="button" data-v="${i}" class="${size===i?"on":""}">${l}</button>`).join("")}</div>
+   <div class="lfest"><button type="button" class="lfstp" data-k="-50" aria-label="Less">−</button><span><b id="lf-k">${kc()}</b> kcal · ~<b id="lf-p">${pr()}</b> g protein</span><button type="button" class="lfstp" data-k="50" aria-label="More">+</button></div>`:`<button type="button" class="addl" id="lf-oth">+ Something else</button>`}
+  <div class="lflab">When</div><div class="opts" data-name="when">${["Now","30 m ago","1 h ago","2 h ago"].map((l,i)=>`<button type="button" data-v="${i}" class="${when===i?"on":""}">${l}</button>`).join("")}</div>
+  ${t.k?`<div class="lftot"><span>Logging</span><span><b>${t.k.toLocaleString()}</b> kcal · ${t.p} g protein</span></div>`:""}`};
+ openSheet(`<h2>What did you eat?</h2><p class="desc">Tap one or more. Calories are estimates you can fix later.</p><div id="lf-b">${body()}</div><div class="btns"><button class="action p" id="lf-s">Pick something</button></div>`,root=>{
+  const box=root.querySelector("#lf-b"),sv=root.querySelector("#lf-s");
+  const paint=()=>{const nm=root.querySelector("#lf-n"),keep=nm&&nm.value;box.innerHTML=body();const n2=root.querySelector("#lf-n");if(n2&&keep)n2.value=keep;bind()};
+  const btn=()=>{const t=tot();sv.textContent=t.k||other?"Log it":"Pick something";sv.disabled=!(t.k||other)};
+  const bind=()=>{box.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{const s=sel[b.dataset.g],i=+b.dataset.i;s.has(i)?s.delete(i):s.add(i);paint()});
+   const o=box.querySelector("#lf-oth");if(o)o.onclick=()=>{other=true;paint();box.querySelector("#lf-n").focus()};
+   const pe=box.querySelector("#lf-pre");if(pe)pe.onclick=()=>presetSheet();
+   box.querySelectorAll('.opts[data-name="sz"] button').forEach(b=>b.onclick=()=>{size=+b.dataset.v;paint()});
+   box.querySelectorAll('.opts[data-name="when"] button').forEach(b=>b.onclick=()=>{when=+b.dataset.v;paint()});
+   box.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{base=Math.max(50,base+ +b.dataset.k/SZ[size][1]);paint()});btn()};
+  bind();
+  sv.onclick=()=>{const ts=Date.now()-[0,30,60,120][when]*60000,items=[];
+   sel.plan.forEach(i=>{const m=plan[i];items.push({name:m.name,kcal:m.kcal,prot:m.prot,role:m.role})});
+   sel.pre.forEach(i=>{const p=pre[i];items.push({name:p.name,kcal:p.kcal,prot:p.prot,role:""})});
+   sel.rec.forEach(i=>{const r=recent[i];items.push({name:r.name,kcal:+r.kcal||0,prot:+r.prot||0,role:""})});
+   if(other){const n=(root.querySelector("#lf-n").value||"").trim();if(!n){toast("What did you eat?");root.querySelector("#lf-n").focus();return}items.push({name:n,kcal:kc(),prot:pr(),role:""})}
+   if(!items.length){toast("Tap something you ate");return}
+   closeSheet();items.forEach((e,j)=>logMeal(e,null,ts+j));if(items.length>1)toast(`Logged ${items.length} things · ${tot().k.toLocaleString()} kcal`)}})}
+function editMeal(id){if(!id)return logFoodSheet();const l=eatLog(),x=id?l.find(e=>e.id===id):null,isNew=!x,m=x||{name:"",kcal:"",prot:"",ts:Date.now()};
  openSheet(`<h2>${isNew?"Log something to eat":"Edit meal"}</h2><p class="desc">Calories and protein are estimates. Adjust them if you know better.</p>
  <div class="field"><label for="em-n">What</label><input id="em-n" value="${esc(m.name)}" placeholder="Chicken wrap, protein bar…" autocomplete="off"></div>
  <div class="pair"><div class="field"><label for="em-k">Calories</label><input id="em-k" type="number" inputmode="numeric" value="${m.kcal}" placeholder="500"></div><div class="field"><label for="em-p">Protein (g)</label><input id="em-p" type="number" inputmode="numeric" value="${m.prot}" placeholder="30"></div></div>
