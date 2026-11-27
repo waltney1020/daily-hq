@@ -742,10 +742,14 @@ new MutationObserver(()=>{const s=$("sheet");if(!s.firstElementChild||s.querySel
  s.addEventListener("pointermove",e=>{if(y0===null)return;dy=Math.max(0,e.clientY-y0);s.style.transform=`translateY(${dy}px)`});
  const end=()=>{if(y0===null)return;y0=null;s.style.transition="transform .3s cubic-bezier(.32,.72,0,1)";if(dy>90){s.style.transform="translateY(110%)";setTimeout(closeSheet,220)}else s.style.transform="";dy=0};
  s.addEventListener("pointerup",end);s.addEventListener("pointercancel",end)})();
+// Outside a page there is no scene to borrow, so each section gets its own night mountains (painted once, then reused).
+const SHEET_PAL={home:1,today:1,food:1,trades:4,money:3,smoke:2,journal:2},sceneCache={};
+function sheetScene(){const pi=SHEET_PAL[S.view]??1,W=Math.round(Math.min(1400,innerWidth*Math.min(2,devicePixelRatio||1))),key=pi+":"+W;
+ if(!sceneCache[key]){const cv=document.createElement("canvas");paintScene(cv,pi,W,Math.round(W*.36),23+pi*7);sceneCache[key]=`url(${cv.toDataURL("image/jpeg",.82)})`}return sceneCache[key]}
 function openSheet(html,bind){const w=$("sheetwrap"),s=$("sheet"),was=!w.hidden&&!w.dataset.closing;sheetGen++;delete w.dataset.closing;s.getAnimations().forEach(a=>a.cancel());
- const pg=$("troom").classList.contains("on");w.classList.toggle("pg",pg);if(!was)sheetSrc=Date.now()-lastTapT<1500?lastTap:null;
+ const inRoom=$("troom").classList.contains("on"),pg=true;w.classList.toggle("pg",pg);if(!was)sheetSrc=Date.now()-lastTapT<1500?lastTap:null;
  delete s.dataset.kind;s.innerHTML=`<div class="grab"></div>`+html;s.style.transform="";w.hidden=false;s.scrollTop=0;
- if(pg&&!was){const rc=$("trcv");let u="none";try{if(rc&&rc.width)u=`url(${rc.toDataURL("image/jpeg",.82)})`}catch(e){}s.style.setProperty("--pgbg",u)}
+ if(pg&&!was){let u="none";try{const rc=$("trcv");u=inRoom&&rc&&rc.width?`url(${rc.toDataURL("image/jpeg",.82)})`:sheetScene()}catch(e){}s.style.setProperty("--pgbg",u)}
  bind(s);
  if(pg&&!was&&!RM){s.animate([{clipPath:roomClip(sheetOrigin())},{clipPath:"inset(0px 0px 0px 0px round 0px)"}],{duration:620,easing:"cubic-bezier(.32,.72,0,1)"});
   [...s.children].filter(c=>!c.classList.contains("grab")&&!c.classList.contains("sheetx")).slice(0,7).forEach((c,i)=>c.animate([{opacity:0,transform:"translateY(14px)"},{opacity:1,transform:"none"}],{duration:420,delay:180+i*35,easing:"cubic-bezier(.2,.8,.2,1)",fill:"backwards"}))}
