@@ -1,0 +1,93 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Today Cleanup</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+:root{--ink:#F3F6F2;--muted:#A99C92;--soft:#D6CBC2;--line:rgba(255,236,220,.1);--line2:rgba(255,236,220,.2);--peach:#EFBC90;--mint:#86D3B0;--rose:#EE8E86;--sky:#8FCBF2;--f:"Work Sans",system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:#0A0706;color:var(--ink);font:400 14px var(--f);padding:28px 16px 60px}button{font:inherit;color:inherit;cursor:pointer}
+h1{text-align:center;font-size:20px;font-weight:600;margin:0 0 4px}.lead{text-align:center;color:var(--muted);font-size:13px;margin:0 auto 24px;max-width:780px;line-height:1.5}
+.row{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;align-items:flex-start}.col{width:min(390px,100%)}
+.cap{font-size:13px;font-weight:700;margin:0 0 4px;display:flex;gap:8px;align-items:center}.cap span{font-weight:500;color:var(--muted)}.tag{font-size:10.5px;font-weight:800;background:var(--peach);color:#2A1606;border-radius:6px;padding:2px 7px}
+.why{font-size:12px;color:var(--muted);margin:0 0 10px;line-height:1.45;min-height:52px}
+.phone{border-radius:32px;padding:18px 16px 20px;background:radial-gradient(120% 50% at 50% 0%,#2A1A12 0%,#140D0A 55%,#0D0907 100%);box-shadow:0 30px 70px rgba(0,0,0,.55),inset 0 0 0 1px var(--line);min-height:780px}
+.date{font-size:12.5px;font-weight:600;color:var(--muted)}.hello{display:flex;justify-content:space-between;align-items:center}.hello h2{margin:2px 0 0;font-size:27px;font-weight:700;letter-spacing:-.01em}
+.ib{width:42px;height:42px;border-radius:13px;border:0;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px var(--line);display:grid;place-items:center}.ib svg{width:19px;height:19px;stroke:var(--soft);fill:none;stroke-width:1.8;stroke-linecap:round}
+/* week strip */
+.week{display:flex;gap:2px;margin-top:14px;padding:4px;border-radius:16px;background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px var(--line)}
+.week button{flex:1;border:0;background:none;border-radius:12px;padding:7px 0 6px;display:flex;flex-direction:column;align-items:center;gap:1px;position:relative}
+.week small{font-size:10.5px;color:var(--muted);font-weight:600}.week b{font-size:15px}.week .on{background:var(--peach);color:#2A1606}.week .on small{color:#5A3A22}.week .dot:after{content:"";position:absolute;bottom:2px;width:4px;height:4px;border-radius:50%;background:var(--peach)}
+/* ---- A: one "Today at a glance" card ---- */
+.glance{margin-top:14px;border-radius:20px;padding:14px;background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.025));box-shadow:inset 0 0 0 1px var(--line)}
+.fhead{display:flex;align-items:center;gap:12px}
+.ring{width:54px;height:54px;position:relative;flex:none}.ring svg{width:54px;height:54px;transform:rotate(-90deg)}.ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:13px}
+.ring circle{fill:none;stroke-width:5}.ring .bg{stroke:rgba(255,255,255,.08)}.ring .fg{stroke:var(--peach);stroke-linecap:round;transition:stroke-dasharray .5s}
+.fnum{flex:1;min-width:0}.fnum .k{font-size:20px;font-weight:700}.fnum .k span{font-size:12.5px;font-weight:500;color:var(--muted)}.fnum .s{font-size:12px;color:var(--soft);margin-top:2px}.fnum .s.w{color:var(--rose)}
+.swap{width:34px;height:34px;border-radius:10px;border:0;background:rgba(255,255,255,.06);font-size:15px}
+.meals{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px}
+.meal{border:0;border-radius:14px;padding:9px 8px;background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px var(--line);text-align:left;display:flex;gap:8px;align-items:center;transition:background .25s}
+.meal i{font-style:normal;font-size:17px;filter:grayscale(1);opacity:.55;transition:.25s}.meal b{display:block;font-size:12px;font-weight:600}.meal small{display:block;font-size:10.5px;color:var(--muted)}
+.meal.f{background:rgba(134,211,176,.12);box-shadow:inset 0 0 0 1px rgba(134,211,176,.35)}.meal.f i{filter:none;opacity:1}.meal.f small{color:var(--mint)}
+.meal.nx{box-shadow:inset 0 0 0 1.5px var(--peach)}.meal.nx small{color:var(--peach)}
+.split{height:1px;background:var(--line);margin:13px -14px}
+.wrow{display:flex;align-items:center;gap:12px}
+.glasses{display:flex;gap:4px;flex:1}.gl{flex:1;height:30px;border-radius:4px 4px 8px 8px;border:1.5px solid rgba(143,203,242,.35);position:relative;overflow:hidden;background:none;padding:0}
+.gl:after{content:"";position:absolute;left:0;right:0;bottom:0;height:0;background:linear-gradient(180deg,#9FD4F7,#5FA8DA);transition:height .35s}.gl.f:after{height:78%}
+.wtxt{text-align:right;min-width:72px}.wtxt b{font-size:15px}.wtxt small{display:block;font-size:11px;color:var(--muted)}
+.dogs{display:flex;gap:6px;margin-top:12px}.dg{border:0;border-radius:999px;padding:6px 11px 6px 7px;background:rgba(255,255,255,.05);font-size:12px;font-weight:600;display:flex;gap:6px;align-items:center}
+.dg i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.18)}.dg i.f{background:var(--mint)}.dg .t{color:var(--muted);font-weight:500}
+/* today header + list */
+.th{display:flex;justify-content:space-between;align-items:flex-end;margin-top:22px}.th h3{margin:0;font-size:22px}.th small{font-size:12px;color:var(--muted)}
+.prog{height:5px;border-radius:5px;background:rgba(255,255,255,.07);margin-top:9px;overflow:hidden}.prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--peach),#F5D2AE);border-radius:5px;transition:width .4s}
+.missed{margin-top:14px;display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:14px;padding:11px 13px;background:rgba(238,142,134,.08);box-shadow:inset 0 0 0 1px rgba(238,142,134,.3);color:var(--rose);font-weight:600;font-size:13.5px;text-align:left}.missed em{margin-left:auto;font-style:normal;font-size:12px;color:var(--soft);font-weight:500}
+.grp{margin:16px 0 4px;font-size:10.5px;font-weight:700;letter-spacing:.16em;color:var(--peach)}
+.task{display:grid;grid-template-columns:48px 22px 1fr;align-items:center;gap:10px;padding:9px 0;position:relative}
+.task .tm{font-size:12px;color:var(--muted);text-align:right}.task .ck{width:20px;height:20px;border-radius:50%;border:1.8px solid rgba(255,255,255,.3);background:none;padding:0}.task.d .ck{background:var(--mint);border-color:var(--mint)}
+.task .t{font-size:14.5px}.task.d .t{color:var(--muted);text-decoration:line-through}.task small{display:block;font-size:11px;color:var(--muted)}
+.tl{position:relative}.tl:before{content:"";position:absolute;left:68px;top:12px;bottom:12px;width:1.5px;background:rgba(255,255,255,.1)}
+/* ---- B: three tiles ---- */
+.tiles{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:8px;margin-top:14px}
+.tile{border:0;border-radius:18px;padding:12px;background:linear-gradient(160deg,rgba(255,255,255,.065),rgba(255,255,255,.025));box-shadow:inset 0 0 0 1px var(--line);text-align:left;min-height:118px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.tile .l{font-size:10.5px;font-weight:700;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}.tile .v{font-size:21px;font-weight:700;margin-top:6px}.tile .v span{font-size:11.5px;color:var(--muted);font-weight:500}.tile .s{font-size:11px;color:var(--soft)}
+.mbar{display:flex;gap:3px;margin-top:8px}.mbar i{flex:1;height:5px;border-radius:5px;background:rgba(255,255,255,.1)}.mbar i.f{background:var(--peach)}
+.wfill{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(180deg,rgba(143,203,242,.28),rgba(95,168,218,.4));transition:height .4s}.tile.w>*{position:relative}
+.flame{font-size:26px;filter:grayscale(1);opacity:.4}.flame.on{filter:none;opacity:1}
+.bdogs{display:flex;gap:8px;margin-top:10px;font-size:12px;color:var(--muted);align-items:center}.bdogs b{color:var(--soft);font-weight:600}
+.note{font-size:11.5px;color:var(--muted);text-align:center;margin-top:10px}
+</style></head><body>
+<h1>Today · a calmer top half, and a better food bar</h1>
+<p class="lead">What feels off now: the same numbers show up twice (water, and "0 of 31 done"), the teal chips clash with the warm background, the food bar is three grey lines with no meaning until you eat, the glasses leave a big hole, and the timeline line cuts through the Missed box. Both phones are interactive: tap meals, glasses and tasks.</p>
+<div class="row">
+ <div class="col"><p class="cap"><span class="tag">A</span>One "at a glance" card</p><p class="why">Food and water share one warm card. The food bar becomes a calorie ring plus your three meals, which light up as you eat. The game bar still swaps in with 🍗. The top chips go away because the card already shows them.</p><div class="phone" id="pa"></div></div>
+ <div class="col"><p class="cap"><span class="tag">B</span>Three tiles</p><p class="why">Food, Water and Streak become three tiles you tap to open their pages. Water fills its tile like a glass. It's the most compact option, but it shows less detail on the Today page.</p><div class="phone" id="pb"></div></div>
+</div>
+<script>
+const M=[["🍳","Breakfast","7:00",650],["🥗","Meal prep A","12:30",750],["🍝","Meal prep B","5:30",800]];
+const st={a:{eat:[0,0,0],w:0,t:[0,0,0,0],fd:[0,0]},b:{eat:[0,0,0],w:0,t:[0,0,0,0],fd:[0,0]}};
+const TASKS=[["6:00","Wake up and review markets","in 3 h 21 min"],["6:05","Morning weigh-in",""],["6:15","Starter workout","0/6 steps"],["7:00","Breakfast","Salmon, eggs and avocado toast"]];
+const head=`<div class="date">Friday, November 27 · 2:39</div><div class="hello"><h2>Good night, James</h2><button class="ib"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button></div>
+<div class="week">${[["Fri",27,"on"],["Sat",28],["Sun",29],["Mon",30,"dot"],["Tue",1],["Wed",2],["Thu",3]].map(([d,n,c])=>`<button class="${c||""}"><small>${d}</small><b>${n}</b></button>`).join("")}</div>`;
+const list=s=>`<div class="tl"><div class="grp">MORNING</div>${TASKS.map((t,i)=>`<div class="task ${s.t[i]?"d":""}" data-t="${i}"><span class="tm">${t[0]}</span><button class="ck" aria-label="Done"></button><span class="t">${t[1]}${t[2]?`<small>${t[2]}</small>`:""}</span></div>`).join("")}</div>`;
+const kc=s=>s.eat.reduce((a,e,i)=>a+(e?M[i][3]:0),0);
+function A(){const s=st.a,k=kc(s),f=k/2800,C=2*Math.PI*23,nx=s.eat.indexOf(0),done=s.t.filter(Boolean).length;
+ pa.innerHTML=head+`<div class="glance">
+  <div class="fhead"><div class="ring"><svg viewBox="0 0 54 54"><circle class="bg" cx="27" cy="27" r="23"/><circle class="fg" cx="27" cy="27" r="23" stroke-dasharray="${(f*C).toFixed(1)} ${C}"/></svg><b>${Math.round(f*100)}%</b></div>
+   <div class="fnum"><div class="k">${k.toLocaleString()} <span>/ 2,800 kcal · ${s.eat.reduce((a,e,i)=>a+(e?[40,50,50][i]:0),0)} g protein</span></div><div class="s ${k?"":"w"}">${k?"Last ate just now":"Nothing eaten yet"}</div></div><button class="swap" title="Game bar">🍗</button></div>
+  <div class="meals">${M.map((m,i)=>`<button class="meal ${s.eat[i]?"f":i===nx?"nx":""}" data-m="${i}"><i>${m[0]}</i><span><b>${m[1]}</b><small>${s.eat[i]?"✓ Ate":i===nx?"Next · "+m[2]:m[2]}</small></span></button>`).join("")}</div>
+  <div class="dogs">${["Boy","Girl"].map((n,i)=>`<button class="dg" data-d="${i}"><i class="${s.fd[i]>0?"f":""}"></i><i class="${s.fd[i]>1?"f":""}"></i>${n} <span class="t">${s.fd[i]===2?"fed":s.fd[i]?"AM fed":"not fed"}</span></button>`).join("")}</div>
+  <div class="split"></div>
+  <div class="wrow"><div class="glasses">${[...Array(8)].map((_,i)=>`<button class="gl ${i<s.w?"f":""}" data-g="${i}" aria-label="Glass ${i+1}"></button>`).join("")}</div><div class="wtxt"><b>${(s.w/2).toFixed(1).replace(".0","")} L</b> <small>of 4 L · on pace</small></div></div></div>
+ <div class="th"><div><h3>Today</h3></div><small>${done} of 31 done · 🔥 0 days · Lv 1</small></div><div class="prog"><i style="width:${done/31*100}%"></i></div>
+ <button class="missed">▸ Missed earlier · 18 <em>Review</em></button>${list(s)}`;bind(pa,s,A)}
+function B(){const s=st.b,k=kc(s),done=s.t.filter(Boolean).length;
+ pb.innerHTML=head+`<div class="tiles">
+  <button class="tile" data-food><span class="l">Food</span><span><div class="v">${k.toLocaleString()}<span> kcal</span></div><div class="s">${s.eat.indexOf(0)>=0?"Next: "+M[s.eat.indexOf(0)][1]:"All meals eaten"}</div><div class="mbar">${s.eat.map(e=>`<i class="${e?"f":""}"></i>`).join("")}</div></span></button>
+  <button class="tile w" data-water><div class="wfill" style="height:${s.w/8*100}%"></div><span class="l">Water</span><span><div class="v">${(s.w/2).toFixed(1).replace(".0","")}<span> / 4 L</span></div><div class="s">Tap +½ L</div></span></button>
+  <button class="tile"><span class="l">Streak</span><span><div class="flame">🔥</div><div class="v">0<span> days</span></div></span></button></div>
+ <div class="bdogs">🐕 <b>Boy</b> ${s.fd[0]?"fed":"not fed"} · <b>Girl</b> ${s.fd[1]?"fed":"not fed"}</div>
+ <div class="th"><div><h3>Today</h3></div><small>${done} of 31 done · Lv 1</small></div><div class="prog"><i style="width:${done/31*100}%"></i></div>
+ <button class="missed">▸ Missed earlier · 18 <em>Review</em></button>${list(s)}<p class="note">Tap the Food tile to open the Food page, where meals are logged.</p>`;
+ pb.querySelector("[data-food]").onclick=()=>{const i=s.eat.indexOf(0);if(i>=0)s.eat[i]=1;else s.eat=[0,0,0];B()};
+ pb.querySelector("[data-water]").onclick=()=>{s.w=s.w>=8?0:s.w+1;B()};bind(pb,s,B)}
+function bind(r,s,re){r.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{s.eat[+b.dataset.m]^=1;re()});r.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{const i=+b.dataset.g;s.w=s.w===i+1?i:i+1;re()});
+ r.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{const i=+b.dataset.d;s.fd[i]=(s.fd[i]+1)%3;re()});r.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{s.t[+b.dataset.t]^=1;re()})}
+A();B();
+</script></body></html>
