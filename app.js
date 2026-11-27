@@ -1348,6 +1348,17 @@ if($("calmbtn"))$("calmbtn").onclick=()=>openCalm();
    freezer, check-in) and Recipes. Meal calories are estimates you can edit; goals live in Food settings. */
 const FO=()=>{const f=S.food;f.eat=f.eat||{};f.goal=f.goal||{kcal:2800,prot:160};f.barMode=f.barMode||"pix";f.remind=f.remind||{on:true,hours:4,start:"8:00 AM",end:"9:00 PM",lastNudge:0};return f};
 const DFED=()=>{S.dogs.fed=S.dogs.fed||{};return S.dogs.fed};
+const PRESET_DEFAULT=[{e:"🍌",name:"Banana",kcal:105,prot:1},{e:"🥛",name:"Greek yogurt",kcal:150,prot:15},{e:"🥜",name:"Handful of nuts",kcal:170,prot:6},{e:"🍞",name:"Toast + peanut butter",kcal:300,prot:10},{e:"🥪",name:"Sandwich",kcal:450,prot:25},{e:"🥡",name:"Takeout meal",kcal:900,prot:35}];
+const PRESETS=()=>{const f=FO();if(!Array.isArray(f.presets))f.presets=PRESET_DEFAULT.map(p=>({...p}));return f.presets};
+function presetSheet(){const P=PRESETS().map(p=>({...p}));
+ const row=(p,i)=>`<div class="prow" data-i="${i}"><input class="pe" value="${esc(p.e||"")}" maxlength="4" aria-label="Emoji"><input class="pn" value="${esc(p.name)}" placeholder="Name" aria-label="Name"><input class="pk" type="number" inputmode="numeric" value="${p.kcal}" aria-label="Calories"><input class="pp" type="number" inputmode="numeric" value="${p.prot}" aria-label="Protein grams"><button class="prx" aria-label="Remove ${esc(p.name)}">×</button></div>`;
+ openSheet(`<h2>Quick-add presets</h2><p class="desc">One tap logs it. Calories and protein (g) are estimates.</p><div class="phead"><span></span><span>Name</span><span>kcal</span><span>g</span><span></span></div><div id="plist">${P.map(row).join("")}</div>
+  <button class="link" id="p-add" style="margin-top:8px">+ Add a preset</button><div class="btns"><button class="action" id="p-reset">Reset</button><button class="action p" id="p-save">Save</button></div>`,r=>{
+  const read=()=>[...r.querySelectorAll(".prow")].map(x=>({e:x.querySelector(".pe").value.trim(),name:x.querySelector(".pn").value.trim(),kcal:Math.max(0,Math.round(+x.querySelector(".pk").value||0)),prot:Math.max(0,Math.round(+x.querySelector(".pp").value||0))}));
+  const bindX=()=>r.querySelectorAll(".prx").forEach(b=>b.onclick=()=>b.parentElement.remove());bindX();
+  r.querySelector("#p-add").onclick=()=>{r.querySelector("#plist").insertAdjacentHTML("beforeend",row({e:"🍽️",name:"",kcal:"",prot:""},0));bindX();const n=r.querySelectorAll(".pn");n[n.length-1].focus()};
+  r.querySelector("#p-reset").onclick=()=>{r.querySelector("#plist").innerHTML=PRESET_DEFAULT.map(row).join("");bindX()};
+  r.querySelector("#p-save").onclick=()=>{FO().presets=read().filter(p=>p.name);save();closeSheet();if(RO&&RO.kind==="food")drawRoom();toast("Presets saved")}})}
 const eatLog=(k=dkey())=>FO().eat[k]||(FO().eat[k]=[]);
 const ROLE_EST={breakfast:[650,40],prepA:[750,50],prepB:[800,50],drink:[600,35]};
 const ROLE_ICON={breakfast:"🍳",prepA:"🥗",prepB:"🍝",drink:"🥤"};
@@ -1357,9 +1368,17 @@ function todayMeals(k=dkey()){const tk=tasksFor(k);return["breakfast","prepA","d
 function foodTotals(k=dkey()){const l=eatLog(k);return{kcal:l.reduce((s,x)=>s+(+x.kcal||0),0),prot:l.reduce((s,x)=>s+(+x.prot||0),0),n:l.length}}
 function lastAteTs(){const all=[...eatLog(dkey())];const y=new Date();y.setDate(y.getDate()-1);all.push(...(FO().eat[dkey(y)]||[]));return all.reduce((m,x)=>Math.max(m,x.ts||0),0)}
 function sinceStrShort(ts){if(!ts)return"not yet today";const m=Math.round((Date.now()-ts)/60000);if(m<2)return"just now";if(m<60)return m+" m ago";const h=Math.floor(m/60);return h+" h "+(m%60?(m%60)+" m ":"")+"ago"}
-// hungry = inside your reminder window, under your calorie goal, and either nothing eaten 2 h into the day or no food for N hours
+// Hunger drains like the game: 0–20 points (10 drumsticks). You wake at 8, lose 1 point every 35 min,
+// and each meal adds points by its calories (a full day's goal ≈ 28 points, so meals overlap the cap). Capped at 20.
+const HUNGER_DRAIN=35,HUNGER_LOW=6;
+function hungerLevel(now=Date.now()){const F=FO(),k=dkey(),ws=tmin(F.remind.start),wake=+atDate(k,ws<9998?ws:480),g=Math.max(500,+F.goal.kcal||2800);
+ if(now<wake)return 8;let lvl=8,last=wake;
+ for(const e of [...eatLog(k)].sort((a,b)=>a.ts-b.ts)){const t=Math.min(now,Math.max(wake,e.ts||wake));lvl=Math.max(0,lvl-(t-last)/6e4/HUNGER_DRAIN);lvl=Math.min(20,lvl+(+e.kcal||300)*20/g*1.4);last=t}
+ return Math.max(0,lvl-(now-last)/6e4/HUNGER_DRAIN)}
+function hungerLeft(){const m=Math.round(hungerLevel()*HUNGER_DRAIN);if(m<1)return"empty";const h=Math.floor(m/60);return(h?h+" h ":"")+(m%60?(m%60)+" m":"").trim()}
+// hungry = inside your reminder window, under your calorie goal, and the bar has drained below 3 drumsticks
 function isHungry(){const t=foodTotals(),g=FO().goal,R=FO().remind,m=new Date().getHours()*60+new Date().getMinutes();if(t.kcal>=g.kcal)return false;if(m<tmin(R.start)||m>tmin(R.end))return false;
- if(!eatLog().length)return m>=tmin(R.start)+120;return Date.now()-lastAteTs()>(+R.hours||4)*36e5}
+ return hungerLevel()<HUNGER_LOW}
 // phone alerts for eating: first one 2 h after your window opens if nothing's logged, then every N hours after your last meal, until the window closes
 function foodNotifs(now){const F=FO(),R=F.remind;if(!R.on)return[];const out=[],a=tmin(R.start),b=tmin(R.end),hrs=Math.max(1,+R.hours||4);if(a>=9998||b>=9998)return out;
  for(let i=0;i<2;i++){const d=new Date();d.setDate(d.getDate()+i);const k=dkey(d),log=F.eat[k]||[],last=log.reduce((m,x)=>Math.max(m,x.ts||0),0),kc=log.reduce((s,x)=>s+(+x.kcal||0),0);if(kc>=F.goal.kcal)continue;
@@ -1373,12 +1392,12 @@ function foodTick(){if(S.view==="today"&&!document.hidden)renderFoodBar();const 
 const DRUM=["...ooo....","..ohhmo...",".ohhmmmo..",".ohmmmmo..",".ommmmdo..","..ommddo..","...odoobo.","....o.obbo","......obso",".......oo."];
 const DPAL={o:"#2B140A",h:"#F2A65A",m:"#C9632B",d:"#8A3A16",b:"#F1E7D0",s:"#B8AA8E"},DPALE={o:"#2B140A",h:"#3A2A22",m:"#2E211B",d:"#241914",b:"#3A332B",s:"#2C2722"};
 function drumSvg(f){let r="";DRUM.forEach((row,y)=>[...row].forEach((ch,x)=>{if(ch===".")return;const full=f>=1||(f>=.5&&x>=5);r+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${(full?DPAL:DPALE)[ch]}"/>`}));return`<svg viewBox="0 0 10 10" aria-hidden="true">${r}</svg>`}
-function drumBar(){const t=foodTotals(),f=Math.min(1,t.kcal/FO().goal.kcal)*10;return[...Array(10)].map((_,i)=>drumSvg(f-i>=1?1:f-i>=.5?.5:0)).join("")}
+function drumBar(){const f=hungerLevel()/2;return[...Array(10)].map((_,i)=>drumSvg(f-i>=1?1:f-i>=.5?.5:0)).join("")}
 function dogFedPills(){const fed=DFED()[dkey()]||{};return S.dogs.list.map(d=>{const x=fed[d.id]||{};return`<span><i class="${x.am?"f":""}"></i><i class="${x.pm?"f":""}"></i>${esc(d.name)}</span>`}).join("")}
-function renderFoodBar(){const el=$("foodbar");if(!el)return;const F=FO(),t=foodTotals(),g=F.goal,hungry=isHungry(),la=lastAteTs(),meals=todayMeals().filter(m=>!m.optional);
+function renderFoodBar(){const el=$("foodbar");if(!el)return;const F=FO(),t=foodTotals(),g=F.goal,hungry=isHungry(),la=lastAteTs(),meals=todayMeals().filter(m=>!m.optional),low=hungerLevel()<HUNGER_LOW;
  const sw=`<button class="fbswap" id="fbswap" aria-label="${F.barMode==="pix"?"Switch to the clean food tracker":"Switch to the game food bar"}">${F.barMode==="pix"?"▤":"🍗"}</button>`;
  el.innerHTML=F.barMode==="pix"
-  ?`<div class="fbline"><div class="fbpx ${hungry&&!RM?"hungry":""}" aria-label="Hunger bar">${drumBar()}</div>${sw}</div><div class="fbfoot"><span class="fbmono">${hungry?(la?"Starving. Last ate "+sinceStrShort(la):"Nothing eaten yet. Go eat!"):t.kcal>=g.kcal?"Full. Nice.":`${t.kcal.toLocaleString()} / ${g.kcal.toLocaleString()} · last ate ${sinceStrShort(la)}`}</span><span class="fbdogs" id="fbdogs">${dogFedPills()}</span></div>`
+  ?`<div class="fbline"><div class="fbpx ${low&&!RM?"hungry":""}" aria-label="Hunger bar, ${Math.round(hungerLevel()/2)} of 10">${drumBar()}</div>${sw}</div><div class="fbfoot"><span class="fbmono">${hungry?(la?"Starving. Last ate "+sinceStrShort(la):"Nothing eaten yet. Go eat!"):`${t.kcal.toLocaleString()} / ${g.kcal.toLocaleString()} · ${hungerLeft()==="empty"?"empty":"empties in "+hungerLeft()}`}</span><span class="fbdogs" id="fbdogs">${dogFedPills()}</span></div>`
   :`<div class="fbclean"><div class="fbrow"><div class="fbbig">${t.kcal.toLocaleString()}<span>/ ${g.kcal.toLocaleString()} kcal · ${t.prot} g protein</span></div><span class="${hungry?"fbwarn":"fbok"}">${hungry?"Time to eat":"Last ate "+sinceStrShort(la)}</span>${sw}</div>
    <div class="fbsegs">${meals.map(m=>`<i class="${eatLog().some(x=>x.role===m.role)?"f":""}"></i>`).join("")}</div><div class="fbfoot"><span class="fblab">${meals.map(m=>m.label.replace(/^Meal \d · /,"")).join(" · ")}</span><span class="fbdogs" id="fbdogs">${dogFedPills()}</span></div></div>`;
  $("fbswap").onclick=e=>{e.stopPropagation();F.barMode=F.barMode==="pix"?"clean":"pix";save();renderFoodBar()};
@@ -1425,7 +1444,9 @@ function drawFoodRoom(){const R=$("troom"),F=FO(),tab=RO.tab||"me",k=dkey(),wk=t
  if(tab==="me"){const t=foodTotals(),g=F.goal,f=t.kcal/g.kcal,RC=94.25,meals=todayMeals(),log=eatLog(),la=lastAteTs(),hungry=isHungry(),next=meals.find(m=>!m.optional&&!log.some(x=>x.role===m.role));
   body=`<div class="fohero"><div><div class="fobig">${t.kcal.toLocaleString()}<span>/ ${g.kcal.toLocaleString()} kcal</span></div><div class="trsub">${hungry?`<b class="wrbehind">${la?"Last ate "+sinceStrShort(la):"Nothing yet today"}. Time to eat.</b>`:t.kcal>=g.kcal?"Goal reached today":"Last ate "+sinceStrShort(la)}</div></div>
    <div class="trring"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,.13)" stroke-width="3"/><circle class="p" cx="18" cy="18" r="15" fill="none" stroke="var(--acc)" stroke-width="3" stroke-linecap="round" stroke-dasharray="${(Math.min(1,f)*RC).toFixed(1)} ${RC}" transform="rotate(-90 18 18)"/></svg><b>${Math.round(Math.min(1,f)*100)}%</b></div></div>
-   ${F.barMode==="pix"?`<div class="fbpx foroom">${drumBar()}</div>`:""}
+   ${F.barMode==="pix"?`<div class="fbpx foroom ${hungerLevel()<HUNGER_LOW&&!RM?"hungry":""}">${drumBar()}</div><div class="fohun">${hungerLeft()==="empty"?"Hunger bar is empty. Eat something.":"Hunger bar empties in <b>"+hungerLeft()+"</b>"}</div>`:""}
+   <div class="foh4"><span>Quick add</span><button class="link" id="fo-pre">Edit</button></div>
+   <div class="foquick">${PRESETS().map((p,i)=>`<button class="foqp" data-p="${i}"><i>${esc(p.e||"🍽️")}</i>${esc(p.name)}<small>${p.kcal}</small></button>`).join("")}</div>
    <div class="fomac"><div><small>Protein</small><b>${t.prot} / ${g.prot} g</b><i><em style="width:${Math.min(100,t.prot/g.prot*100)}%"></em></i></div><div><small>Meals</small><b>${meals.filter(m=>!m.optional&&log.some(x=>x.role===m.role)).length} of ${meals.filter(m=>!m.optional).length}</b><i><em style="width:${meals.length?meals.filter(m=>!m.optional&&log.some(x=>x.role===m.role)).length/Math.max(1,meals.filter(m=>!m.optional).length)*100:0}%"></em></i></div><div><small>Logged</small><b>${log.length} today</b><i><em style="width:0"></em></i></div></div>
    <div class="foh4"><span>Today's meal plan</span><button class="link" id="fo-add">+ Something else</button></div>
    ${meals.map(m=>{const done=log.find(x=>x.role===m.role);return`<div class="fomeal ${done?"done":m===next?"next":""}"><i>${ROLE_ICON[m.role]||"🍽️"}</i><div class="m">${esc(m.name)}<small>${esc(m.label)}${m.time?" · "+esc(m.time):""}${m.kcal?` · ~${m.kcal} kcal · ${m.prot} g`:""}${m.optional?" · if intake is low":""}</small></div>${m.r?`<button class="forec" data-r="${m.r.id}">Recipe</button>`:""}<button class="fogo" data-role="${m.role}">${done?"✓ Ate":"Ate it"}</button></div>`}).join("")||`<p class="trmin">No meal plan for today.</p>`}
@@ -1438,25 +1459,101 @@ function drawFoodRoom(){const R=$("troom"),F=FO(),tab=RO.tab||"me",k=dkey(),wk=t
     ${p?`<div class="foport"><span>Per meal: <b>${cupStr(p.kibCup/2)} kibble</b> + ${r5(p.freshG/2)} g fresh</span><span>${100-s.fresh}/${s.fresh}</span></div>`:`<div class="trmin">Add ${esc(d.name)}'s weight to see portions.</div>`}
     ${p?dogWeightLine(d):""}${s.urgent.map(u=>`<div class="flag urgent">⚠ ${esc(u)}. Call your vet.</div>`).join("")}${s.watch.map(u=>`<div class="flag">${esc(u)}</div>`).join("")}</div>`}).join("")
    +`<div class="fomini"><div><small>Freezer bags</small><b>${D.freezer||0}</b><div class="foctl"><button id="fz-m" aria-label="Use one bag">−1</button><button id="fz-p" aria-label="Add one bag">+1</button><button id="fz-b">+ Batch</button></div></div><div><small>One batch lasts</small><b>${(()=>{const bd=batchDays();return bd?"≈ "+Math.floor(bd)+" days":"–"})()}</b><small style="margin-top:6px">at today's ratios</small></div></div>
-   <button class="fowide p" id="dg-check">Daily check-in · food, water, stool, energy</button><div class="fotwo"><button class="fowide" id="dg-rec">Meal-prep recipe</button><button class="fowide" id="dg-edit">Names and weights</button></div>
+   <button class="fowide p" id="dg-check">Daily check-in · food, water, stool, energy</button><button class="fowide" id="dg-wheel">🎡 Build-a-bowl wheel</button><div class="fotwo"><button class="fowide" id="dg-rec">Meal-prep recipe</button><button class="fowide" id="dg-edit">Names and weights</button></div>
    <details class="foflags"><summary>Red flags</summary><p>${esc(DOG_FLAGS)}</p></details>`}
- if(tab==="rec"){const q=(RO.q||"").toLowerCase(),who=RO.who||"all",list=S.food.recipes.filter(r=>(who==="all"||r.who===who)&&(!q||(r.name+" "+(r.ingredients||[]).join(" ")).toLowerCase().includes(q))).sort((a,b)=>(b.fav?1:0)-(a.fav?1:0)||a.name.localeCompare(b.name));
-  body=`<div class="fosearch"><input id="fo-q" type="search" value="${esc(RO.q||"")}" placeholder="Search recipes or ingredients" autocomplete="off" aria-label="Search recipes"></div>
-   <div class="fochips">${[["all","All"],["me","You"],["dog","Dogs"]].map(([w,n])=>`<button data-who="${w}" class="${w===who?"on":""}">${n}</button>`).join("")}<button id="fo-new" class="fonew">+ New recipe</button></div>
-   <div class="forgrid">${list.map(r=>`<button class="forc" data-r="${r.id}"><i>${r.who==="dog"?"🐕":ROLE_ICON[r.role]||"🍽️"}</i><span><b>${esc(r.name)}</b><small>${esc(r.cat||"")}${r.week?" · week "+r.week:""}${r.fav?" · ★":""}</small></span></button>`).join("")||`<p class="trmin">No recipes match.</p>`}</div>`}
+ if(tab==="rec"){const m=recMenu(wk);body=m.html;RO._list=m.list}
  $("trs").innerHTML=head+`<div class="fobody">${body}</div></div>`;$("trfoot").innerHTML="";
  const q=s=>R.querySelector(s);q("#tr-back").onclick=()=>closeRoom();q("#fo-set").onclick=()=>foodGoalsSheet();
  R.querySelectorAll("[data-ft]").forEach(b=>b.onclick=()=>{RO.tab=b.dataset.ft;drawRoom();$("trs").scrollTo({top:Math.min($("trs").scrollTop,170)})});
  R.querySelectorAll(".fogo").forEach(b=>b.onclick=()=>{const role=b.dataset.role,l=eatLog(),ex=l.findIndex(x=>x.role===role);if(ex>=0){l.splice(ex,1);save();renderFoodBar();drawRoom();return}
   const m=todayMeals().find(x=>x.role===role);if(m)logMeal({name:m.name,kcal:m.kcal,prot:m.prot,role},b)});
  R.querySelectorAll(".forec,.forc").forEach(b=>b.onclick=()=>openRecipe(b.dataset.r));
+ R.querySelectorAll(".foqp").forEach(b=>{let lp=0,t=null;b.onpointerdown=()=>{lp=0;t=setTimeout(()=>{lp=1;presetSheet()},550)};b.onpointerup=b.onpointerleave=b.onpointercancel=()=>clearTimeout(t);
+  b.onclick=()=>{if(lp)return;const p=PRESETS()[+b.dataset.p];if(p)logMeal({name:p.name,kcal:p.kcal,prot:p.prot,role:""},b)}});const pe=q("#fo-pre");if(pe)pe.onclick=()=>presetSheet();
  R.querySelectorAll(".folog").forEach(b=>b.onclick=()=>editMeal(b.dataset.id));const rm=q("#fo-rem");if(rm)rm.onclick=()=>{F.remind.on=!F.remind.on;save();drawRoom();toast(F.remind.on?"Eat reminders on":"Eat reminders off")};const ad=q("#fo-add");if(ad)ad.onclick=()=>editMeal();
  R.querySelectorAll(".fofeed").forEach(b=>b.onclick=()=>feedDog(b.dataset.dog,b.dataset.slot,b));R.querySelectorAll("[data-all]").forEach(b=>b.onclick=()=>feedBoth(b.dataset.all));
  const fz=n=>{S.dogs.freezer=Math.max(0,(S.dogs.freezer||0)+n);save();drawRoom()};if(q("#fz-m")){q("#fz-m").onclick=()=>fz(-1);q("#fz-p").onclick=()=>fz(1);
   q("#fz-b").onclick=()=>openSheet(`<h2>Add a batch</h2><p class="desc">How many bags went into the freezer?</p><div class="field"><label for="fz-n">Bags</label><input id="fz-n" type="number" inputmode="numeric" value="7"></div><div class="btns"><button class="action p" id="fz-save">Add bags</button></div>`,r=>{r.querySelector("#fz-save").onclick=()=>{const n=Math.round(+r.querySelector("#fz-n").value);if(!(n>0)){toast("Enter how many bags");return}closeSheet();fz(n);toast(n+" bags added to the freezer")}})}
  if(q("#dg-check")){q("#dg-check").onclick=()=>dogCheckIn();q("#dg-rec").onclick=()=>{const r=S.food.recipes.find(x=>x.name===HUSKY_RECIPE.name);if(r)openRecipe(r.id)};q("#dg-edit").onclick=()=>dogEdit()}
  const fq=q("#fo-q");if(fq)fq.oninput=()=>{RO.q=fq.value;const pos=fq.selectionStart;drawRoom();const n=$("fo-q");if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}};
- R.querySelectorAll("[data-who]").forEach(b=>b.onclick=()=>{RO.who=b.dataset.who;drawRoom()});const nw=q("#fo-new");if(nw)nw.onclick=()=>{S.ui.who=RO.who==="dog"?"dog":"me";editRecipe()}}
+ R.querySelectorAll("[data-who]").forEach(b=>b.onclick=()=>{RO.who=b.dataset.who;RO.pick=null;drawRoom()});const nw=q("#fo-new");if(nw)nw.onclick=()=>{S.ui.who=RO.who==="dog"?"dog":"me";editRecipe()};
+ R.querySelectorAll("[data-mt]").forEach(b=>b.onclick=()=>{RO.mt=b.dataset.mt;RO.pick=null;drawRoom()});
+ R.querySelectorAll(".fodish").forEach(b=>b.onclick=()=>openRecipe(b.dataset.r));
+ R.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{const p=pickRecipe(b.dataset.pick,RO._list||[],wk);if(!p){toast("No recipes in this tab yet");return}RO.pick={id:p.r.id,mode:b.dataset.pick,why:p.why};RO.pickAnim=!RM;drawRoom();$("trs").scrollTo({top:Math.min($("trs").scrollTop,140),behavior:RM?"auto":"smooth"})});
+ if(q("#fp-x")){q("#fp-x").onclick=()=>{RO.pick=null;drawRoom()};q("#fp-again").onclick=()=>{const p=pickRecipe(RO.pick.mode,RO._list||[],wk);if(p){RO.pick={id:p.r.id,mode:RO.pick.mode,why:p.why};RO.pickAnim=!RM;drawRoom()}};q("#fp-cook").onclick=()=>openRecipe(RO.pick.id)}
+ if(RO.pickAnim){RO.pickAnim=false;const el=q("#fp-name"),names=(RO._list||[]).map(r=>r.name),fin=el&&el.textContent,card=q(".fopick");if(el&&names.length>1){card.classList.add("spin");let n=0;const iv=setInterval(()=>{if(!el.isConnected){clearInterval(iv);return}el.textContent=names[Math.floor(Math.random()*names.length)];if(++n>12){clearInterval(iv);el.textContent=fin;card.classList.remove("spin")}},70)}}
+ const bw=q("#fo-wheel");if(bw)bw.onclick=()=>dogWheel();const bw2=q("#dg-wheel");if(bw2)bw2.onclick=()=>dogWheel()}
+/* ---- recipes as a menu: tabs by meal, sections by main food ---- */
+const MENU_TABS={me:[["Breakfast","Breakfast"],["Mains","Meal prep"],["Drinks","Drinks"],["Lessons","Lessons"],["Other","Other"]],dog:[["Meals","Meal"],["Toppers","Topper"],["Treats","Treat"]]};
+const SEC_ORDER=["This week","Chicken","Beef","Seafood","Turkey","Eggs","Shakes","Refreshers","Frozen","Baked","Other","Results"];
+function mainFood(r){const n=r.name.toLowerCase(),all=n+" "+(r.ingredients||[]).join(" ").toLowerCase();
+ if(r.cat==="Drinks")return/shake|smoothie/.test(n)?"Shakes":"Refreshers";
+ if(r.who==="dog"&&r.cat==="Treat")return/frozen|freeze/.test(all)?"Frozen":/bake|biscuit|oven/.test(all)?"Baked":"Other";
+ const T=[["Seafood",/salmon|shrimp|fish|cod|tuna|sardine/],["Beef",/steak|beef/],["Chicken",/chicken/],["Turkey",/turkey/],["Eggs",/\beggs?\b/]];
+ for(const s of[n,all])for(const[lab,re]of T)if(re.test(s))return lab;return"Other"}
+function recKcal(r){return r.who!=="dog"&&ROLE_EST[r.role]?mealEst(r.role,r):null}
+function recMenu(wk){const who=RO.who==="dog"?"dog":"me",tabs=MENU_TABS[who],q=(RO.q||"").trim().toLowerCase();
+ const mt=tabs.some(t=>t[1]===RO.mt)?RO.mt:(who==="dog"?"Meal":"Meal prep");RO.mt=mt;
+ const pool=S.food.recipes.filter(r=>(r.who||"me")===who),catOf=r=>who==="me"?(FOOD_CATS.me.includes(r.cat)?r.cat:"Other"):(FOOD_CATS.dog.includes(r.cat)?r.cat:"Meal");
+ const list=(q?pool.filter(r=>(r.name+" "+(r.ingredients||[]).join(" ")).toLowerCase().includes(q)):pool.filter(r=>catOf(r)===mt))
+  .sort((a,b)=>((b.week===wk)-(a.week===wk))||((b.fav?1:0)-(a.fav?1:0))||((a.week||9)-(b.week||9))||a.name.localeCompare(b.name));
+ const secs={};list.forEach(r=>{const s=q?"Results":mainFood(r);(secs[s]=secs[s]||[]).push(r)});
+ const order=Object.keys(secs).sort((a,b)=>(SEC_ORDER.indexOf(a)+99)%99-(SEC_ORDER.indexOf(b)+99)%99);
+ const pk=RO.pick&&S.food.recipes.find(r=>r.id===RO.pick.id);
+ const row=r=>{const e=recKcal(r),meta=who==="dog"?[r.time,r.serves].filter(Boolean).join(" · "):(r.ingredients||[]).slice(0,4).map(x=>x.replace(/\s*\(.*?\)/g,"")).join(" · ");
+  return`<button class="fodish" data-r="${r.id}"><span class="dl"><b>${esc(r.name)}${who==="me"&&r.week===wk?`<em class="fowk">This week</em>`:""}</b><i></i><span>${e&&e[0]?"~"+e[0]+" kcal":r.fav?"★":""}</span></span><span class="dd">${esc(meta)}</span></button>`};
+ const theme=typeof MENU_THEMES!=="undefined"&&MENU_THEMES[wk-1];
+ const html=`<div class="fochips">${[["me","You"],["dog","Dogs"]].map(([w,n])=>`<button data-who="${w}" class="${w===who?"on":""}">${w==="dog"?"🐕 ":""}${n}</button>`).join("")}<button id="fo-new" class="fonew">+ New recipe</button></div>
+  <div class="fosearch" style="margin-top:10px"><input id="fo-q" type="search" value="${esc(RO.q||"")}" placeholder="Search ${who==="dog"?"dog recipes":"recipes or ingredients"}" autocomplete="off" aria-label="Search recipes"></div>
+  ${q?"":`<div class="fomt" role="tablist">${tabs.map(([n,c])=>`<button role="tab" data-mt="${c}" class="${c===mt?"on":""}" aria-selected="${c===mt}">${n}</button>`).join("")}</div>`}
+  <div class="fopk"><button data-pick="rand" class="r">🎲 Random<small>Any ${q?"result":tabs.find(t=>t[1]===mt)[0].toLowerCase()}</small></button><button data-pick="choose" class="c">✨ Choose for me<small>${who==="dog"?"Gentle, favorites first":"This week, not eaten lately"}</small></button></div>
+  ${who==="dog"?`<button class="fowheel" id="fo-wheel"><span class="fwi" aria-hidden="true">🎡</span><span><b>Build-a-bowl wheel</b><small>Spin a protein, a carb and a veg, all dog-safe</small></span><em>Spin →</em></button>`:""}
+  ${pk?`<div class="fopick"><div class="why">${RO.pick.mode==="choose"?"Chosen for you":"Random pick"}</div><div class="fpname" id="fp-name">${esc(pk.name)}</div><div class="fpmeta">${esc((RO.pick.why&&RO.pick.why.length?RO.pick.why:[pk.cat||""]).join(" · "))}</div><div class="fpacts"><button id="fp-x" aria-label="Close the pick">✕</button><button id="fp-again">Another</button><button class="p" id="fp-cook">Cook this →</button></div></div>`:""}
+  <div class="fomenu"><div class="fmh">${who==="dog"?"The Dog Bowl":q?"Search":esc(tabs.find(t=>t[1]===mt)[0])}</div><div class="fms">${who==="dog"?"Plain, cooked, no seasoning · ever":theme?`Week ${wk} · ${esc(theme)}`:"Your recipes"}</div>
+   ${order.map(s=>`<div class="fosec"><h5>${esc(s)}</h5>${secs[s].map(row).join("")}</div>`).join("")||`<p class="trmin" style="text-align:center">${q?"No recipes match.":"Nothing here yet. Tap + New recipe."}</p>`}</div>
+  ${who==="dog"?`<details class="foflags"><summary>Never feed dogs</summary><p>${typeof DOG_SAFE!=="undefined"?DOG_SAFE:""}</p></details>`:""}`;
+ return{html,list}}
+function pickRecipe(mode,list,wk){if(!list.length)return null;const eaten=new Set();for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()-i);(FO().eat[dkey(d)]||[]).forEach(e=>eaten.add((e.name||"").toLowerCase()))}
+ const prev=RO.pick&&RO.pick.id,c=list.length>1?list.filter(r=>r.id!==prev):list;
+ if(mode==="rand")return{r:c[Math.floor(Math.random()*c.length)],why:[]};
+ const soft=S.dogs&&S.dogs.list.some(d=>d.sensitive);
+ return c.map(r=>{const why=[];let s=Math.random()*1.5;
+  if(r.who==="dog"){if(r.fav){s+=2;why.push("A favorite")}if(soft&&/rice|plain|pumpkin/i.test(r.name+" "+(r.ingredients||[]).join(" "))){s+=2;why.push("Gentle on a settling stomach")}}
+  else{if(r.week===wk){s+=3;why.push("On this week's menu")}if(eaten.has(r.name.toLowerCase()))s-=5;else why.push("Not eaten in the last 7 days");const e=recKcal(r);if(e&&e[1]){s+=e[1]/20;why.push("~"+e[1]+" g protein")}if(r.fav){s+=1;why.push("A favorite")}}
+  return{r,s,why}}).sort((a,b)=>b.s-a.s)[0]}
+/* ---- build-a-bowl wheel for the dogs: three rings (protein, carb, veg), all plain and dog-safe ---- */
+const BOWL=[[["🦃","Turkey (93% lean)","3 lb 93% lean ground turkey"],["🐔","Chicken breast","3 lb boneless, skinless chicken breast"],["🥩","Lean beef","3 lb lean ground beef (90% or leaner)"],["🐟","White fish","3 lb boneless white fish (cod or pollock)"],["🍣","Salmon","3 lb boneless salmon, fully cooked"],["🥚","Eggs","12 eggs"]],
+ [["🍚","White rice","4 cups cooked white rice"],["🍠","Sweet potato","4 cups cooked, mashed sweet potato (peeled)"],["🥣","Oats","4 cups plain cooked oats"],["🎃","Pumpkin","2 cups pure pumpkin purée + 2 cups cooked rice"],["🍙","Brown rice","4 cups cooked brown rice"],["🥔","Potato","4 cups cooked, peeled potato"]],
+ [["🌿","Green beans","2 cups green beans"],["🥕","Carrots","2 cups carrots"],["🫛","Peas","2 cups peas"],["🥒","Zucchini","2 cups zucchini"],["🥦","Broccoli","1 cup broccoli (small amounts only)"],["🥬","Spinach","1 cup spinach (small amounts only)"]]];
+const BOWL_TOP=["a few blueberries","a spoon of plain pumpkin","a spoon of plain unsweetened yogurt","one sardine (in water, no salt)","nothing extra this time"];
+const BOWL_STEP=[i=>[["Cook the turkey in a pan with no oil and no seasoning, then drain the fat"],["Boil or bake the chicken plain until fully cooked, then shred and check for bones"],["Brown the beef with no oil or seasoning, then drain the fat well"],["Bake or poach the fish plain until it flakes, then check carefully for bones"],["Bake the salmon plain until fully cooked (never raw), then flake and remove every bone"],["Hard-boil or scramble the eggs plain (no butter or oil), then chop"]][i][0],
+ i=>[["Cook the rice in plain water"],["Peel, dice and boil the sweet potato until soft, then mash"],["Cook the oats in plain water"],["Use pure pumpkin purée (not pie filling) and mix it with plain cooked rice"],["Cook the brown rice in plain water until very soft"],["Peel, dice and boil the potato until soft (never raw or green potato)"]][i][0],
+ i=>"Steam or boil the "+BOWL[2][i][1].toLowerCase()+" until soft, then chop or mash small"];
+let BW=null;
+function bowlSector(r0,r1,a0,a1){const p=(r,a)=>{const t=(a-90)*Math.PI/180;return[(100+r*Math.cos(t)).toFixed(2),(104+r*Math.sin(t)).toFixed(2)]};const[x0,y0]=p(r1,a0),[x1,y1]=p(r1,a1),[x2,y2]=p(r0,a1),[x3,y3]=p(r0,a0);return`M${x0} ${y0}A${r1} ${r1} 0 0 1 ${x1} ${y1}L${x2} ${y2}A${r0} ${r0} 0 0 0 ${x3} ${y3}Z`}
+function dogWheel(){if(!BW)BW={rot:[0,0,0],idx:[0,0,0],lock:[false,false,false],top:0,spun:false};
+ const RG=[[68,98,15,83],[40,68,13,54],[12,40,11,26]],FILL=[["rgba(233,162,94,.30)","rgba(233,162,94,.14)"],["rgba(255,255,255,.12)","rgba(255,255,255,.05)"],["rgba(134,211,176,.26)","rgba(134,211,176,.12)"]];
+ const svg=`<svg viewBox="0 0 200 206" class="bwsvg" aria-hidden="true">${BOWL.map((ring,k)=>{const[r0,r1,fs,rl]=RG[k],n=ring.length,step=360/n;
+  return`<g id="bw${k}" style="transform-origin:100px 104px;transform:rotate(${BW.rot[k]}deg)">${ring.map((it,i)=>{const a=i*step,c=(a+step/2-90)*Math.PI/180;return`<path d="${bowlSector(r0,r1,a,a+step)}" fill="${FILL[k][i%2]}" stroke="#140C08" stroke-width="1.2"/><text x="${(100+rl*Math.cos(c)).toFixed(1)}" y="${(104+rl*Math.sin(c)).toFixed(1)}" font-size="${fs}" text-anchor="middle" dominant-baseline="central" transform="rotate(${a+step/2} ${(100+rl*Math.cos(c)).toFixed(1)} ${(104+rl*Math.sin(c)).toFixed(1)})">${it[0]}</text>`}).join("")}</g>`}).join("")}
+  <circle cx="100" cy="104" r="11" fill="#2A170C" stroke="var(--acc,#E9A25E)" stroke-width="1.5"/><text x="100" y="104.5" font-size="10" text-anchor="middle" dominant-baseline="central">🐕</text><path d="M92 0h16l-8 15z" fill="var(--acc,#E9A25E)" stroke="#140C08" stroke-width="1.2"/></svg>`;
+ const res=()=>BW.spun?`${["Protein","Carb","Veg"].map((n,k)=>`<button class="bwr ${BW.lock[k]?"lk":""}" data-l="${k}" aria-pressed="${BW.lock[k]}"><small>${n}${BW.lock[k]?" · locked":""}</small><b>${BOWL[k][BW.idx[k]][0]} ${esc(BOWL[k][BW.idx[k]][1])}</b></button>`).join("")}`:`<p class="desc" style="grid-column:1/-1;text-align:center;margin:0">Spin to build a bowl. Tap a result to lock it, then spin the rest.</p>`;
+ openSheet(`<h2>Build-a-bowl wheel</h2><div class="bwwrap">${svg}</div><div class="bwres" id="bw-res">${res()}</div><p class="bwtop" id="bw-top">${BW.spun?"Topper idea: "+esc(BOWL_TOP[BW.top]):""}</p>
+  <p class="desc bwsafe">Cook everything plain: no salt, oil, onion, garlic or seasoning. Change one ingredient at a time from what they eat now, and watch their stool for 2–3 days. It's a topper over kibble, not a complete diet.</p>
+  <div class="btns"><button class="action" id="bw-save" ${BW.spun?"":"disabled"}>Save as recipe</button><button class="action p" id="bw-spin">Spin</button></div>`,r=>{
+  let busy=false;const paint=()=>{r.querySelector("#bw-res").innerHTML=res();r.querySelector("#bw-top").textContent=BW.spun?"Topper idea: "+BOWL_TOP[BW.top]:"";r.querySelector("#bw-save").disabled=!BW.spun;bindL()};
+  const bindL=()=>r.querySelectorAll(".bwr").forEach(b=>b.onclick=()=>{if(busy)return;const k=+b.dataset.l;BW.lock[k]=!BW.lock[k];paint()});bindL();
+  r.querySelector("#bw-spin").onclick=()=>{if(busy)return;if(BW.lock.every(Boolean)){toast("Unlock a ring to spin it");return}busy=true;let longest=0;
+   BOWL.forEach((ring,k)=>{if(BW.lock[k])return;const n=ring.length,step=360/n;let i=Math.floor(Math.random()*n);if(i===BW.idx[k]&&BW.spun)i=(i+1+Math.floor(Math.random()*(n-1)))%n;BW.idx[k]=i;
+    const target=-(i+.5)*step,turns=3+k,base=BW.rot[k]+turns*360;BW.rot[k]=base+(((target-base)%360)+360)%360;const dur=RM?0:1.5+k*.45;longest=Math.max(longest,dur);
+    const g=r.querySelector("#bw"+k);g.style.transition=RM?"none":`transform ${dur}s cubic-bezier(.12,.75,.18,1)`;g.style.transform=`rotate(${BW.rot[k]}deg)`});
+   BW.top=Math.floor(Math.random()*BOWL_TOP.length);try{navigator.vibrate&&navigator.vibrate(8)}catch(e){}
+   r.querySelectorAll(".bwr:not(.lk) b").forEach(b=>b.textContent="…");
+   setTimeout(()=>{busy=false;BW.spun=true;if(r.isConnected)paint();try{navigator.vibrate&&navigator.vibrate([10,40,10])}catch(e){}},longest*1000+80)};
+  r.querySelector("#bw-save").onclick=()=>{if(!BW.spun||busy)return;const[P,C,V]=BOWL.map((ring,k)=>ring[BW.idx[k]]),clean=s=>s.replace(/\s*\(.*?\)/g,"");
+   const rec={id:uid(),who:"dog",cat:"Meal",name:`${clean(P[1])}, ${clean(C[1]).toLowerCase()} and ${V[1].toLowerCase()} bowl`,time:"About 1 hour",serves:"One batch of toppers",protein:"",fav:false,ts:Date.now(),
+    ingredients:[P[2],C[2],V[2],"Plain water"],steps:[BOWL_STEP[0](BW.idx[0]),BOWL_STEP[1](BW.idx[1]),BOWL_STEP[2](BW.idx[2]),"Mix everything with a little warm water until moist","Let it cool completely","Portion into freezer bags, flatten them and label with the date","Keep about 3 days in the fridge and freeze the rest"],
+    notes:`Built on the bowl wheel. Topper idea: ${BOWL_TOP[BW.top]}.\n\nNo salt, oil, onion, garlic, broth or seasoning. This is a topper over kibble, not a complete diet. Switch one ingredient at a time and watch stool for 2–3 days before the next change.`};
+   S.food.recipes.push(rec);save();closeSheet();if(RO&&RO.kind==="food"){RO.tab="rec";RO.who="dog";RO.mt="Meal";RO.q="";drawRoom()}toast("Saved to dog recipes","Open",()=>openRecipe(rec.id))}})}
 
 /* ================= Streak · Coach · Rewards =================
    Coins 🪙 are earned for discipline (they ride along with XP, plus bonuses for clearing a day, the water goal,
