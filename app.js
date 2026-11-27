@@ -734,7 +734,7 @@ new MutationObserver(()=>{const s=$("sheet");if(!s.firstElementChild||s.querySel
  const end=()=>{if(y0===null)return;y0=null;s.style.transition="transform .3s cubic-bezier(.32,.72,0,1)";if(dy>90){s.style.transform="translateY(110%)";setTimeout(closeSheet,220)}else s.style.transform="";dy=0};
  s.addEventListener("pointerup",end);s.addEventListener("pointercancel",end)})();
 function openSheet(html,bind){delete $("sheet").dataset.kind;$("sheet").innerHTML=`<div class="grab"></div>`+html;$("sheetwrap").hidden=false;bind($("sheet"));const f=$("sheet").querySelector("input:not([type=checkbox]),textarea");if(f&&matchMedia("(hover:hover)").matches)f.focus()}
-function opts(name,list,val,cls=""){return `<div class="opts ${cls}" data-name="${name}">${list.map(([v,l])=>`<button type="button" data-v="${esc(v)}" class="${v===val?"on":""}">${esc(l)}</button>`).join("")}</div>`}
+function opts(name,list,val,cls=""){return `<div class="opts ${cls}" data-name="${name}">${list.map(([v,l,ic])=>`<button type="button" data-v="${esc(v)}" class="${v===val?"on":""}">${ic?`<i aria-hidden="true">${ic}</i>`:""}${esc(l)}</button>`).join("")}</div>`}
 function bindOpts(root,onChange){root.querySelectorAll(".opts").forEach(g=>g.querySelectorAll("button").forEach(b=>b.onclick=()=>{g.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));onChange&&onChange(g.dataset.name,b.dataset.v)}))}
 const optVal=(root,name)=>root.querySelector(`.opts[data-name="${name}"] .on`)?.dataset.v;
 const toLocalInput=ts=>{const d=new Date(ts);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)};
@@ -900,7 +900,7 @@ function renderJournal(){if(!bookArt)bookArt=BOOKS.map((b,i)=>{const cv=document
  $("qentry").onsubmit=e=>{e.preventDefault();const v=$("ne").value.trim();if(!v)return;S.journal[k].push({id:uid(),title:v.length>60?v.slice(0,57)+"…":v,body:v.length>60?v:"",ts:Date.now()});addXP(5);save();renderJournal();renderCards();toast("Saved · +5 XP")}}
 function editEntry(k,id){const isNew=!id,e=isNew?{id:uid(),title:"",body:"",ts:Date.now(),mood:k==="emotions"?2:null}:S.journal[k].find(x=>x.id===id);if(!e)return;
  openSheet(`<h2>${isNew?"New":"Edit"} ${esc(bookName(k).toLowerCase())} entry</h2><p class="desc">${whenStr(e.ts)}</p>
- ${k==="emotions"?`<div class="field"><label>How do you feel?</label>${opts("mood",MOODS.map((m,i)=>[String(i),m]),String(e.mood??2))}</div>`:""}
+ ${k==="emotions"?`<div class="field"><label>How do you feel?</label>${opts("mood",MOODS.map((m,i)=>[String(i),m,["😞","😕","😐","🙂","😄"][i]]),String(e.mood??2),"tiles")}</div>`:""}
  <div class="field"><label for="e-t">Title</label><input id="e-t" value="${esc(e.title)}" placeholder="${k==="dreams"?"Flying over the ocean":k==="ideas"?"App for traders":"A few words"}" autocomplete="off"></div>
  <div class="field"><label for="e-b">Write it down</label><textarea id="e-b" placeholder="Everything you remember…">${esc(e.body)}</textarea></div>
  <div class="btns"><button class="action p" id="e-save">${isNew?"Save · +5 XP":"Save changes"}</button>${isNew?"":`<button class="action danger" id="e-del">Delete</button>`}</div>`,
@@ -1220,14 +1220,14 @@ function renderWish(){const M=MO(),W=M.wish||(M.wish=[]),host=$("moneywish");if(
 function editWish(id){const M=MO(),x=(M.wish||[]).find(i=>i.id===id);if(!x)return;
  openSheet(`<h2>Thing to buy</h2><div class="field"><label for="we-t">What</label><input id="we-t" value="${esc(x.t)}" autocomplete="off"></div>
  <div class="field"><label for="we-p">Price ($, optional)</label><input id="we-p" type="number" inputmode="decimal" step="0.01" value="${+x.price>0?x.price:""}"></div>
- <div class="field"><label>Category</label>${opts("cat",MCATS.map(([c])=>[c,c]),x.cat||"Shopping")}</div>
+ <div class="field"><label>Category</label>${opts("cat",MCATS.map(([c])=>[c,c,MICO[c]||"•"]),x.cat||"Shopping","tiles")}</div>
  <div class="field"><label>Priority</label>${opts("need",[["want","Want"],["need","Need"]],x.need?"need":"want")}</div>
  <div class="btns"><button class="action p" id="we-s">Save</button><button class="action danger" id="we-d">Remove</button></div>`,r=>{bindOpts(r);
   r.querySelector("#we-s").onclick=()=>{Object.assign(x,{t:r.querySelector("#we-t").value.trim()||x.t,price:Math.max(0,Math.round((+r.querySelector("#we-p").value||0)*100)/100),cat:optVal(r,"cat"),need:optVal(r,"need")==="need"});save();closeSheet();renderWish();toast("Saved")};
   r.querySelector("#we-d").onclick=()=>{M.wish=M.wish.filter(i=>i.id!==x.id);save();closeSheet();renderWish();toast("Removed","Undo",()=>{M.wish.push(x);save();renderWish()})}})}
 function editMoney(id){const M=MO(),x=M.items.find(i=>i.id===id);if(!x)return;
  openSheet(`<h2>Edit purchase</h2><div class="pair"><div class="field"><label for="me-a">Amount ($)</label><input id="me-a" type="number" inputmode="decimal" step="0.01" value="${x.amt}"></div><div class="field"><label for="me-t">When</label><input id="me-t" type="datetime-local" value="${toLocalInput(x.ts)}"></div></div>
- <div class="field"><label>Category</label>${opts("cat",MCATS.map(([c])=>[c,c]),x.cat)}</div><div class="field"><label for="me-n">What was it?</label><input id="me-n" value="${esc(x.note||"")}"></div>
+ <div class="field"><label>Category</label>${opts("cat",MCATS.map(([c])=>[c,c,MICO[c]||"•"]),x.cat,"tiles")}</div><div class="field"><label for="me-n">What was it?</label><input id="me-n" value="${esc(x.note||"")}"></div>
  <div class="field"><label>Paid with</label>${opts("pay",[["Card","Card"],["Cash","Cash"],["Other","Other"]],x.pay||"Card")}</div>
  <div class="btns"><button class="action p" id="me-s">Save</button><button class="action danger" id="me-d">Delete</button></div>`,r=>{bindOpts(r);
   r.querySelector("#me-s").onclick=()=>{Object.assign(x,{amt:Math.round((+r.querySelector("#me-a").value||0)*100)/100,ts:new Date(r.querySelector("#me-t").value).getTime()||x.ts,cat:optVal(r,"cat"),note:r.querySelector("#me-n").value.trim(),pay:optVal(r,"pay")});save();closeSheet();renderMoney();toast("Saved")};
@@ -1718,18 +1718,40 @@ function bindDogDashboard(){const D=S.dogs,upd=n=>{D.freezer=Math.max(0,(D.freez
  $("fz-minus").onclick=()=>upd(-1);$("fz-plus").onclick=()=>upd(1);
  $("fz-batch").onclick=()=>openSheet(`<h2>Add a batch</h2><p class="desc">How many bags went into the freezer?</p><div class="field"><label for="fz-n">Bags</label><input id="fz-n" type="number" inputmode="numeric" value="7"></div><div class="btns"><button class="action p" id="fz-save">Add bags</button></div>`,root=>{root.querySelector("#fz-save").onclick=()=>{const n=Math.round(+root.querySelector("#fz-n").value);if(!(n>0)){toast("Enter how many bags");return}closeSheet();upd(n);toast(n+" bags added to the freezer")}});
  $("dogcheck").onclick=()=>dogCheckIn();$("dogrecipe").onclick=()=>{const r=S.food.recipes.find(x=>x.name===HUSKY_RECIPE.name);if(r)openRecipe(r.id)};$("dogedit").onclick=()=>dogEdit()}
+// One dog at a time: an "all normal" shortcut, then picture tiles for anything that was different.
+const DCI_NORMAL={food:100,water:"normal",stool:3,urine:"yellow",energy:4};
+const DCI_STOOL=[["#4A2E1C","Hard"],["#7A4A26","Firm"],["#9A6332","Normal"],["#B98A55","Soft"],["#D2B48A","Watery"]];
+const DCI_EN=["#EE8E86","#EFA98A","#EFBC90","#B8D7A0","#86D3B0"];
+function dciBowl(p){const cp="dcib"+p;return`<svg viewBox="0 0 34 22" aria-hidden="true"><defs><clipPath id="${cp}"><path d="M2 8h30a15 13 0 0 1-30 0z"/></clipPath></defs><path d="M2 8h30a15 13 0 0 1-30 0z" fill="#2E1F16" stroke="#7A5E4A" stroke-width="1.2"/>${p?`<rect x="0" y="${8+14*(1-p/100)}" width="34" height="14" fill="#C9874F" clip-path="url(#${cp})"/>`:""}</svg>`}
 function dogCheckIn(){const k=dkey(),D=S.dogs;
- openSheet(`<h2>Dog check-in</h2><p class="desc">${new Date().toLocaleDateString([], {weekday:"long",month:"long",day:"numeric"})}. Takes about 20 seconds.</p>
- ${D.list.map(d=>{const l=dogLog(k,d.id)||{};const o=(n,list,v)=>opts(d.id+"-"+n,list,v===undefined?"":String(v));return `<div class="sec" style="margin-top:10px"><h3>${esc(d.name)}</h3>
-  <div class="field"><label>Food eaten</label>${o("food",[0,25,50,75,100].map(x=>[String(x),x+"%"]),l.food)}</div>
-  <div class="field"><label>Water</label>${o("water",[["low","Low"],["normal","Normal"],["high","High"]],l.water)}</div>
-  <div class="field"><label>Stool</label>${o("stool",[1,2,3,4,5].map(x=>[String(x),String(x)]),l.stool)}<span class="hint">1 very hard · 2 firm · 3 normal · 4 soft · 5 watery</span></div>
-  <div class="field"><label>Urine</label>${o("urine",[["yellow","Yellow"],["dark","Dark"]],l.urine)}</div>
-  <div class="field"><label>Energy</label>${o("energy",[1,2,3,4,5].map(x=>[String(x),String(x)]),l.energy)}<span class="hint">1 very low · 5 full energy</span></div>
-  <div class="field"><label for="${d.id}-note">Note</label><input id="${d.id}-note" value="${esc(l.note||"")}" placeholder="Anything unusual"></div></div>`}).join("")}
+ const ans={};D.list.forEach(d=>{const l=dogLog(k,d.id)||{};ans[d.id]={...l};if(ans[d.id].note==="")delete ans[d.id].note});
+ const keys=["food","water","stool","urine","energy"],full=a=>keys.every(x=>a[x]!==undefined&&a[x]!==""),isNorm=a=>keys.every(x=>a[x]===DCI_NORMAL[x]);
+ let cur=(D.list.find(d=>!full(ans[d.id]))||D.list[0]||{}).id,noteOpen={};
+ const flagsOf=a=>{const w=[];if(a.food===0)w.push("Ate nothing");if(a.stool===5)w.push("Watery stool");if(a.energy===1)w.push("Very low energy");if(a.urine==="dark")w.push("Dark urine");if(a.water==="low")w.push("Drinking less");return w};
+ const body=()=>{const d=D.list.find(x=>x.id===cur);if(!d)return`<p class="desc">Add your dogs in Names and weights first.</p>`;const a=ans[cur],nm=esc(d.name),tile=(key,v,inner,lab)=>`<button class="dci-tile ${a[key]===v?"on":""}" data-k="${key}" data-v="${v}" aria-pressed="${a[key]===v}">${inner}<small>${lab}</small></button>`;
+  return`<div class="dci-dogs">${D.list.map((x,i)=>{const b=ans[x.id];return`<button class="dci-dog ${x.id===cur?"on":""}" data-dog="${x.id}"><span class="dci-av" aria-hidden="true">${i%2?"🐕":"🐺"}</span><span><b>${esc(x.name)}</b><small class="${full(b)?"ok":""}">${full(b)?"✓ Done":Object.keys(b).some(y=>keys.includes(y))?"In progress":"Not yet"}</small></span></button>`}).join("")}</div>
+  <button class="dci-ok ${full(a)&&isNorm(a)?"done":""}" id="dci-ok"><span><b>${nm} was normal today</b><small>Ate it all · normal water · firm stool · good energy</small></span><em aria-hidden="true">${full(a)&&isNorm(a)?"✓":"👍"}</em></button>
+  <div class="dci-lab">Food eaten <b>${a.food!==undefined?a.food+"%":""}</b></div><div class="dci-t c5">${[0,25,50,75,100].map(p=>tile("food",p,dciBowl(p),p+"%")).join("")}</div>
+  <div class="dci-lab">Water</div><div class="dci-t c3">${[["low","💧","Less"],["normal","💧💧","Normal"],["high","💧💧💧","More"]].map(([v,i,l])=>tile("water",v,`<i aria-hidden="true">${i}</i>`,l)).join("")}</div>
+  <div class="dci-lab">Stool</div><div class="dci-t c5">${DCI_STOOL.map(([c,l],i)=>tile("stool",i+1,`<i class="dci-dot" style="background:${c}"></i>`,l)).join("")}</div><div class="dci-zone"><span>healthy</span></div>
+  <div class="dci-lab">Urine</div><div class="dci-t c2">${[["yellow","#F2D46B","Pale yellow"],["dark","#C9822E","Dark"]].map(([v,c,l])=>tile("urine",v,`<i class="dci-sw" style="background:${c}"></i>`,l)).join("")}</div>
+  <div class="dci-lab">Energy</div><div class="dci-batt">${[1,2,3,4,5].map(n=>`<button data-k="energy" data-v="${n}" class="${a.energy>=n?"f":""}" style="${a.energy>=n?"background:"+DCI_EN[a.energy-1]:""}" aria-pressed="${a.energy===n}" aria-label="Energy ${n} of 5">${n}</button>`).join("")}</div><div class="dci-bl"><span>Very low</span><span>Full energy</span></div>
+  ${noteOpen[cur]||a.note?`<input class="dci-note" id="dci-note" value="${esc(a.note||"")}" placeholder="Anything unusual about ${nm}?">`:`<button class="dci-addn" id="dci-addn">+ Add a note</button>`}
+  ${flagsOf(a).length?`<div class="dci-flags">${flagsOf(a).map(f=>`<span>⚠ ${esc(f)}</span>`).join("")}</div>`:""}`};
+ const nextDog=()=>D.list.find(x=>x.id!==cur&&!full(ans[x.id]));
+ openSheet(`<h2>Tonight's check-in</h2><p class="desc">${new Date().toLocaleDateString([], {weekday:"long",month:"long",day:"numeric"})} · about 10 seconds</p><div id="dci-body">${body()}</div>
  <div class="btns"><button class="action p" id="dc-save">Save check-in</button></div>`,
- root=>{bindOpts(root);root.querySelector("#dc-save").onclick=()=>{S.dogs.log[k]=S.dogs.log[k]||{};let any=false;
-   for(const d of D.list){const g=n=>optVal(root,d.id+"-"+n),num=n=>g(n)===undefined||g(n)===""?undefined:+g(n);const e={food:num("food"),water:g("water"),stool:num("stool"),urine:g("urine"),energy:num("energy"),note:root.querySelector("#"+d.id+"-note").value.trim()};
+ root=>{const box=root.querySelector("#dci-body"),saveBtn=root.querySelector("#dc-save");
+  const keepNote=()=>{const n=root.querySelector("#dci-note");if(n)ans[cur].note=n.value};
+  const paint=()=>{box.innerHTML=body();const nx=nextDog();saveBtn.textContent=full(ans[cur])&&nx?`Next: ${nx.name} →`:"Save check-in";bind()};
+  const bind=()=>{box.querySelectorAll("[data-dog]").forEach(b=>b.onclick=()=>{keepNote();cur=b.dataset.dog;paint()});
+   const ok=box.querySelector("#dci-ok");if(ok)ok.onclick=()=>{keepNote();Object.assign(ans[cur],DCI_NORMAL);try{navigator.vibrate&&navigator.vibrate(10)}catch(e){}paint();const nx=nextDog();if(nx)setTimeout(()=>{if(!root.isConnected||$("sheetwrap").hidden)return;cur=nx.id;paint();root.scrollTo({top:0,behavior:RM?"auto":"smooth"})},420)};
+   box.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{keepNote();const v=b.dataset.v;ans[cur][b.dataset.k]=isNaN(+v)?v:+v;paint()});
+   const an=box.querySelector("#dci-addn");if(an)an.onclick=()=>{noteOpen[cur]=1;paint();const n=box.querySelector("#dci-note");if(n)n.focus()}};
+  paint();
+  saveBtn.onclick=()=>{keepNote();const nx=nextDog();if(full(ans[cur])&&nx){cur=nx.id;paint();root.scrollTo({top:0,behavior:RM?"auto":"smooth"});return}
+   S.dogs.log[k]=S.dogs.log[k]||{};let any=false;
+   for(const d of D.list){const a=ans[d.id],e={food:a.food,water:a.water,stool:a.stool,urine:a.urine,energy:a.energy,note:(a.note||"").trim()};
     if(Object.values(e).some(v=>v!==undefined&&v!=="")){S.dogs.log[k][d.id]=e;any=true}}
    if(!any){toast("Tap at least one answer");return}const t=S.routine.find(r=>r.link==="dogs"),dd=dayData(k),both=D.list.every(d=>dogLog(k,d.id));save();closeSheet();
    if(t&&both&&!dd.done[t.id])toggleTask(t.id);else toast("Check-in saved");renderFood();
