@@ -1033,3 +1033,36 @@ details.note[open] summary{margin-bottom:6px}
 .burst{position:fixed;width:7px;height:7px;border-radius:2px;z-index:96;pointer-events:none;animation:burst .9s var(--ease) forwards}
 @keyframes burst{to{transform:translate(var(--bx),var(--by)) rotate(var(--br));opacity:0}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* ---- food v2: hunger drain, quick add, recipe menu, pick card, dog bowl wheel ---- */
+.fohun{font:500 11.5px ui-monospace,Consolas,monospace;color:#E9D4A8;margin-top:6px}.fohun b{color:var(--acc)}
+.foquick{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:0 2px 2px}
+.foqp{flex:none;display:flex;align-items:center;gap:6px;border:1px solid var(--line2);background:rgba(255,255,255,.03);border-radius:999px;padding:7px 11px 7px 8px;font:600 12.5px var(--f);color:var(--soft);cursor:pointer;transition:transform .12s,background .2s;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.foqp i{font-style:normal;font-size:15px}.foqp small{font-weight:500;color:var(--muted);font-size:11px}.foqp:active{transform:scale(.94);background:rgba(134,211,176,.15)}
+.prow,.phead{display:grid;grid-template-columns:44px 1fr 64px 52px 32px;gap:6px;align-items:center;margin-top:6px}.phead{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.prow input{width:100%;min-width:0;background:rgba(255,255,255,.05);border:1px solid var(--line2);border-radius:10px;padding:9px 8px;color:var(--ink);font:500 14px var(--f)}.prow .pe{text-align:center;padding:9px 2px}
+.prx{border:0;background:none;color:var(--muted);font-size:20px;cursor:pointer;height:40px}
+.fomt{position:sticky;top:34px;z-index:2;display:flex;gap:18px;overflow-x:auto;scrollbar-width:none;margin:12px -16px 0;padding:0 16px;border-bottom:1px solid var(--line2);background:rgba(20,12,8,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.fomt button{flex:none;border:0;background:none;padding:11px 0;font:600 13.5px var(--f);color:var(--muted);position:relative;cursor:pointer}.fomt button.on{color:var(--ink)}.fomt button.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--acc);border-radius:2px}
+.fopk{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.fopk button{border:0;border-radius:14px;padding:12px 13px;font:700 13.5px var(--f);text-align:left;cursor:pointer;color:var(--ink);background:rgba(255,255,255,.07)}.fopk small{display:block;font-weight:500;font-size:11px;margin-top:2px;opacity:.8}.fopk .c{background:var(--acc);color:#2A1606}.fopk button:active{transform:scale(.97)}
+.fowheel{display:flex;align-items:center;gap:12px;width:100%;margin-top:8px;border:1px dashed rgba(233,162,94,.4);border-radius:14px;padding:11px 13px;background:rgba(233,162,94,.06);color:var(--ink);text-align:left;font:500 13px var(--f);cursor:pointer}
+.fowheel .fwi{font-size:24px}.fowheel b{display:block;font-weight:700;font-size:13.5px}.fowheel small{color:var(--muted);font-size:11.5px}.fowheel em{margin-left:auto;font-style:normal;font-weight:700;color:var(--acc);white-space:nowrap}
+.fopick{margin-top:12px;border-radius:20px;padding:16px;text-align:center;background:linear-gradient(160deg,#2A170C,#140C08);box-shadow:inset 0 0 0 1px rgba(233,162,94,.3);animation:fopop .35s cubic-bezier(.2,1.3,.4,1)}
+@keyframes fopop{from{transform:scale(.94);opacity:0}}
+.fopick .why{font-size:10.5px;font-weight:700;letter-spacing:.16em;color:var(--acc);text-transform:uppercase}
+.fpname{font:600 21px "Playfair Display",Georgia,serif;color:#F3D9B8;margin:10px 0 4px;line-height:1.25;min-height:27px}.fopick.spin .fpname{opacity:.65;filter:blur(.4px)}
+.fpmeta{font-size:12px;color:var(--muted)}.fopick.spin .fpmeta{visibility:hidden}
+.fpacts{display:flex;gap:8px;margin-top:14px}.fpacts button{flex:1;border:0;border-radius:12px;padding:11px;font:700 13.5px var(--f);background:rgba(255,255,255,.08);color:var(--ink);cursor:pointer}.fpacts #fp-x{flex:none;width:44px}.fpacts .p{background:var(--acc);color:#2A1606}
+.fomenu{margin-top:14px;padding:18px 16px 12px;border-radius:18px;background:linear-gradient(180deg,#1B110B,#140C08);box-shadow:inset 0 0 0 1px rgba(233,162,94,.18)}
+.fmh{text-align:center;font:600 23px "Playfair Display",Georgia,serif;color:#F3D9B8}.fms{text-align:center;font:italic 500 12.5px "Playfair Display",Georgia,serif;color:var(--muted);margin-top:2px}
+.fosec{margin-top:16px}.fosec h5{margin:0 0 4px;display:flex;align-items:center;gap:8px;font-size:10.5px;font-weight:700;letter-spacing:.18em;color:var(--acc);text-transform:uppercase}.fosec h5::after{content:"";flex:1;height:1px;background:rgba(233,162,94,.25)}
+.fodish{display:block;width:100%;border:0;background:none;text-align:left;padding:8px 0;color:var(--ink);cursor:pointer;border-radius:8px}.fodish:active{background:rgba(255,255,255,.04)}
+.fodish .dl{display:flex;align-items:baseline;gap:6px}.fodish .dl b{font:600 15.5px "Playfair Display",Georgia,serif;color:var(--ink);min-width:0}.fodish .dl i{flex:1;min-width:14px;border-bottom:1.5px dotted rgba(255,255,255,.2);transform:translateY(-3px)}.fodish .dl>span{font-size:12px;color:var(--peach);font-weight:600;white-space:nowrap}
+.fodish .dd{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.35}
+.fowk{display:inline-block;font:700 9.5px var(--f);font-style:normal;padding:1px 6px;border-radius:999px;background:rgba(233,162,94,.15);color:var(--acc);margin-left:6px;vertical-align:2px;letter-spacing:.04em;text-transform:uppercase}
+.bwwrap{display:flex;justify-content:center;margin:4px 0 10px}.bwsvg{width:min(78vw,300px);height:auto;overflow:visible}
+.bwres{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.bwr{border:1px solid var(--line2);background:rgba(255,255,255,.04);border-radius:12px;padding:9px 6px;text-align:center;color:var(--ink);cursor:pointer;font:600 12.5px var(--f)}.bwr small{display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.bwr.lk{border-color:var(--peach);background:rgba(239,188,144,.12)}.bwr.lk small{color:var(--peach)}
+.bwtop{text-align:center;font-size:12.5px;color:var(--soft);margin:10px 0 0;min-height:16px}.bwsafe{font-size:12px!important;margin-top:8px!important}
+@media (prefers-reduced-motion:reduce){.fopick{animation:none}}
