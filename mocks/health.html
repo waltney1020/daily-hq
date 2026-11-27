@@ -1,0 +1,187 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Human OS</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+:root{--ink:#F6EFE9;--muted:#AFA197;--soft:#DDD0C6;--line:rgba(255,236,220,.11);--line2:rgba(255,236,220,.2);--peach:#EFBC90;--mint:#86D3B0;--rose:#EE8E86;--sky:#8FCBF2;--lav:#B7A3E0;--gold:#E9C46A;--f:"Work Sans",system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:#0A0706;color:var(--ink);font:400 14px var(--f);padding:28px 16px 70px}button,input{font:inherit;color:inherit}button{cursor:pointer}
+h1{text-align:center;font-size:21px;font-weight:600;margin:0 0 4px}.lead{text-align:center;color:var(--muted);font-size:13px;margin:0 auto 26px;max-width:820px;line-height:1.55}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,372px));gap:28px;justify-content:center;align-items:start}
+.cap{font-size:13px;font-weight:700;margin:0 0 4px;display:flex;gap:8px;align-items:center}.n{font-size:10.5px;font-weight:800;background:var(--peach);color:#2A1606;border-radius:6px;padding:2px 7px}
+.was{font-size:12px;color:var(--muted);margin:0 0 10px;line-height:1.45;min-height:34px}
+.phone{border-radius:30px;background:#0D0907;padding:10px;box-shadow:0 30px 70px rgba(0,0,0,.5),inset 0 0 0 1px var(--line)}
+.scr{border-radius:22px;overflow:hidden;position:relative;background:linear-gradient(180deg,#1E140E 0%,#140D0A 240px,#0F0A08 100%);min-height:740px}
+.hero{height:150px;position:relative;overflow:hidden}.hero svg{position:absolute;inset:0;width:100%;height:100%}
+.top{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;z-index:2}.ib{width:36px;height:36px;border-radius:50%;border:1px solid var(--line2);background:rgba(10,6,4,.45);display:grid;place-items:center;font-size:14px}
+.eb{font-size:10px;font-weight:800;letter-spacing:.16em;color:var(--soft)}
+.in{padding:0 16px 18px;margin-top:-58px;position:relative;z-index:1}
+.ttl{font-size:30px;font-weight:700;letter-spacing:-.02em;margin:0}.sub{font-size:12.5px;color:var(--muted);margin:3px 0 0}
+.lab{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px;display:flex;justify-content:space-between;align-items:center}.lab b{letter-spacing:0;text-transform:none;font-size:12px;color:var(--soft);font-weight:600}.lab a{letter-spacing:0;text-transform:none;font-size:12px;color:var(--peach);font-weight:600}
+.card{border-radius:16px;padding:12px 14px;background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px var(--line)}
+.tile{border:0;border-radius:14px;padding:10px 4px 9px;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px var(--line);text-align:center;transition:transform .12s,background .2s,box-shadow .2s}.tile:active{transform:scale(.95)}
+.tile i{display:block;font-style:normal;font-size:20px;line-height:1.15}.tile small{display:block;font-size:10.5px;font-weight:600;color:var(--muted);margin-top:4px}.tile.on{background:rgba(239,188,144,.16);box-shadow:inset 0 0 0 1.5px var(--peach)}.tile.on small{color:var(--peach)}
+.t{display:grid;gap:6px}.t3{grid-template-columns:repeat(3,1fr)}.t4{grid-template-columns:repeat(4,1fr)}.t5{grid-template-columns:repeat(5,1fr)}
+.btn{width:100%;border:0;border-radius:14px;padding:14px;font-weight:700;font-size:14.5px;background:var(--peach);color:#2A1606;margin-top:14px}
+/* body */
+.bodywrap{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;margin-top:6px}
+.fig{width:150px;height:270px}.fig .z{transition:fill .5s,opacity .5s,filter .5s}
+.score{text-align:center;margin-bottom:6px}.score b{font-size:40px;font-weight:800;letter-spacing:-.03em}.score small{display:block;font-size:11px;color:var(--muted);margin-top:-4px}
+.sys{display:grid;gap:5px}.sy{display:grid;grid-template-columns:20px 1fr 30px;gap:6px;align-items:center;font-size:12px}.sy i{font-style:normal;text-align:center}.sy .bar{height:6px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden}.sy .bar em{display:block;height:100%;border-radius:6px;transition:width .5s,background .5s}.sy b{font-size:11.5px;text-align:right;color:var(--soft)}
+.sy span{grid-column:2/4;font-size:10.5px;color:var(--muted);margin-top:-3px}
+.sim{display:flex;gap:6px;flex-wrap:wrap}.sim button{border:1px dashed rgba(140,170,255,.4);background:rgba(120,160,255,.07);border-radius:999px;padding:6px 10px;font-size:11.5px;font-weight:600;color:#C9D6FF}
+.feed{display:grid;gap:6px}.fe{display:flex;gap:10px;align-items:center;font-size:12.5px}.fe i{font-style:normal;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:rgba(255,255,255,.06);flex:none}.fe small{color:var(--muted);margin-left:auto;font-size:11px;white-space:nowrap}.fe .p{color:var(--mint)}.fe .m{color:var(--rose)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mini b{display:block;font-size:20px}.mini small{font-size:11px;color:var(--muted)}.mini .d{font-size:11px;font-weight:600}
+/* mood */
+.wave{width:100%;height:130px;display:block}.legend{display:flex;gap:12px;font-size:11px;color:var(--muted);margin-top:4px}.legend i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.freq{display:grid;gap:6px}.fq{display:grid;grid-template-columns:24px 64px 1fr 24px;gap:8px;align-items:center;font-size:12px}.fq .bar{height:8px;border-radius:8px;background:rgba(255,255,255,.06);overflow:hidden}.fq .bar em{display:block;height:100%;border-radius:8px}.fq b{text-align:right;font-size:11.5px;color:var(--soft)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.cal span{aspect-ratio:1;border-radius:8px;display:grid;place-items:center;font-size:14px;background:rgba(255,255,255,.04)}.cal .h{background:none;font-size:10px;color:var(--muted);aspect-ratio:auto}
+.insight{border-radius:14px;padding:11px 13px;background:rgba(183,163,224,.1);box-shadow:inset 0 0 0 1px rgba(183,163,224,.3);font-size:12.5px;line-height:1.45;color:#E3DAF6;margin-top:10px}.insight b{color:#CDBDF0}
+/* vitamins */
+.vit{display:grid;grid-template-columns:38px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px var(--line);margin-top:6px}
+.pill{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:18px}.vit b{display:block;font-size:13.5px}.vit small{font-size:11px;color:var(--muted)}
+.take{border:0;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:700;background:rgba(255,255,255,.07)}.take.on{background:var(--mint);color:#0B3324}
+.vring{display:flex;align-items:center;gap:14px}.vring svg{width:64px;height:64px;transform:rotate(-90deg)}.vring b{font-size:20px}.vring small{display:block;font-size:11.5px;color:var(--muted)}
+.dots7{display:flex;gap:4px;margin-top:6px}.dots7 i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.1)}.dots7 i.f{background:var(--mint)}
+.warn{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.45}
+/* emotion */
+.faces{display:flex;justify-content:space-between;margin-top:8px}.face{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 2px;border-radius:14px;width:19%;transition:transform .15s,background .2s}
+.face i{font-style:normal;font-size:30px;filter:grayscale(.6);opacity:.6;transition:.2s}.face small{font-size:10.5px;color:var(--muted);font-weight:600}.face.on{background:rgba(239,188,144,.14);transform:translateY(-3px)}.face.on i{filter:none;opacity:1;transform:scale(1.15)}.face.on small{color:var(--peach)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{border:0;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:600;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px var(--line);color:var(--soft)}.chip.on{background:rgba(239,188,144,.16);box-shadow:inset 0 0 0 1.5px var(--peach);color:var(--peach)}
+.rng{width:100%;accent-color:var(--peach)}.rl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.advice{border-radius:16px;padding:14px;margin-top:14px;background:linear-gradient(150deg,rgba(134,211,176,.16),rgba(134,211,176,.04));box-shadow:inset 0 0 0 1px rgba(134,211,176,.35);animation:pop .35s cubic-bezier(.2,1.3,.4,1)}@keyframes pop{from{transform:scale(.95);opacity:0}}
+.advice h4{margin:0 0 4px;font-size:14px;color:var(--mint)}.advice p{margin:0;font-size:12.5px;line-height:1.5;color:var(--soft)}.advice ul{margin:8px 0 0;padding-left:18px;font-size:12.5px;color:var(--soft);line-height:1.55}
+.advice .acts{display:flex;gap:6px;margin-top:10px}.advice .acts button{flex:1;border:0;border-radius:10px;padding:9px;font-size:12px;font-weight:700;background:rgba(255,255,255,.08)}
+.more{display:grid;grid-template-columns:repeat(4,1fr);gap:12px 6px;margin-top:6px}.app{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--soft)}.app i{width:50px;height:50px;border-radius:15px;display:grid;place-items:center;font-style:normal;font-size:22px}.app.new i{box-shadow:0 0 0 2px var(--peach)}.app.new small{color:var(--peach);font-size:9px;font-weight:800;letter-spacing:.08em;margin-top:-3px}
+/* task */
+.sent{font-size:22px;line-height:1.55;font-weight:600;margin-top:6px}.sent button{border:0;background:rgba(239,188,144,.14);color:var(--peach);border-radius:10px;padding:1px 9px;font-weight:700;font-size:20px;box-shadow:inset 0 -2px 0 rgba(239,188,144,.4)}
+.pv{display:grid;grid-template-columns:54px 20px 1fr;gap:10px;align-items:center;padding:11px 12px;border-radius:14px;background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px var(--line);margin-top:8px}.pv .tm{font-size:12px;color:var(--muted);text-align:right}.pv .ck{width:18px;height:18px;border-radius:50%;border:1.8px solid rgba(255,255,255,.3)}.pv b{font-size:14px;font-weight:600}.pv small{display:block;font-size:11px;color:var(--muted)}
+.pick{margin-top:10px;border-radius:16px;padding:12px;background:rgba(0,0,0,.25);box-shadow:inset 0 0 0 1px var(--line);animation:pop .25s}
+.stl{display:grid;gap:6px}.st{display:grid;grid-template-columns:22px 1fr 26px;gap:8px;align-items:center;padding:9px 10px;border-radius:12px;background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px var(--line);font-size:13px}.st i{font-style:normal;color:var(--muted);text-align:center;cursor:grab}.st button{border:0;background:none;color:var(--muted);font-size:16px}
+.addst{display:flex;gap:6px;margin-top:6px}.addst input{flex:1;background:rgba(0,0,0,.28);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px}.addst button{border:0;border-radius:12px;padding:0 14px;font-weight:700;background:rgba(255,255,255,.08)}
+.sw{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;border-radius:14px;background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px var(--line);margin-top:8px;font-size:13px}.sw small{display:block;font-size:11px;color:var(--muted)}.sw i{width:40px;height:24px;border-radius:12px;background:rgba(255,255,255,.14);position:relative;flex:none}.sw i:after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}.sw.on i{background:var(--mint)}.sw.on i:after{left:19px}
+</style></head><body>
+<h1>Health · a body that reacts to everything you log</h1>
+<p class="lead">One new <b>Health</b> page ties together water, food, workouts, smoke, sleep, mood, weight and a new <b>Vitamins</b> tracker, all drawn on one body. Every log nudges a system up or down. The blue dashed buttons on phone 1 simulate logging so you can watch it react. Nothing here is medical advice. It's a mirror of your own habits.</p>
+<div class="grid">
+ <div><p class="cap"><span class="n">1</span>Health · "Human OS"</p><p class="was">New page (Home → Health, and in More). The body lights up by system, with a score up top.</p><div class="phone"><div class="scr" id="s1"></div></div></div>
+ <div><p class="cap"><span class="n">2</span>Mood &amp; energy</p><p class="was">Inside Health. Your energy "frequency" over the week, how often each mood shows up, and a pattern it noticed.</p><div class="phone"><div class="scr" id="s2"></div></div></div>
+ <div><p class="cap"><span class="n">3</span>Vitamins</p><p class="was">New. Tap when taken, morning and evening groups, a 7-day streak. Feeds the body's Vitamins ring.</p><div class="phone"><div class="scr" id="s3"></div></div></div>
+ <div><p class="cap"><span class="n">4</span>Quick check-in (emotions)</p><p class="was">One tap from More. Pick a face, what's behind it, your energy, and get advice that fits.</p><div class="phone"><div class="scr" id="s4"></div></div></div>
+ <div><p class="cap"><span class="n">5</span>More · new shortcuts</p><p class="was">Health, Check in and Vitamins join the section shortcuts.</p><div class="phone"><div class="scr" id="s5"></div></div></div>
+ <div><p class="cap"><span class="n">6</span>Edit task · friendlier</p><p class="was">Reads like a sentence. Tap any underlined part to change it, see a live preview, and edit steps as a list.</p><div class="phone"><div class="scr" id="s6"></div></div></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const hero=(c1,c2,c3,eb,back=true)=>`<div class="hero"><svg viewBox="0 0 400 150" preserveAspectRatio="none"><defs><linearGradient id="g${c1.slice(1)}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c3}"/><stop offset="1" stop-color="#140D0A"/></linearGradient></defs><rect width="400" height="150" fill="url(#g${c1.slice(1)})"/><circle cx="320" cy="34" r="11" fill="#F4E2C8" opacity=".85"/>${[...Array(26)].map((_,i)=>`<circle cx="${(i*67)%400}" cy="${(i*29)%70}" r="${i%5?0.7:1.1}" fill="#fff" opacity="${.25+(i%4)*.12}"/>`).join("")}<path d="M0 110 L60 70 L110 96 L170 52 L230 92 L290 64 L350 88 L400 70 L400 150 L0 150Z" fill="${c1}" opacity=".85"/><path d="M0 128 L80 100 L150 120 L220 96 L300 122 L360 104 L400 116 L400 150 L0 150Z" fill="${c2}"/></svg>
+ <div class="top">${back?`<span class="ib">‹</span>`:`<span></span>`}<span class="eb">${eb}</span><span class="ib">⚙</span></div></div>`;
+/* ---------- 1 · body ---------- */
+const B={water:1.5,meals:1,kcal:650,work:0,smoke:2,vit:1,vitN:3,mood:3,sleep:6.5};
+const clamp=v=>Math.max(0,Math.min(100,Math.round(v)));
+function sys(){return[
+ ["💧","Hydration",clamp(B.water/4*100),`${B.water} of 4 L`],
+ ["🍗","Fuel",clamp(B.kcal/2800*100*.8+B.meals/3*20),`${B.kcal.toLocaleString()} kcal · ${B.meals} of 3 meals`],
+ ["💪","Muscle",clamp(40+B.work*30),B.work?`${B.work} workout${B.work>1?"s":""} today`:"No workout yet · 3 this week"],
+ ["🫁","Lungs",clamp(100-B.smoke*14),B.smoke?`${B.smoke} smoke session${B.smoke>1?"s":""} today`:"Clear today"],
+ ["❤️","Heart",clamp(55+B.work*15-B.smoke*8+B.water*3),"Cardio + smoke + water"],
+ ["🧠","Mind",clamp(B.mood*18+B.sleep*4),`Mood ${["","Low","Meh","Okay","Good","Great"][B.mood]} · ${B.sleep} h sleep`],
+ ["💊","Vitamins",clamp(B.vit/B.vitN*100),`${B.vit} of ${B.vitN} taken`]]}
+const col=v=>v>=75?"#86D3B0":v>=50?"#E9C46A":v>=30?"#EFA98A":"#EE8E86";
+function body(S){const g=Object.fromEntries(S.map(s=>[s[1],s[2]])),wl=g.Hydration/100,glow=(v)=>`drop-shadow(0 0 ${4+v/12}px ${col(v)})`;
+ return`<svg class="fig" viewBox="0 0 150 270" aria-label="Body">
+ <defs><clipPath id="torso"><path d="M48 70 Q75 62 102 70 L106 150 Q75 162 44 150Z"/></clipPath><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9FD4F7" stop-opacity=".55"/><stop offset="1" stop-color="#4A8FC4" stop-opacity=".7"/></linearGradient></defs>
+ <!-- silhouette -->
+ <g fill="#2A1D15" stroke="rgba(255,236,220,.18)" stroke-width="1.2">
+  <circle cx="75" cy="34" r="20"/><path d="M68 52h14v12H68z"/>
+  <path d="M48 70 Q75 62 102 70 L106 150 Q75 162 44 150Z"/>
+  <path class="z" d="M48 72 Q34 78 30 100 L24 150 Q22 158 30 158 L36 112 Q40 92 50 88Z" style="fill:${col(g.Muscle)};opacity:${.18+g.Muscle/180}"/>
+  <path class="z" d="M102 72 Q116 78 120 100 L126 150 Q128 158 120 158 L114 112 Q110 92 100 88Z" style="fill:${col(g.Muscle)};opacity:${.18+g.Muscle/180}"/>
+  <path class="z" d="M50 154 Q60 160 72 158 L70 250 Q66 258 58 254 Z" style="fill:${col(g.Muscle)};opacity:${.18+g.Muscle/180}"/>
+  <path class="z" d="M100 154 Q90 160 78 158 L80 250 Q84 258 92 254 Z" style="fill:${col(g.Muscle)};opacity:${.18+g.Muscle/180}"/>
+ </g>
+ <rect clip-path="url(#torso)" x="40" y="${160-wl*96}" width="70" height="${wl*96+4}" fill="url(#wg)" style="transition:y .6s,height .6s"/>
+ <circle class="z" cx="75" cy="30" r="9" fill="${col(g.Mind)}" opacity=".85" style="filter:${glow(g.Mind)}"/>
+ <ellipse class="z" cx="64" cy="94" rx="9" ry="15" fill="${col(g.Lungs)}" opacity=".8" style="filter:${glow(g.Lungs)}"/><ellipse class="z" cx="86" cy="94" rx="9" ry="15" fill="${col(g.Lungs)}" opacity=".8" style="filter:${glow(g.Lungs)}"/>
+ <path class="z" d="M75 104 c-6 -7 -14 -2 -10 5 l10 9 l10 -9 c4 -7 -4 -12 -10 -5z" fill="${col(g.Heart)}" style="filter:${glow(g.Heart)}"/>
+ <ellipse class="z" cx="75" cy="132" rx="13" ry="9" fill="${col(g.Fuel)}" opacity=".8" style="filter:${glow(g.Fuel)}"/>
+ <circle class="z" cx="118" cy="62" r="7" fill="${col(g.Vitamins)}" opacity=".9" style="filter:${glow(g.Vitamins)}"/><text x="118" y="65" font-size="8" text-anchor="middle">💊</text>
+ ${B.smoke?`<g opacity="${Math.min(.8,B.smoke*.2)}"><circle cx="58" cy="86" r="3" fill="#6B5A4E"/><circle cx="90" cy="100" r="2.5" fill="#6B5A4E"/><circle cx="68" cy="104" r="2" fill="#6B5A4E"/></g>`:""}
+ </svg>`}
+function d1(){const S=sys(),tot=Math.round(S.reduce((a,s)=>a+s[2],0)/S.length);
+ s1.innerHTML=hero("#4C2D1D","#2A1810","#33190F","HEALTH")+`<div class="in"><p class="ttl">Human OS</p><p class="sub">Friday · everything you log shows up here</p>
+ <div class="bodywrap">${body(S)}<div><div class="score"><b style="color:${col(tot)}">${tot}</b><small>body score today</small></div><div class="sys">${S.map(([i,n,v,d])=>`<div class="sy"><i>${i}</i><div class="bar"><em style="width:${v}%;background:${col(v)}"></em></div><b>${v}</b><span>${n} · ${d}</span></div>`).join("")}</div></div></div>
+ <div class="lab">Try it <b>simulates logging</b></div><div class="sim">
+  <button data-s="water">+ ½ L water</button><button data-s="meal">Ate a meal</button><button data-s="work">Worked out</button><button data-s="smoke">Smoked</button><button data-s="vit">Took vitamins</button><button data-s="mood">Mood up</button><button data-s="reset">Reset</button></div>
+ <div class="lab">What moved it today</div><div class="card feed">
+  <div class="fe"><i>💧</i>Drank 1.5 L<small class="p">+38 hydration</small></div><div class="fe"><i>🍳</i>Breakfast · 650 kcal<small class="p">+23 fuel</small></div>
+  <div class="fe"><i>💨</i>2 smoke sessions · 7 puffs<small class="m">−28 lungs</small></div><div class="fe"><i>💊</i>Vitamin D<small class="p">+33 vitamins</small></div></div>
+ <div class="lab">Body</div><div class="two"><div class="card mini"><small>Weight · 7-day avg</small><b>148.2 lb</b><span class="d" style="color:var(--mint)">▲ 0.4 this week · on target</span></div><div class="card mini"><small>Smoke-free</small><b>3 h 12 m</b><span class="d" style="color:var(--soft)">lungs recovering</span></div></div>
+ </div>`;
+ s1.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{const k=b.dataset.s;if(k==="water")B.water=Math.min(4,B.water+.5);if(k==="meal"){B.meals=Math.min(3,B.meals+1);B.kcal+=750}if(k==="work")B.work=Math.min(2,B.work+1);if(k==="smoke")B.smoke++;if(k==="vit")B.vit=Math.min(B.vitN,B.vit+1);if(k==="mood")B.mood=Math.min(5,B.mood+1);if(k==="reset")Object.assign(B,{water:1.5,meals:1,kcal:650,work:0,smoke:2,vit:1,mood:3});d1()})}
+/* ---------- 2 · mood & energy ---------- */
+const DAYS=["Sat","Sun","Mon","Tue","Wed","Thu","Fri"],EN=[3,4,2,3,4,2,3],MO=[3,4,2,3,5,2,3];const MOODS=[["😞","Low"],["😕","Meh"],["😐","Okay"],["🙂","Good"],["😄","Great"]];
+function d2(){const W=300,H=120,X=i=>14+i*(W-28)/6,Y=v=>H-14-(v-1)/4*(H-34);const pts=EN.map((v,i)=>[X(i),Y(v)]);
+ const smooth=p=>p.map((q,i)=>i?`C${(p[i-1][0]+q[0])/2} ${p[i-1][1]} ${(p[i-1][0]+q[0])/2} ${q[1]} ${q[0]} ${q[1]}`:`M${q[0]} ${q[1]}`).join(" ");
+ const mpts=MO.map((v,i)=>[X(i),Y(v)]);const cnt=[0,0,0,0,0];[...MO,2,3,3,4,1,3,2,4,3,3,2,4].forEach(m=>cnt[m-1]++);const mx=Math.max(...cnt);
+ s2.innerHTML=hero("#3A2C5C","#1E1733","#231B3E","MOOD & ENERGY")+`<div class="in"><p class="ttl">Mood &amp; energy</p><p class="sub">From your check-ins and journal moods</p>
+ <div class="lab">Your frequency <b>last 7 days</b></div><div class="card"><svg class="wave" viewBox="0 0 ${W} ${H}">
+  ${[1,2,3,4,5].map(v=>`<line x1="0" x2="${W}" y1="${Y(v)}" y2="${Y(v)}" stroke="rgba(255,255,255,.05)"/>`).join("")}
+  <path d="${smooth(pts)} L${X(6)} ${H} L${X(0)} ${H}Z" fill="rgba(239,188,144,.12)"/><path d="${smooth(pts)}" fill="none" stroke="#EFBC90" stroke-width="2.5"/>
+  <path d="${smooth(mpts)}" fill="none" stroke="#B7A3E0" stroke-width="2" stroke-dasharray="4 4"/>
+  ${MO.map((v,i)=>`<text x="${X(i)}" y="${Y(v)-8}" font-size="12" text-anchor="middle">${MOODS[v-1][0]}</text>`).join("")}
+  ${DAYS.map((d,i)=>`<text x="${X(i)}" y="${H-1}" font-size="9" fill="#AFA197" text-anchor="middle">${d}</text>`).join("")}</svg>
+  <div class="legend"><span><i style="background:#EFBC90"></i>Energy</span><span><i style="background:#B7A3E0"></i>Mood</span></div></div>
+ <div class="insight"><b>Pattern:</b> your energy dips on days with 2+ smoke sessions and under 2 L of water (Mon, Thu). On workout days your mood runs about a step higher.</div>
+ <div class="lab">How often <b>last 30 days</b></div><div class="card freq">${MOODS.map(([e,n],i)=>`<div class="fq"><span>${e}</span><span>${n}</span><div class="bar"><em style="width:${cnt[i]/mx*100}%;background:${["#EE8E86","#EFA98A","#E9C46A","#B8D7A0","#86D3B0"][i]}"></em></div><b>${cnt[i]}</b></div>`).join("")}</div>
+ <div class="lab">This month</div><div class="card"><div class="cal">${["M","T","W","T","F","S","S"].map(d=>`<span class="h">${d}</span>`).join("")}${[...Array(28)].map((_,i)=>`<span>${i<27?MOODS[[2,3,3,4,1,3,2,4,3,3,2,4,3,4,2,3,1,3,4,4,3,2,3,4,2,3,3][i]][0]:""}</span>`).join("")}</div></div>
+ </div>`}
+/* ---------- 3 · vitamins ---------- */
+const V=[{e:"☀️",c:"#3A3016",n:"Vitamin D3",d:"2,000 IU · with breakfast",g:"Morning",on:true},{e:"🐟",c:"#16303A",n:"Omega-3",d:"1 softgel · with food",g:"Morning",on:false},{e:"🟢",c:"#1E3320",n:"Multivitamin",d:"1 tablet · with breakfast",g:"Morning",on:false},{e:"🌙",c:"#2A2340",n:"Magnesium",d:"1 capsule · before bed",g:"Evening",on:false}];
+function d3(){const t=V.filter(v=>v.on).length,C=2*Math.PI*26;
+ s3.innerHTML=hero("#30573F","#172C20","#132820","VITAMINS")+`<div class="in"><p class="ttl">Vitamins</p><p class="sub">Tap when you take one</p>
+ <div class="card vring" style="margin-top:12px"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="6"/><circle cx="32" cy="32" r="26" fill="none" stroke="#86D3B0" stroke-width="6" stroke-linecap="round" stroke-dasharray="${t/V.length*C} ${C}" style="transition:stroke-dasharray .4s"/></svg><div><b>${t} of ${V.length} today</b><small>4-day streak · all taken</small><div class="dots7">${[1,1,1,1,0,0,t===V.length?1:0].map(f=>`<i class="${f?"f":""}"></i>`).join("")}</div></div></div>
+ ${["Morning","Evening"].map(g=>`<div class="lab">${g==="Morning"?"🌅 Morning":"🌙 Evening"} <b>${g==="Morning"?"8:00 AM reminder":"9:30 PM reminder"}</b></div>${V.map((v,i)=>v.g!==g?"":`<div class="vit"><span class="pill" style="background:${v.c}">${v.e}</span><span><b>${v.n}</b><small>${v.d}</small></span><button class="take ${v.on?"on":""}" data-v="${i}">${v.on?"✓ Taken":"Take"}</button></div>`).join("")}`).join("")}
+ <button class="btn" style="background:rgba(255,255,255,.07);color:var(--ink)">+ Add a vitamin</button>
+ <p class="warn">Starting something new? Check doses with a pharmacist or doctor, especially alongside other meds. The app only tracks what you take and reminds you.</p></div>`;
+ s3.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>{V[+b.dataset.v].on=!V[+b.dataset.v].on;d3()})}
+/* ---------- 4 · check-in ---------- */
+const E={m:-1,why:[],en:3,done:false};const WHY=["Sleep","Work","Trading","Money","People","Health","Smoking","Food","Nothing specific"];
+const ADV={1:{h:"Rough one. Go easy.",p:"Low moods pass, especially when you look after the basics.",l:["Drink a full glass of water and eat something real","Get 10 minutes outside or near a window","Text one person, even just \"hey\""]},
+ 2:{h:"A bit flat today.",p:"Small wins move the needle fastest.",l:["Pick one small task and finish it","A 10-minute walk lifts energy for about an hour","Put your phone down for 20 minutes"]},
+ 3:{h:"Steady. That's good.",p:"Use the calm to set up tomorrow.",l:["Prep tomorrow's first task now","Check your water: are you on pace?"]},
+ 4:{h:"Nice, ride it.",p:"Good days are a great time to do the hard thing.",l:["Knock out the task you've been avoiding","Note what made today good"]},
+ 5:{h:"Great day! 🎉",p:"Write down what worked so you can repeat it.",l:["Add a quick journal line about why","Share it with someone"]}};
+const WHYTIP={Sleep:"Low on sleep? Aim for lights-out 30 min earlier tonight and skip screens in bed.",Trading:"After a rough trade, step away 15 minutes before the next one. Don't revenge trade.",Smoking:"Cravings and low moods feed each other. The calm screen helps: 2 minutes.",Work:"Write the 3 things stressing you, then pick just one to act on.",Money:"Open Money and check one number. Facing it is usually lighter than avoiding it.",People:"It's okay to take space. A short walk can reset how you respond.",Health:"Log water and a meal. Basics first, then reassess.",Food:"Haven't eaten in a while? Eat first. Hunger feels a lot like a bad mood."};
+function d4(){s4.innerHTML=hero("#4D3F7A","#251E3F","#231B3E","CHECK IN")+`<div class="in"><p class="ttl">How are you?</p><p class="sub">Takes 5 seconds. Logged to Mood &amp; energy.</p>
+ <div class="faces">${MOODS.map(([e,n],i)=>`<button class="face ${E.m===i+1?"on":""}" data-m="${i+1}"><i>${e}</i><small>${n}</small></button>`).join("")}</div>
+ ${E.m>0?`<div class="lab">What's behind it? <b>optional</b></div><div class="chips">${WHY.map(w=>`<button class="chip ${E.why.includes(w)?"on":""}" data-w="${w}">${w}</button>`).join("")}</div>
+ <div class="lab">Energy <b>${["","Drained","Low","Okay","Good","Wired"][E.en]}</b></div><input class="rng" type="range" min="1" max="5" value="${E.en}" id="en"><div class="rl"><span>🪫 Drained</span><span>⚡ Wired</span></div>
+ ${E.done?`<div class="advice"><h4>${ADV[E.m].h}</h4><p>${ADV[E.m].p}</p><ul>${ADV[E.m].l.map(x=>`<li>${x}</li>`).join("")}${E.why.filter(w=>WHYTIP[w]).slice(0,2).map(w=>`<li>${WHYTIP[w]}</li>`).join("")}</ul>
+  <div class="acts">${E.m<=2?`<button>🧘 2-min calm</button>`:""}<button>📝 Journal it</button><button>Done</button></div>
+  ${E.m===1?`<p style="font-size:11px;color:var(--muted);margin-top:10px">Feeling low most days lately? Talking to someone you trust, or a professional, really helps.</p>`:""}</div>`:`<button class="btn" id="go">Log it</button>`}`:""}
+ </div>`;
+ s4.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{E.m=+b.dataset.m;E.done=false;d4()});s4.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>{const w=b.dataset.w;E.why=E.why.includes(w)?E.why.filter(x=>x!==w):[...E.why,w];d4()});
+ const en=s4.querySelector("#en");if(en)en.oninput=()=>{E.en=+en.value;s4.querySelector(".lab:nth-of-type(2) b")};if(en)en.onchange=()=>d4();const g=s4.querySelector("#go");if(g)g.onclick=()=>{E.done=true;d4()}}
+/* ---------- 5 · more ---------- */
+function d5(){const A=(e,n,bg,nw)=>`<div class="app ${nw?"new":""}"><i style="background:${bg}">${e}</i>${n}${nw?"<small>NEW</small>":""}</div>`;
+ s5.innerHTML=hero("#4C2D1D","#2A1810","#33190F","MORE")+`<div class="in"><p class="ttl">More</p>
+ <div class="lab">Sections</div><div class="more">${A("📈","Trades","#1E6B4F")}${A("📔","Journal","#B9754A")}${A("🍴","Food","#6E9A3A")}${A("💨","Smoke log","#6E5FC0")}${A("🫀","Health","#B04A5A",1)}${A("💊","Vitamins","#2E7D5B",1)}</div>
+ <div class="lab">Quick</div><div class="more">${A("🙂","Check in","#7A5FC0",1)}${A("⚖️","Weigh-in","#5A6B7A")}${A("💧","Water","#2F6E9A")}${A("🧘","Calm","#3E8A73")}</div>
+ <div class="lab">Shortcuts</div><div class="more">${A("PM","Polymarket","#2A57D8")}${A("C","Coinbase","#0B4FD8")}${A("TV","TradingView","#131722")}${A("31","Calendar","#fff")}</div></div>`}
+/* ---------- 6 · edit task ---------- */
+const T={name:"Hair: regular wash",when:"Fridays",time:"9:00 PM",part:"Evening",open:"",opt:false,remind:true,steps:["Wash with Innersense shampoo","Apply conditioner 3–5 min","Gently detangle","Rinse thoroughly","Scrunch and air-dry"]};
+const PICK={when:["Every day","Weekdays","Weekends","Fridays","Mon · Wed · Fri","Today only"],time:["Any time","8:00 AM","12:00 PM","6:00 PM","9:00 PM","Other…"],part:["Morning","Afternoon","Evening","Hair care","Weekly","Anytime"]};
+function d6(){const u=(k,v)=>`<button data-o="${k}">${v}</button>`;
+ s6.innerHTML=hero("#4D3F7A","#251E3F","#231B3E","EDIT TASK")+`<div class="in"><input value="${T.name}" style="width:100%;background:none;border:0;border-bottom:1.5px dashed var(--line2);font-size:26px;font-weight:700;padding:2px 0 6px" aria-label="Task name">
+ <div class="sent">${u("when",T.when)} at ${u("time",T.time)},<br>in my ${u("part",T.part.toLowerCase())} list.</div>
+ ${T.open?`<div class="pick"><div class="t t3">${PICK[T.open].map(v=>`<button class="tile ${[T.when,T.time,T.part].includes(v)?"on":""}" data-v="${v}"><small style="margin:0;font-size:12px">${v}</small></button>`).join("")}</div></div>`:""}
+ <div class="lab">Looks like this on Today</div><div class="pv"><span class="tm">${T.time==="Any time"?"—":T.time.replace(" PM","pm").replace(" AM","am")}</span><span class="ck"></span><span><b>${T.name}</b><small>0/${T.steps.length} steps${T.opt?" · optional":""}</small></span></div>
+ <div class="lab">Steps <b>drag ⠿ to reorder</b></div><div class="stl">${T.steps.map((s,i)=>`<div class="st"><i>⠿</i><span>${s}</span><button data-x="${i}" aria-label="Remove">×</button></div>`).join("")}</div>
+ <div class="addst"><input id="ns" placeholder="Add a step"><button id="ad">Add</button></div>
+ <div class="sw ${T.remind?"on":""}" data-t="remind"><span>Remind me<small>Buzz at ${T.time}</small></span><i></i></div>
+ <div class="sw ${T.opt?"on":""}" data-t="opt"><span>Optional<small>Won't break your streak</small></span><i></i></div>
+ <button class="btn">Save</button><button class="btn" style="background:none;color:var(--rose);margin-top:4px">Remove from routine</button></div>`;
+ s6.querySelectorAll("[data-o]").forEach(b=>b.onclick=()=>{T.open=T.open===b.dataset.o?"":b.dataset.o;d6()});
+ s6.querySelectorAll(".pick [data-v]").forEach(b=>b.onclick=()=>{const v=b.dataset.v;if(T.open==="when")T.when=v;if(T.open==="time")T.time=v==="Other…"?"7:30 PM":v;if(T.open==="part")T.part=v;T.open="";d6()});
+ s6.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{T.steps.splice(+b.dataset.x,1);d6()});s6.querySelector("#ad").onclick=()=>{const v=s6.querySelector("#ns").value.trim();if(v){T.steps.push(v);d6()}};
+ s6.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{T[b.dataset.t]=!T[b.dataset.t];d6()})}
+d1();d2();d3();d4();d5();d6();
+</script></body></html>
